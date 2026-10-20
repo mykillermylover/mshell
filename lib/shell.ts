@@ -3,11 +3,11 @@ import app from 'ags/gtk4/app';
 import AstalHyprland from 'gi://AstalHyprland';
 import GLib from 'gi://GLib';
 
-import { config } from './config-app';
+import { config } from './config/app';
 import { handleDebug } from './debug';
-import type { FloatSpec } from './Float';
-import { Frame } from './Frame';
-import type { PopSpec } from './Pop';
+import { Frame } from './frame/Frame';
+import type { FloatSpec } from './windows/Float';
+import type { PopSpec } from './windows/Pop';
 
 const debugEnabled = GLib.getenv('MSHELL_DEBUG') === '1';
 

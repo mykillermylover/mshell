@@ -15,9 +15,9 @@ import {
   patchInto,
   reactive,
   snapshot,
-} from './config';
+} from './index';
 
-// Отдельно от config.ts: там только чистые данные и типы (их грузит node),
+// Отдельно от config/index.ts: там только чистые данные и типы (их грузит node),
 // а gi://GLib есть только в GJS.
 const PATH = GLib.build_filenamev([
   GLib.get_user_config_dir(),

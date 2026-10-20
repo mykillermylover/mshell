@@ -1,9 +1,9 @@
+import { config } from '@lib/config/app';
+import { Shell } from '@lib/shell';
+import { FLOATS, POPS } from '@lib/windows';
 import { createBinding } from 'ags';
 import app from 'ags/gtk4/app';
 
-import { config } from './lib/config-app';
-import { Shell } from './lib/shell';
-import { FLOATS, POPS } from './lib/windows';
 import style from './style.css';
 
 const shell = new Shell(POPS, FLOATS);

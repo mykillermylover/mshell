@@ -3,10 +3,10 @@ import Graphene from 'gi://Graphene';
 import Gsk from 'gi://Gsk';
 import { register } from 'gnim/gobject';
 
-import { type Reactive, snapshot } from './config';
-import { type Bridge, sigmaOf } from './liquid/bridges';
-import type { Box } from './liquid/geometry';
-import { buildScene } from './liquid/scene';
+import { type Reactive, snapshot } from '../config';
+import { type Bridge, sigmaOf } from './bridges';
+import type { Box } from './geometry';
+import { buildScene } from './scene';
 
 /** Прямоугольник в координатах поля: синоним Box из геометрии. */
 export type Rect = Box;

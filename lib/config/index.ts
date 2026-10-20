@@ -1,7 +1,7 @@
 import type { Accessor } from 'ags';
 
+import type { FieldStyle } from '../liquid/LiquidField';
 import { isEqual, isObject, isSamePrimitive } from './guards.ts';
-import type { FieldStyle } from './LiquidField';
 
 /** Лист конфига: значение, которое кладётся в JSON и сравнивается по данным. */
 export type Leaf = string | number | boolean;

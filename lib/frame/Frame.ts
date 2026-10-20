@@ -2,15 +2,15 @@ import type { Gdk } from 'ags/gtk4';
 import { Astal, Gtk } from 'ags/gtk4';
 import app from 'ags/gtk4/app';
 
-import { type Reactive } from './config';
-import { Float, type FloatSpec } from './Float';
+import { type Reactive } from '../config';
+import { type FieldStyle, LiquidField, type Rect } from '../liquid/LiquidField';
+import { Float, type FloatSpec } from '../windows/Float';
+import { Pop, type PopSpec } from '../windows/Pop';
 import { FrameInput } from './FrameInput';
 import { FrameMotion } from './FrameMotion';
-import { type FieldStyle, LiquidField, type Rect } from './LiquidField';
-import { Pop, type PopSpec } from './Pop';
 
-export type { FloatSpec } from './Float';
-export type { Edge, PopSpec } from './Pop';
+export type { FloatSpec } from '../windows/Float';
+export type { Edge, PopSpec } from '../windows/Pop';
 
 export type FrameStyle = FieldStyle;
 

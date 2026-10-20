@@ -1,6 +1,6 @@
 import { Gtk } from 'ags/gtk4';
 
-import type { Rect } from './LiquidField';
+import type { Rect } from '../liquid/LiquidField';
 import { type Content, padded } from './ui';
 
 /** Плавающее окно: таскается за заголовок, у рамки примагничивается и сливается с ней. */

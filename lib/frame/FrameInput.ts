@@ -2,7 +2,7 @@ import type { Astal } from 'ags/gtk4';
 import type giCairo from 'cairo';
 import Cairo from 'gi://cairo';
 
-import type { Rect } from './LiquidField';
+import type { Rect } from '../liquid/LiquidField';
 
 /**
  * Кликабельны только сами окна; рамка и «жидкость» между ними прозрачны для ввода.

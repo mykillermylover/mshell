@@ -1,4 +1,4 @@
-import { DEFAULTS } from '../../lib/config.ts';
+import { DEFAULTS } from '../../lib/config/index.ts';
 import {
   bridges,
   type BridgeSpec,

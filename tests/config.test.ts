@@ -8,7 +8,7 @@ import {
   merge,
   reactive,
   snapshot,
-} from '../lib/config.ts';
+} from '../lib/config/index.ts';
 
 /** Как в приложении: содержимое файла → статика конфига. */
 const fromJson = (text: string) =>

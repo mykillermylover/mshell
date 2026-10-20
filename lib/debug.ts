@@ -1,7 +1,7 @@
 // Debug-команды для живых прогонов. Включаются только при MSHELL_DEBUG=1:
 // в продакшене остаются toggle/open/close/closeall.
-import { config } from './config-app';
-import type { Frame } from './Frame';
+import { config } from './config/app';
+import type { Frame } from './frame/Frame';
 
 const has = (object: object, key: string) =>
   Object.prototype.hasOwnProperty.call(object, key);

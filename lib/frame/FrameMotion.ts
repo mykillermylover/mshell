@@ -2,10 +2,10 @@ import type { Gdk } from 'ags/gtk4';
 import { Gtk } from 'ags/gtk4';
 import GLib from 'gi://GLib';
 
-import { type Reactive, snapshot } from './config';
-import type { Float } from './Float';
-import type { FieldStyle, Rect } from './LiquidField';
-import { snapTo } from './snap';
+import { type Reactive, snapshot } from '../config';
+import type { FieldStyle, Rect } from '../liquid/LiquidField';
+import { snapTo } from '../snap';
+import type { Float } from '../windows/Float';
 
 interface Tween {
   fromX: number;
