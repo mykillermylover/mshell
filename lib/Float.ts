@@ -1,7 +1,7 @@
 import { Gtk } from 'ags/gtk4';
 
 import type { Rect } from './LiquidField';
-import { padded } from './ui';
+import { type Content, padded } from './ui';
 
 /** Плавающее окно: таскается за заголовок, у рамки примагничивается и сливается с ней. */
 export interface FloatSpec {
@@ -9,7 +9,7 @@ export interface FloatSpec {
   title?: string;
   x: number;
   y: number;
-  content: () => Gtk.Widget;
+  content: Content;
   open?: boolean;
 }
 

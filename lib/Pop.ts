@@ -1,6 +1,6 @@
 import { Gtk } from 'ags/gtk4';
 
-import { padded } from './ui';
+import { type Content, padded } from './ui';
 
 export type Edge = 'top' | 'bottom' | 'left' | 'right';
 
@@ -9,7 +9,7 @@ export interface PopSpec {
   id: string;
   edge: Edge;
   align?: 'start' | 'center' | 'end'; // положение вдоль края
-  content: () => Gtk.Widget; // вызывается по разу на монитор; фон НЕ задавать
+  content: Content; // вызывается по разу на монитор; фон НЕ задавать
 }
 
 const SLIDE = {
