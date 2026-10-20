@@ -137,6 +137,13 @@ export class FrameMotion {
     this.deps.fixed.put(float.revealer, float.x, float.y);
   }
 
+  /** Поставить окно как есть: без ограничения комнатой. */
+  private place(float: Float, x: number, y: number) {
+    float.x = x;
+    float.y = y;
+    this.deps.fixed.move(float.revealer, x, y);
+  }
+
   private moveTo(float: Float, x: number, y: number) {
     const fieldWidth = this.deps.field.get_width();
     const fieldHeight = this.deps.field.get_height();
@@ -151,9 +158,11 @@ export class FrameMotion {
       border,
       fieldHeight - border - float.revealer.get_height(),
     );
-    float.x = Math.max(border, Math.min(x, maxX));
-    float.y = Math.max(border, Math.min(y, maxY));
-    this.deps.fixed.move(float.revealer, float.x, float.y);
+    this.place(
+      float,
+      Math.max(border, Math.min(x, maxX)),
+      Math.max(border, Math.min(y, maxY)),
+    );
   }
 
   /** Отпустили окно ближе waistReach к краю или соседу → тянем вплотную. */
@@ -231,6 +240,8 @@ export class FrameMotion {
       (_w: Gtk.Widget, clock: Gdk.FrameClock) => {
         this.frames++;
         const now = clock.get_frame_time() / 1000;
+        const fieldWidth = this.deps.field.get_width();
+        const fieldHeight = this.deps.field.get_height();
         for (const [float, tween] of this.tweens) {
           tween.startedAt ??= now;
           const progress =
@@ -238,10 +249,14 @@ export class FrameMotion {
               ? Math.min(1, (now - tween.startedAt) / tween.duration)
               : 1;
           const eased = easeOutBack(progress);
-          this.moveTo(
+          const x = tween.fromX + (tween.toX - tween.fromX) * eased;
+          const y = tween.fromY + (tween.toY - tween.fromY) * eased;
+          // Перелёт easeOutBack должен заходить за рамку и за соседа, поэтому
+          // комнату на время твина не держим — только поверхность слоя.
+          this.place(
             float,
-            tween.fromX + (tween.toX - tween.fromX) * eased,
-            tween.fromY + (tween.toY - tween.fromY) * eased,
+            Math.max(0, Math.min(x, fieldWidth - float.revealer.get_width())),
+            Math.max(0, Math.min(y, fieldHeight - float.revealer.get_height())),
           );
           if (progress >= 1) {
             this.tweens.delete(float);
