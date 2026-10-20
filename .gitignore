@@ -1,0 +1,11 @@
+node_modules/
+@girs/
+.idea
+build/
+.direnv/
+.claude/
+.envrc
+result
+*.tsbuildinfo
+.superpowers/
+tests/visual/out/
