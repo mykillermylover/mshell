@@ -7,7 +7,7 @@
     "allowSyntheticDefaultImports": true,
     "allowUnreachableCode": false,
     "alwaysStrict": true,
-    "baseUrl": "./src",
+    "baseUrl": ".",
     "checkJs": false,
     "incremental": true,
     "jsx": "react-jsx",
@@ -22,8 +22,11 @@
     "noImplicitAny": true,
     "noImplicitThis": true,
     "paths": {
-      "@*": [
-        "*"
+      "@lib/*": [
+        "./lib/*"
+      ],
+      "@src/*": [
+        "./src/*"
       ],
       "ags": [
         "./node_modules/ags"
