@@ -1,8 +1,8 @@
-// CPU-модель слоя слизи: те же тела и капсулы, box-blur ≈ Gaussian, порог 0.5.
+// CPU-модель слоя жидкости: те же тела и капсулы, box-blur ≈ Gaussian, порог 0.5.
 // Это модель алгоритма, а не пиксельная копия GPU: проверяем топологию и
 // непрерывность, а не цвет и сглаживание краёв.
-import type { Bridge } from '../../lib/goo/bridges.ts';
-import type { Body } from '../../lib/goo/geometry.ts';
+import type { Bridge } from '../../lib/liquid/bridges.ts';
+import type { Body } from '../../lib/liquid/geometry.ts';
 
 export interface Scene {
   width: number;
@@ -16,7 +16,7 @@ export interface Scene {
 export interface Raster {
   width: number;
   height: number;
-  /** Уже с порогом: 1 — слизь. */
+  /** Уже с порогом: 1 — жидкость. */
   alpha: Uint8Array;
   /** Материал до размытия (полосы, тела, мостики). */
   material: Uint8Array;
@@ -118,7 +118,7 @@ const blur = (src: Float32Array, w: number, h: number, sigma: number) => {
 };
 
 // σ — собственно гауссова сигма в логических px. У GTK `push_blur` аргумент
-// — «радиус» ≈ 3.2σ (GooField умножает σ на внутреннюю константу GTK);
+// — «радиус» ≈ 3.2σ (LiquidField умножает σ на внутреннюю константу GTK);
 // CPU-модель принимает σ напрямую, иначе blur в модели был бы в 3.2 раза шире.
 export const renderGoo = (
   scene: Scene,
@@ -127,7 +127,7 @@ export const renderGoo = (
   const scale = opts.scale ?? 0.5;
   const width = Math.ceil(scene.width * scale);
   const height = Math.ceil(scene.height * scale);
-  // Поля вокруг экрана, как в GooField: рамка уходит за край, чтобы blur не
+  // Поля вокруг экрана, как в LiquidField: рамка уходит за край, чтобы blur не
   // съел полосу с наружной стороны. В результат поля не входят.
   const sigmaPx = opts.sigma * scale;
   const pad = Math.ceil(sigmaPx * 5) + 8;
@@ -157,9 +157,9 @@ export const renderGoo = (
     }
   };
 
-  // Рамка в слое слизи — то же кольцо, что рисует чёткая рамка
+  // Рамка в слое жидкости — то же кольцо, что рисует чёткая рамка
   // (append_border): материал идёт по всей кромке, включая дуги углов.
-  // Наружу уходит за экран, как в GooField, чтобы blur не съел внешний край.
+  // Наружу уходит за экран, как в LiquidField, чтобы blur не съел внешний край.
   const band = Math.ceil(opts.sigma * 5) + 16;
   mark(-band, -band, scene.width + band, scene.height + band, (x, y) => {
     const outer = roundedSdf(
@@ -223,7 +223,7 @@ export const renderGoo = (
   return { width, height, alpha, material, scale };
 };
 
-/** Есть ли путь по слизи от логической точки from до любой точки target. */
+/** Есть ли путь по жидкости от логической точки from до любой точки target. */
 export const reaches = (
   raster: Raster,
   from: { x: number; y: number },
@@ -272,7 +272,7 @@ export const reaches = (
   return false;
 };
 
-/** Площадь слизи, которой нет в материале: добавка от blur и мостиков. */
+/** Площадь жидкости, которой нет в материале: добавка от blur и мостиков. */
 export const addedArea = (raster: Raster) => {
   let count = 0;
   for (let i = 0; i < raster.alpha.length; i++) {
@@ -284,10 +284,10 @@ export const addedArea = (raster: Raster) => {
 };
 
 /**
- * Слизь в комнате у углов экрана. Квадрат [border + r, border + 3r]² от угла —
+ * Жидкость в комнате у углов экрана. Квадрат [border + r, border + 3r]² от угла —
  * это уже комната за кольцом обводки (внутреннее скругление r, далее кольцо
  * шириной border). Без окон там должно быть пусто: иначе хвост blur затекает
- * из вогнутого угла рамки — именно так выглядел старый «уголок» слизи.
+ * из вогнутого угла рамки — именно так выглядел старый «уголок» жидкости.
  */
 export const cornerRoomDirty = (
   raster: Raster,

@@ -19,6 +19,16 @@ export interface Bridge {
   angle: number;
 }
 
+/** Зазор слияния двух кромок: две параллельные кромки дают 0.5 на ≈1.35σ. */
+const MERGE_SIGMAS = 1.35;
+/** σ не меньше пикселя: иначе blur превращается в point-sample. */
+const MIN_SIGMA = 1;
+/** Нахлёст внутрь тела: 2σ прячет торец капсулы + 2 px запаса. */
+const OVERLAP_SIGMAS = 2;
+const OVERLAP_PX = 2;
+/** Тоньше половины пикселя порог всё равно съест. */
+const MIN_HALF_WIDTH = 0.5;
+
 export interface BridgeSpec {
   frame: FrameSpec;
   /** Зазор, на котором капля умирает. */
@@ -33,14 +43,16 @@ export interface BridgeSpec {
  * σ размытия под meltRadius. Размытие — «колокол»: две параллельные кромки
  * сливаются, когда зазор падает до ≈1.35σ (замерено), поэтому σ = R/1.35.
  */
-export const sigmaOf = (meltRadius: number) => Math.max(1, meltRadius / 1.35);
+export const sigmaOf = (meltRadius: number) =>
+  Math.max(MIN_SIGMA, meltRadius / MERGE_SIGMAS);
 
 /** Числа капсулы из настроек: нахлёст прячет торец под телом (2σ + 2 px). */
 export const bridgeSpecFor = (
   frame: FrameSpec,
   opts: { meltRadius: number; reach: number },
 ): BridgeSpec => {
-  const overlap = Math.ceil(2 * sigmaOf(opts.meltRadius)) + 2;
+  const overlap =
+    Math.ceil(OVERLAP_SIGMAS * sigmaOf(opts.meltRadius)) + OVERLAP_PX;
   return {
     frame,
     reach: opts.reach,
@@ -72,16 +84,16 @@ export const halfWidth = (contact: Contact, spec: BridgeSpec) => {
 
 /**
  * Все мостики сцены. Для рамки материал заканчивается на внутренней кромке
- * (за кольцо не лезем — иначе у угла экрана blur покажет слизь вне обводки),
+ * (за кольцо не лезем — иначе у угла экрана blur покажет жидкость вне обводки),
  * для тел — заходит внутрь на intoBody.
  */
 export const bridges = (bodies: Body[], spec: BridgeSpec): Bridge[] => {
   const out: Bridge[] = [];
   const add = (contact: Contact, intoB: number) => {
     const half = halfWidth(contact, spec);
-    if (half < 0.5) {
+    if (half < MIN_HALF_WIDTH) {
       return;
-    } // тоньше пикселя порог всё равно съест
+    }
     const length = contact.gap + spec.intoBody + intoB;
     if (length <= 0) {
       return;

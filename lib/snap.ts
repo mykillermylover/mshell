@@ -4,10 +4,14 @@ import {
   contactBetween,
   contactsWithFrame,
   type FrameSpec,
-} from './goo/geometry.ts';
+} from './liquid/geometry.ts';
 
 /** Допуск закрытия выбранного контакта, px. */
 const RESIDUAL = 0.5;
+/** Минимальный детерминант пары: вырожденные (коллинеарные) нормали. */
+const MIN_PAIR_DET = 1e-6;
+/** Запас при осевом выпихивании: тела не должны остаться в контакте. */
+const EJECT_GAP = 0.5;
 
 export interface SnapEnv {
   frame: FrameSpec;
@@ -140,6 +144,11 @@ const make = (
     return null;
   }
 
+  // Пары — только из двух контактов: тройки переопределены.
+  if (contacts.length > 2) {
+    return null;
+  }
+
   let dx: number;
   let dy: number;
 
@@ -150,7 +159,7 @@ const make = (
     const [a, b] = contacts;
     const det = a.contact.nx * b.contact.ny - a.contact.ny * b.contact.nx;
 
-    if (Math.abs(det) < 1e-6) {
+    if (Math.abs(det) < MIN_PAIR_DET) {
       return null;
     }
 
@@ -236,11 +245,12 @@ const eject = (self: Body, env: SnapEnv, others: Body[]): SnapResult | null => {
       continue;
     }
 
-    const pushes: Array<[number, number]> = [
-      [-(overlapX + 0.5), 0],
-      [overlapX + 0.5, 0],
-      [0, -(overlapY + 0.5)],
-      [0, overlapY + 0.5],
+    // Толкаем по осям: у глубокого перекрытия нормали уже нет.
+    const pushes: [number, number][] = [
+      [-(overlapX + EJECT_GAP), 0],
+      [overlapX + EJECT_GAP, 0],
+      [0, -(overlapY + EJECT_GAP)],
+      [0, overlapY + EJECT_GAP],
     ];
 
     for (const [dx, dy] of pushes) {
@@ -317,7 +327,8 @@ const pick = (candidates: Candidate[]): Candidate | null => {
  * зазор или слипшиеся сердцевины — выпихивание. Кандидаты — каждый контакт
  * (стены и дуги рамки, тела) в одиночку и парами: решение системы «нормаль ×
  * зазор». Выбор: больше контактов, затем короче ход, затем ключ контактов.
- * Если контакты выпихнуть не дают, запасной вариант — вписать тело в рамку.
+ * Если контакты выпихнуть не дают, запасной вариант — осевые выталкивания
+ * из тел, затем вписать тело в рамку.
  * `null` — рядом нет контакта или закрыть его нечем.
  */
 export const snapTo = (

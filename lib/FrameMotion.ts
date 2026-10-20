@@ -4,7 +4,7 @@ import GLib from 'gi://GLib';
 
 import { type Reactive, snapshot } from './config';
 import type { Float } from './Float';
-import type { FieldStyle, Rect } from './GooField';
+import type { FieldStyle, Rect } from './LiquidField';
 import { snapTo } from './snap';
 
 interface Tween {
@@ -19,6 +19,9 @@ interface Tween {
 // лёгкий «перелёт» при примагничивании
 const easeOutBack = (t: number) =>
   1 + 3 * Math.pow(t - 1, 3) + 2 * Math.pow(t - 1, 2);
+
+/** Сколько кадров держать тик после изменения раскладки. */
+const POKE_FRAMES = 2;
 
 export interface MotionDeps {
   field: Gtk.Widget;
@@ -171,12 +174,14 @@ export class FrameMotion {
 
   /**
    * Отпустили окно ближе waistReach к краю или соседу → оно втягивается вплотную.
-   * Это та же дистанция, на которой появляются перемычки-капли: сцепились — прилипло.
+   * Это та же дистанция, на которой появляются мостики-капли: сцепились — прилипло.
    */
   private snapTarget(float: Float): { x: number; y: number } | null {
     const { border, screenRadius, waistReach, windowRadius } = snapshot(
       this.deps.style,
     );
+    // Соседи — все видимые тела поля, не только float: выехавший Pop тоже
+    // должен притягивать окно и слипаться с ним.
     const others = this.deps
       .revealers()
       .filter(
@@ -209,7 +214,7 @@ export class FrameMotion {
 
   /** Перерисовать пару кадров: хватает, чтобы подхватить итоговую раскладку после изменения. */
   poke() {
-    this.pokes = 2;
+    this.pokes = POKE_FRAMES;
     this.tick();
   }
 

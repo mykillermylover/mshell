@@ -1,6 +1,6 @@
 import { Gtk } from 'ags/gtk4';
 
-import type { Rect } from './GooField';
+import type { Rect } from './LiquidField';
 import { padded } from './ui';
 
 /** Плавающее окно: таскается за заголовок, у рамки примагничивается и сливается с ней. */
@@ -62,7 +62,7 @@ export class Float {
     this.revealer.transitionDuration = this.duration();
   }
 
-  /** Текущая граница на экране — по ней поле слизи и примагничивание. */
+  /** Текущая граница на экране — по ней поле жидкости и примагничивание. */
   get rect(): Rect {
     return {
       x: this.x,

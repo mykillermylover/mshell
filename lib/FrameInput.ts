@@ -2,10 +2,10 @@ import type { Astal } from 'ags/gtk4';
 import type giCairo from 'cairo';
 import Cairo from 'gi://cairo';
 
-import type { Rect } from './GooField';
+import type { Rect } from './LiquidField';
 
 /**
- * Кликабельны только сами окна; рамка и «слизь» между ними прозрачны для ввода.
+ * Кликабельны только сами окна; рамка и «жидкость» между ними прозрачны для ввода.
  * Вызывается из снапшота после layout: rects уже соответствуют текущему кадру.
  */
 export class FrameInput {

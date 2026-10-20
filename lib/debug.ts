@@ -6,6 +6,11 @@ import type { Frame } from './Frame';
 const has = (object: object, key: string) =>
   Object.prototype.hasOwnProperty.call(object, key);
 
+// Параметры debug-замера нагрузки: проход 200 px за 3 с.
+const BENCH_MARGIN = 250;
+const BENCH_TRAVEL = 200;
+const BENCH_MS = 3000;
+
 const numberArg = (value: string | undefined) => {
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
@@ -90,8 +95,18 @@ export function handleDebug(frame: Frame, args: string[]): string | undefined {
       }
 
       const { w } = frame.debug.size();
-      const fromX = Math.min(float.x, w - float.revealer.get_width() - 250);
-      frame.debug.tween(float, fromX, float.y, fromX + 200, float.y, 3000);
+      const fromX = Math.min(
+        float.x,
+        w - float.revealer.get_width() - BENCH_MARGIN,
+      );
+      frame.debug.tween(
+        float,
+        fromX,
+        float.y,
+        fromX + BENCH_TRAVEL,
+        float.y,
+        BENCH_MS,
+      );
       return 'ok';
     }
     case 'snap': {

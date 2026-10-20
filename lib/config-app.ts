@@ -25,6 +25,8 @@ const PATH = GLib.build_filenamev([
   'config.json',
 ]);
 const SAVE_DELAY_MS = 500;
+const SIGTERM = 15;
+const SIGINT = 2;
 
 // Точки, куда процесс реально завершается. AGS 3 в quit() сразу вызывает
 // exit(): Gtk.Application::shutdown не эмитится, а DBus-обработчик `ags quit`
@@ -55,8 +57,8 @@ function hookExit(flush: () => void): void {
     app.quit(); // хук выше запишет конфиг
     return GLib.SOURCE_REMOVE;
   };
-  GLibUnix.signal_add(GLib.PRIORITY_DEFAULT, 15, stop); // SIGTERM
-  GLibUnix.signal_add(GLib.PRIORITY_DEFAULT, 2, stop); // SIGINT
+  GLibUnix.signal_add(GLib.PRIORITY_DEFAULT, SIGTERM, stop);
+  GLibUnix.signal_add(GLib.PRIORITY_DEFAULT, SIGINT, stop);
 }
 
 /**

@@ -10,14 +10,10 @@ import { handleDebug } from './lib/debug';
 import { type FloatSpec, Frame, type PopSpec } from './lib/Frame';
 import style from './style.css';
 
-// ─────────────────────────── настройки ───────────────────────────
-// config — готовый синглтон из lib/config-app.ts; значения живут в
-// ~/.config/mshell/config.json, дефолты и разбор — lib/config.ts.
-// Hyprland: general { gaps_out = <style.border> },
-// decoration { rounding = <style.screenRadius> }.
-
 // ─────────────────────────── контент окон ───────────────────────────
-// Ваши виджеты. Фон и отступы не задавать: фон рисует рамка, отступы — .frame-body в style.css.
+// Ваши виджеты. Фон и отступы не задавать: фон рисует поле жидкости,
+// отступы — .frame-body в style.css.
+// JSX-элемент приводим к Widget один раз, чтобы не писать это в каждом content.
 const widget = (e: unknown) => e as Gtk.Widget;
 
 function Card(props: { title: string; body: string; w: number; h: number }) {

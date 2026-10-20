@@ -1,7 +1,7 @@
 import type { Accessor } from 'ags';
 
-import type { FieldStyle } from './GooField';
 import { isEqual, isObject, isSamePrimitive } from './guards.ts';
+import type { FieldStyle } from './LiquidField';
 
 /** Лист конфига: значение, которое кладётся в JSON и сравнивается по данным. */
 export type Leaf = string | number | boolean;
@@ -35,11 +35,11 @@ export const DEFAULTS = {
     border: 4, // толщина рамки
     screenRadius: 10, // углы экрана (= rounding в Hyprland)
     windowRadius: 12, // углы окон
-    meltRadius: 10, // радиус кривой, которой слизь соединяет тела, px
+    meltRadius: 10, // радиус кривой, которой жидкость соединяет тела, px
     waistReach: 44, // до какого зазора капли шире, чем даёт одно размытие; окно прилипает в этом же радиусе (px)
     sharp: 2.2, // крутизна порога по альфе: чем больше, тем чётче край (≈1.5px при 2.2)
-    snapDuration: 340,
-    revealDuration: 400,
+    snapDuration: 340, // длительность твина магнита/выпихивания, мс
+    revealDuration: 400, // длительность выезда/скрытия Pop и Float, мс
   } satisfies FieldStyle,
 } satisfies Record<string, Section>;
 

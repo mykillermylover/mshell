@@ -63,7 +63,7 @@ const gif = (name: string, frames: string[], dir: string) => {
 };
 
 for (const scenario of scenarioList()) {
-  const dir = path.join(tmpdir(), `goo-${scenario.name}`);
+  const dir = path.join(tmpdir(), `liquid-${scenario.name}`);
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   const frames: string[] = [];

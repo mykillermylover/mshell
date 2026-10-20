@@ -6,7 +6,7 @@ import {
   contactBetween,
   contactsWithFrame,
   type FrameSpec,
-} from '../lib/goo/geometry.ts';
+} from '../lib/liquid/geometry.ts';
 import { type SnapEnv, snapTo } from '../lib/snap.ts';
 
 const frame: FrameSpec = { w: 1000, h: 600, border: 4, screenRadius: 10 };
@@ -44,7 +44,7 @@ test('диагональ: касание скруглёнными уголкам
 });
 
 test('граница waistReach: на reach тянет, дальше — нет', () => {
-  assert.ok(snapTo(env, body(48, 250)));
+  assert.deepEqual(snapTo(env, body(48, 250)), { x: 4, y: 250 });
   assert.equal(snapTo(env, body(49, 250)), null);
 });
 
@@ -155,6 +155,21 @@ test('равная дистанция: выбор по ключу не зави�
 
   assert.deepEqual(snapTo(env, self, [right, left]), { x: 440, y: 250 });
   assert.deepEqual(snapTo(env, self, [left, right]), { x: 440, y: 250 });
+});
+
+test('почти параллельные нормали: выбирается одиночный контакт', () => {
+  const a = body(200, 250, 180, 100);
+  const b = body(200, 379, 190, 100);
+  const result = snapTo(env, body(400, 300), [a, b]);
+
+  assert.ok(result);
+  assert.ok(near(result.x, 389.907, 0.05));
+  assert.ok(near(result.y, 300.891, 0.05));
+
+  for (const other of [a, b]) {
+    const contact = contactBetween(body(result.x, result.y), other);
+    assert.ok(contact && contact.gap >= -0.01);
+  }
 });
 
 test('угол с маленьким windowRadius не залезает в рамку', () => {

@@ -6,7 +6,7 @@ import { type Reactive } from './config';
 import { Float, type FloatSpec } from './Float';
 import { FrameInput } from './FrameInput';
 import { FrameMotion } from './FrameMotion';
-import { type FieldStyle, GooField, type Rect } from './GooField';
+import { type FieldStyle, LiquidField, type Rect } from './LiquidField';
 import { Pop, type PopSpec } from './Pop';
 
 export type { FloatSpec } from './Float';
@@ -17,16 +17,16 @@ export type FrameStyle = FieldStyle;
 /**
  * Хост поля на один монитор:
  *   Overlay
- *    ├─ GooField  — рисует рамку и ВСЕ окна как единое поле (форма = то, что лежит в раскладке)
+ *    ├─ LiquidField  — рисует рамку и ВСЕ окна как единое поле (форма = то, что лежит в раскладке)
  *    ├─ Fixed      — плавающие окна (в Revealer'ах)
  *    └─ Revealer×N — окна, выезжающие из краёв
- * Окна прозрачны и рисуют только содержимое; фон за них рисует GooField.
+ * Окна прозрачны и рисуют только содержимое; фон за них рисует LiquidField.
  * Каждый кадр форма берётся из реальных границ Revealer'ов, поэтому анимация и форма не расходятся.
  */
 export class Frame {
   readonly window: Astal.Window;
   readonly connector: string | null;
-  private field = new GooField();
+  private field = new LiquidField();
   private fixed = new Gtk.Fixed();
   private pops = new Map<string, Pop>();
   private floats = new Map<string, Float>();
@@ -242,7 +242,7 @@ export class Frame {
     };
   }
 
-  /** Тела поля в координатах поля. Больше никаких ключей: слизь — функция раскладки. */
+  /** Тела поля в координатах поля. Больше никаких ключей: жидкость — функция раскладки. */
   private rects(): Rect[] {
     return this.revealers()
       .map((revealer) => this.boundsOf(revealer))

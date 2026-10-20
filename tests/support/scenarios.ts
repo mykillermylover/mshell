@@ -4,8 +4,8 @@ import {
   type BridgeSpec,
   bridgeSpecFor,
   sigmaOf,
-} from '../../lib/goo/bridges.ts';
-import type { Body, FrameSpec } from '../../lib/goo/geometry.ts';
+} from '../../lib/liquid/bridges.ts';
+import type { Body, FrameSpec } from '../../lib/liquid/geometry.ts';
 import { type Raster, renderGoo, type Scene } from './raster.ts';
 
 export const FIELD = { width: 1260, height: 840, border: 4, screenRadius: 10 };

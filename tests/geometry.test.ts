@@ -6,7 +6,7 @@ import {
   contactBetween,
   contactsWithFrame,
   type FrameSpec,
-} from '../lib/goo/geometry.ts';
+} from '../lib/liquid/geometry.ts';
 
 const body = (
   x: number,

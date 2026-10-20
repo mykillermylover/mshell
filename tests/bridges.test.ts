@@ -6,12 +6,12 @@ import {
   bridges,
   bridgeSpecFor,
   halfWidth,
-} from '../lib/goo/bridges.ts';
+} from '../lib/liquid/bridges.ts';
 import {
   type Body,
   contactBetween,
   type FrameSpec,
-} from '../lib/goo/geometry.ts';
+} from '../lib/liquid/geometry.ts';
 
 const frame: FrameSpec = { w: 1260, h: 840, border: 4, screenRadius: 10 };
 const spec = bridgeSpecFor(frame, { meltRadius: 10, reach: 44 });
@@ -33,7 +33,7 @@ const near = (a: number, b: number, eps = 1e-6) => Math.abs(a - b) < eps;
 const key = (b: Bridge) =>
   [b.centerX, b.centerY, b.length, b.width].map((v) => v.toFixed(6)).join(',');
 
-test('параметры выводятся из настроек: σ и нахлёст как раньше', () => {
+test('параметры выводятся из настроек: σ и нахлёст', () => {
   assert.ok(near(spec.cornerHalfWidth, 17));
   assert.ok(near(spec.intoBody, 17));
   assert.ok(near(spec.reach, 44));

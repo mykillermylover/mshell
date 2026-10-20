@@ -40,10 +40,8 @@ export class Pop {
     },
     revealed: () => void,
   ) {
-    const { revealDuration } = this.style();
     const revealer = new Gtk.Revealer({
       transitionType: SLIDE[spec.edge],
-      transitionDuration: revealDuration,
       revealChild: false,
     });
     revealer.set_child(padded(spec.content()));
