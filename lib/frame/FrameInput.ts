@@ -14,6 +14,11 @@ export class FrameInput {
 
   constructor(private readonly window: Astal.Window) {}
 
+  /** Последний применённый регион (debug). */
+  get boxes(): string | null {
+    return this.key;
+  }
+
   /** Новая surface должна получить регион заново. */
   reset() {
     this.key = null;

@@ -5,7 +5,8 @@ import GLib from 'gi://GLib';
 import { type Reactive, snapshot } from '../config';
 import type { FieldStyle, Rect } from '../liquid/LiquidField';
 import { snapTo } from '../snap';
-import type { Float } from '../windows/Float';
+import type { WindowBody } from '../windows/body';
+import { Float } from '../windows/Float';
 
 interface Tween {
   fromX: number;
@@ -27,9 +28,7 @@ export interface MotionDeps {
   field: Gtk.Widget;
   fixed: Gtk.Fixed;
   style: Reactive<FieldStyle>;
-  floats: Map<string, Float>;
-  revealers: () => Gtk.Revealer[];
-  boundsOf: (revealer: Gtk.Revealer) => Rect | null;
+  bodies: () => WindowBody[];
 }
 
 /** Движение окон: drag, примагничивание, твины и тик-цикл. */
@@ -93,9 +92,10 @@ export class FrameMotion {
         );
         const inside = (ancestor: Gtk.Widget) =>
           !!picked && (picked === ancestor || picked.is_ancestor(ancestor));
-        const hit = [...this.deps.floats.values()].find(
-          (float) => inside(float.grip) && !inside(float.closeBtn),
-        );
+        const hit = this.deps
+          .bodies()
+          .filter((body): body is Float => body instanceof Float)
+          .find((float) => inside(float.grip) && !inside(float.closeBtn));
         if (!hit) {
           gesture.set_state(Gtk.EventSequenceState.DENIED);
           return;
@@ -189,14 +189,17 @@ export class FrameMotion {
     const { border, screenRadius, waistReach, windowRadius } = snapshot(
       this.deps.style,
     );
-    // Соседи — все видимые тела поля, не только float: выехавший Pop тоже
+    const self = float.bounds(this.deps.field);
+    if (!self) {
+      return null;
+    }
+
+    // Соседи — все видимые тела поля, не только Float: выехавший Pop тоже
     // должен притягивать окно и слипаться с ним.
     const others = this.deps
-      .revealers()
-      .filter(
-        (revealer) => revealer !== float.revealer && revealer.child_revealed,
-      )
-      .map((revealer) => this.deps.boundsOf(revealer))
+      .bodies()
+      .filter((body) => body !== float)
+      .map((body) => body.bounds(this.deps.field))
       .filter((rect): rect is Rect => rect !== null)
       .map((rect) => ({ ...rect, cornerRadius: windowRadius }));
 
@@ -210,15 +213,13 @@ export class FrameMotion {
         },
         reach: waistReach,
       },
-      { ...float.rect, cornerRadius: windowRadius },
+      { ...self, cornerRadius: windowRadius },
       others,
     );
   }
 
   private animating() {
-    return this.deps
-      .revealers()
-      .some((revealer) => revealer.reveal_child !== revealer.child_revealed);
+    return this.deps.bodies().some((body) => body.animating);
   }
 
   /** Перерисовать пару кадров: хватает, чтобы подхватить итоговую раскладку после изменения. */

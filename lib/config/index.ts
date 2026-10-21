@@ -40,6 +40,9 @@ export const DEFAULTS = {
     sharp: 2.2, // крутизна порога по альфе: чем больше, тем чётче край (≈1.5px при 2.2)
     snapDuration: 340, // длительность твина магнита/выпихивания, мс
     revealDuration: 400, // длительность выезда/скрытия Pop и Float, мс
+    // Видимая губа hover-зоны. Input достраивается до blurReach из
+    // meltRadius (см. lib/windows/popLayout.ts), поэтому губа может быть короткой.
+    hoverDepth: 6,
   } satisfies FieldStyle,
 } satisfies Record<string, Section>;
 
@@ -57,6 +60,7 @@ const STYLE_LIMITS = {
   sharp: [0.1, 20],
   snapDuration: [0, 2000],
   revealDuration: [0, 2000],
+  hoverDepth: [0, 64],
 } as const satisfies Record<keyof FieldStyle, readonly [number, number]>;
 
 /** Лимиты style: применяются при загрузке, update и прямом .set(). */

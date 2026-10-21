@@ -36,6 +36,15 @@ function Player() {
   );
 }
 
+function PlayerHover() {
+  return (
+    <box class="hover-row" spacing={8}>
+      <image iconName="media-playback-start-symbolic" />
+      <label label="Player" />
+    </box>
+  );
+}
+
 function Settings() {
   return (
     <Card title="Settings" body="Выезжает из правой стороны" w={300} h={360} />
@@ -71,8 +80,20 @@ function Mixer() {
 }
 
 // Выезжают из краёв: ags request toggle player
-addPop({ id: 'player', edge: 'top', content: Player });
-addPop({ id: 'settings', edge: 'right', content: Settings });
+addPop({
+  id: 'player',
+  edge: 'top',
+  hover: { content: PlayerHover, hideOnReveal: true },
+  content: Player,
+});
+addPop({
+  id: 'settings',
+  edge: 'right',
+  hover: {
+    depth: 9,
+  },
+  content: Settings,
+});
 addPop({ id: 'launcher', edge: 'bottom', content: Launcher });
 
 // Плавающие: таскаются за заголовок; ags request toggle notes

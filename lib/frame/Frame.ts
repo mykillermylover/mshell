@@ -4,6 +4,7 @@ import app from 'ags/gtk4/app';
 
 import { type Reactive } from '../config';
 import { type FieldStyle, LiquidField, type Rect } from '../liquid/LiquidField';
+import type { WindowBody } from '../windows/body';
 import { Float, type FloatSpec } from '../windows/Float';
 import { Pop, type PopSpec } from '../windows/Pop';
 import { FrameInput } from './FrameInput';
@@ -17,11 +18,12 @@ export type FrameStyle = FieldStyle;
 /**
  * Хост поля на один монитор:
  *   Overlay
- *    ├─ LiquidField  — рисует рамку и ВСЕ окна как единое поле (форма = то, что лежит в раскладке)
- *    ├─ Fixed      — плавающие окна (в Revealer'ах)
- *    └─ Revealer×N — окна, выезжающие из краёв
+ *    ├─ LiquidField — рисует рамку и ВСЕ окна как единое поле (форма = то, что лежит в раскладке)
+ *    ├─ Fixed       — плавающие окна (Float)
+ *    └─ Pop×N       — компоненты попапов (Box из Revealer'а и hover-зоны)
  * Окна прозрачны и рисуют только содержимое; фон за них рисует LiquidField.
- * Каждый кадр форма берётся из реальных границ Revealer'ов, поэтому анимация и форма не расходятся.
+ * Каждый кадр форма берётся из Frame.bodies() (WindowBody.bounds), поэтому
+ * анимация и форма не расходятся.
  */
 export class Frame {
   readonly window: Astal.Window;
@@ -39,8 +41,10 @@ export class Frame {
     size: () => ({ w: this.field.get_width(), h: this.field.get_height() }),
     border: () => this.style.border(),
     rects: () => this.rects(),
+    inputs: () => this.inputs(),
+    region: () => this.input.boxes,
     reveal: (float: Float) => {
-      float.revealer.reveal_child = true;
+      float.setOpen(true);
     },
     move: (float: Float, x: number, y: number) => {
       this.motion.move(float, x, y);
@@ -87,7 +91,9 @@ export class Frame {
     this.field.cfg = style;
     this.field.rects = () => {
       const rects = this.rects();
-      this.input.sync(rects);
+      // Сцена рисует видимые тела, а input может быть шире: у hover-попапа
+      // он достроен до blurReach, чтобы ховер ловился по blur-эффекту.
+      this.input.sync(this.inputs());
       return rects;
     };
     this.field.add_css_class('frame-shape');
@@ -100,14 +106,12 @@ export class Frame {
     this.fixed.vexpand = true;
     overlay.add_overlay(this.fixed); // под выезжающими окнами
 
-    // Motion создаётся до окон: их reveal-колбэки зовут motion.poke().
+    // Motion создаётся до окон: их subscribe зовёт motion.poke().
     this.motion = new FrameMotion({
       field: this.field,
       fixed: this.fixed,
       style,
-      floats: this.floats,
-      revealers: () => this.revealers(),
-      boundsOf: (revealer) => this.boundsOf(revealer),
+      bodies: () => this.bodies(),
     });
 
     for (const spec of floats) {
@@ -140,40 +144,36 @@ export class Frame {
     if (pop) {
       for (const [otherId, other] of this.pops) {
         if (otherId !== id) {
-          other.revealer.reveal_child = false;
+          other.setOpen(false);
         }
       }
-      pop.revealer.reveal_child = true;
+      pop.setOpen(true);
     } else {
-      this.floats.get(id)?.revealer.set_reveal_child(true);
+      this.floats.get(id)?.setOpen(true);
     }
     this.motion.tick();
   }
 
   close(id: string) {
-    const revealer =
-      this.pops.get(id)?.revealer ?? this.floats.get(id)?.revealer;
-    if (revealer) {
-      revealer.reveal_child = false;
-    }
+    (this.pops.get(id) ?? this.floats.get(id))?.setOpen(false);
     this.motion.tick();
   }
 
   toggle(id: string) {
-    const revealer =
-      this.pops.get(id)?.revealer ?? this.floats.get(id)?.revealer;
-    if (revealer) {
-      if (revealer.reveal_child) {
-        this.close(id);
-      } else {
-        this.open(id);
-      }
+    const body = this.pops.get(id) ?? this.floats.get(id);
+    if (!body) {
+      return;
+    }
+    if (body.open) {
+      this.close(id);
+    } else {
+      this.open(id);
     }
   }
 
   closeAll() {
-    for (const id of [...this.pops.keys(), ...this.floats.keys()]) {
-      this.close(id);
+    for (const body of this.bodies()) {
+      body.setOpen(false);
     }
   }
 
@@ -194,58 +194,58 @@ export class Frame {
 
   // ───────────────────────── окна ─────────────────────────
 
-  private addPop(spec: PopSpec): Gtk.Revealer {
+  private addPop(spec: PopSpec): Gtk.Widget {
     const pop = new Pop(
       spec,
       () => ({
         border: this.style.border(),
         screenRadius: this.style.screenRadius(),
         revealDuration: this.style.revealDuration(),
+        hoverDepth: this.style.hoverDepth(),
+        meltRadius: this.style.meltRadius(),
       }),
-      () => this.motion.poke(),
+      this.window,
+      spec.hover
+        ? {
+            enter: () => this.open(spec.id),
+            leave: () => this.close(spec.id),
+          }
+        : null,
     );
+    pop.subscribe(() => this.motion.poke());
     this.pops.set(spec.id, pop);
-    return pop.revealer;
+    return pop.widget;
   }
 
   private addFloat(spec: FloatSpec) {
     const float = new Float(
       spec,
       () => this.close(spec.id),
-      () => this.motion.poke(),
       () => this.style.revealDuration(),
     );
+    float.subscribe(() => this.motion.poke());
     this.fixed.put(float.revealer, float.x, float.y);
     this.floats.set(spec.id, float);
   }
 
   // ───────────────────────── поле ─────────────────────────
 
-  private revealers(): Gtk.Revealer[] {
-    return [
-      ...[...this.pops.values()].map((pop) => pop.revealer),
-      ...[...this.floats.values()].map((float) => float.revealer),
-    ];
-  }
-
-  /** Границы тела в координатах поля; null, если оно ещё не разложено. */
-  private boundsOf(revealer: Gtk.Revealer): Rect | null {
-    const [ok, bounds] = revealer.compute_bounds(this.field);
-    if (!ok || bounds.get_width() < 1 || bounds.get_height() < 1) {
-      return null;
-    }
-    return {
-      x: bounds.get_x(),
-      y: bounds.get_y(),
-      w: bounds.get_width(),
-      h: bounds.get_height(),
-    };
+  /** Все тела поля: попапы и флоаты. */
+  private bodies(): WindowBody[] {
+    return [...this.pops.values(), ...this.floats.values()];
   }
 
   /** Тела поля в координатах поля. Больше никаких ключей: жидкость — функция раскладки. */
   private rects(): Rect[] {
-    return this.revealers()
-      .map((revealer) => this.boundsOf(revealer))
+    return this.bodies()
+      .map((body) => body.bounds(this.field))
+      .filter((rect): rect is Rect => rect !== null);
+  }
+
+  /** Input region: может быть шире тел (hover blur reach). */
+  private inputs(): Rect[] {
+    return this.bodies()
+      .map((body) => body.inputBounds(this.field))
       .filter((rect): rect is Rect => rect !== null);
   }
 }

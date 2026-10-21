@@ -1,5 +1,6 @@
-/* Слой целиком прозрачный: всё, что видно как «фон», рисует lib/liquid/LiquidField.ts. */
-window.frame { background: transparent; }
+/* Слой целиком прозрачный: всё, что видно как «фон», рисует lib/liquid/LiquidField.ts.
+ * shadow/border темы съедают 2 px content'а внутри surface — это мёртвая полоса у края. */
+window.frame { background: transparent; box-shadow: none; border: none; }
 
 /* Цвет и прозрачность рамки и ВСЕХ окон — одной заливкой. */
 .frame-shape { color: rgb(118 138 154 / 0.96); }
@@ -7,6 +8,10 @@ window.frame { background: transparent; }
 /* Отступы содержимого окон (контент оборачивается автоматически). Фона нет. */
 .frame-body { padding: 18px 24px; color: #d3c6aa; }
 .title { font-weight: 700; }
+
+/* Hover-зона попапа: фон рисует LiquidField, контент — обычные виджеты. */
+.hover-zone { color: #d3c6aa; }
+.hover-row { padding: 4px 12px; }
 
 /* Плавающие окна: заголовок — «ручка», за неё таскаем. */
 .float .frame-body { padding-top: 6px; }

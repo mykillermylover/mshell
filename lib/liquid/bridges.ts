@@ -23,7 +23,8 @@ export interface Bridge {
 const MERGE_SIGMAS = 1.35;
 /** σ не меньше пикселя: иначе blur превращается в point-sample. */
 const MIN_SIGMA = 1;
-/** Нахлёст внутрь тела: 2σ прячет торец капсулы + 2 px запаса. */
+
+/** Нахлёст мостика внутрь тела: 2σ; +2 px прячет торец под телом. */
 const OVERLAP_SIGMAS = 2;
 const OVERLAP_PX = 2;
 /** Тоньше половины пикселя порог всё равно съест. */
@@ -46,13 +47,20 @@ export interface BridgeSpec {
 export const sigmaOf = (meltRadius: number) =>
   Math.max(MIN_SIGMA, meltRadius / MERGE_SIGMAS);
 
+/** Видимая часть нахлёста мостика: 2σ. */
+export const visibleOverlap = (meltRadius: number) =>
+  Math.ceil(OVERLAP_SIGMAS * sigmaOf(meltRadius));
+
+/** Полный нахлёст мостика внутрь тела: 2σ + 2 px (прячет торец под телом). */
+export const bridgeOverlap = (meltRadius: number) =>
+  visibleOverlap(meltRadius) + OVERLAP_PX;
+
 /** Числа капсулы из настроек: нахлёст прячет торец под телом (2σ + 2 px). */
 export const bridgeSpecFor = (
   frame: FrameSpec,
   opts: { meltRadius: number; reach: number },
 ): BridgeSpec => {
-  const overlap =
-    Math.ceil(OVERLAP_SIGMAS * sigmaOf(opts.meltRadius)) + OVERLAP_PX;
+  const overlap = bridgeOverlap(opts.meltRadius);
   return {
     frame,
     reach: opts.reach,

@@ -88,6 +88,12 @@ export function handleDebug(frame: Frame, args: string[]): string | undefined {
     case 'rects': {
       return JSON.stringify(frame.debug.rects());
     }
+    case 'inputs': {
+      return JSON.stringify(frame.debug.inputs());
+    }
+    case 'region': {
+      return frame.debug.region() ?? 'none';
+    }
     case 'bench': {
       const float = frame.debug.float(id);
       if (!float) {
