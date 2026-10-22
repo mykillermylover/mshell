@@ -1,3 +1,4 @@
+import Settings from '@widgets/Settings';
 import Test from '@widgets/Test';
 import { Gtk } from 'ags/gtk4';
 
@@ -43,12 +44,6 @@ function PlayerHover() {
       <image iconName="media-playback-start-symbolic" />
       <label label="Player" />
     </box>
-  );
-}
-
-function Settings() {
-  return (
-    <Card title="Settings" body="Выезжает из правой стороны" w={300} h={360} />
   );
 }
 

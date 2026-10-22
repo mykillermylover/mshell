@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import type { Body } from '../src/lib/liquid/geometry.ts';
-import { addedArea, cornerRoomDirty, reaches } from './support/raster.ts';
-import { body, FIELD, NOTES, render } from './support/scenarios.ts';
-import { scenarioList } from './support/scenarios.ts';
+import type { Body } from '../src/lib/liquid/geometry';
+import { addedArea, cornerRoomDirty, reaches } from './support/raster';
+import { body, FIELD, NOTES, render } from './support/scenarios';
+import { scenarioList } from './support/scenarios';
 
 const center = (b) => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
 const insideBody = (b) => (x: number, y: number) =>

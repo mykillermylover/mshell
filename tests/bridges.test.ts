@@ -6,12 +6,12 @@ import {
   bridges,
   bridgeSpecFor,
   halfWidth,
-} from '../src/lib/liquid/bridges.ts';
+} from '../src/lib/liquid/bridges';
 import {
   type Body,
   contactBetween,
   type FrameSpec,
-} from '../src/lib/liquid/geometry.ts';
+} from '../src/lib/liquid/geometry';
 
 const frame: FrameSpec = { w: 1260, h: 840, border: 4, screenRadius: 10 };
 const spec = bridgeSpecFor(frame, { meltRadius: 10, reach: 44 });

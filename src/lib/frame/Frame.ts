@@ -4,9 +4,9 @@ import app from 'ags/gtk4/app';
 
 import { type Reactive } from '../config';
 import { type FieldStyle, LiquidField, type Rect } from '../liquid/LiquidField';
-import type { WindowBody } from '../windows/body';
 import { Float, type FloatSpec } from '../windows/Float';
 import { Pop, type PopSpec } from '../windows/Pop';
+import type { Window } from '../windows/window';
 import { FrameInput } from './FrameInput';
 import { FrameMotion } from './FrameMotion';
 
@@ -22,7 +22,7 @@ export type FrameStyle = FieldStyle;
  *    ├─ Fixed       — плавающие окна (Float)
  *    └─ Pop×N       — компоненты попапов (Box из Revealer'а и hover-зоны)
  * Окна прозрачны и рисуют только содержимое; фон за них рисует LiquidField.
- * Каждый кадр форма берётся из Frame.bodies() (WindowBody.bounds), поэтому
+ * Каждый кадр форма берётся из Frame.bodies() (Window.bounds), поэтому
  * анимация и форма не расходятся.
  */
 export class Frame {
@@ -30,21 +30,27 @@ export class Frame {
   readonly connector: string | null;
   private field = new LiquidField();
   private fixed = new Gtk.Fixed();
-  private pops = new Map<string, Pop>();
-  private floats = new Map<string, Float>();
+  private windows = new Map<string, Window>();
   private readonly input: FrameInput;
   private readonly motion: FrameMotion;
 
   /** Узкий доступ для debug-команд; см. lib/debug.ts. */
   readonly debug = {
-    float: (id: string) => this.floats.get(id),
+    float: (id: string) => {
+      const body = this.windows.get(id);
+      return body instanceof Float ? body : undefined;
+    },
+    pop: (id: string) => {
+      const body = this.windows.get(id);
+      return body instanceof Pop ? body : undefined;
+    },
     size: () => ({ w: this.field.get_width(), h: this.field.get_height() }),
     border: () => this.style.border(),
     rects: () => this.rects(),
     inputs: () => this.inputs(),
     region: () => this.input.boxes,
     reveal: (float: Float) => {
-      float.setOpen(true);
+      float.open();
     },
     move: (float: Float, x: number, y: number) => {
       this.motion.move(float, x, y);
@@ -140,55 +146,47 @@ export class Frame {
   // ───────────────────────── управление ─────────────────────────
 
   open(id: string) {
-    const pop = this.pops.get(id);
-    if (pop) {
-      for (const [otherId, other] of this.pops) {
-        if (otherId !== id) {
-          other.setOpen(false);
-        }
-      }
-      pop.setOpen(true);
-    } else {
-      this.floats.get(id)?.setOpen(true);
-    }
+    this.body(id)?.open();
     this.motion.tick();
   }
 
   close(id: string) {
-    (this.pops.get(id) ?? this.floats.get(id))?.setOpen(false);
+    this.body(id)?.close();
     this.motion.tick();
   }
 
   toggle(id: string) {
-    const body = this.pops.get(id) ?? this.floats.get(id);
+    const body = this.body(id);
     if (!body) {
       return;
     }
-    if (body.open) {
-      this.close(id);
+    if (body.isOpen) {
+      body.close();
     } else {
-      this.open(id);
+      body.open();
     }
+    this.motion.tick();
   }
 
   closeAll() {
     for (const body of this.bodies()) {
-      body.setOpen(false);
+      body.close();
     }
+    this.motion.tick();
   }
 
   /** Применить текущий конфиг: длительности и отступы, форму обновит poke(). */
   refresh() {
-    for (const pop of this.pops.values()) {
-      pop.apply();
-    }
-    for (const float of this.floats.values()) {
-      float.apply();
+    for (const body of this.windows.values()) {
+      body.apply();
     }
     this.motion.poke();
   }
 
   destroy() {
+    for (const body of this.bodies()) {
+      body.dispose();
+    }
     this.window.destroy();
   }
 
@@ -202,36 +200,42 @@ export class Frame {
         screenRadius: this.style.screenRadius(),
         revealDuration: this.style.revealDuration(),
         hoverDepth: this.style.hoverDepth(),
+        hoverDelay: this.style.hoverDelay(),
+        hideDelay: this.style.hideDelay(),
       }),
       this.window,
-      spec.hover
-        ? {
-            enter: () => this.open(spec.id),
-            leave: () => this.close(spec.id),
-          }
-        : null,
+      () => this.activate(spec.id),
     );
     pop.subscribe(() => this.motion.poke());
-    this.pops.set(spec.id, pop);
+    this.windows.set(spec.id, pop);
     return pop.widget;
   }
 
   private addFloat(spec: FloatSpec) {
-    const float = new Float(
-      spec,
-      () => this.close(spec.id),
-      () => this.style.revealDuration(),
-    );
+    const float = new Float(spec, () => this.style.revealDuration());
     float.subscribe(() => this.motion.poke());
     this.fixed.put(float.revealer, float.x, float.y);
-    this.floats.set(spec.id, float);
+    this.windows.set(spec.id, float);
+  }
+
+  /** Открылся попап: остальные закрываются, если не закреплены. */
+  private activate(activeId: string) {
+    for (const body of this.windows.values()) {
+      if (body.id !== activeId && body instanceof Pop) {
+        body.dismiss();
+      }
+    }
+  }
+
+  private body(id: string): Window | undefined {
+    return this.windows.get(id);
   }
 
   // ───────────────────────── поле ─────────────────────────
 
   /** Все тела поля: попапы и флоаты. */
-  private bodies(): WindowBody[] {
-    return [...this.pops.values(), ...this.floats.values()];
+  private bodies(): Window[] {
+    return [...this.windows.values()];
   }
 
   /** Тела поля в координатах поля. Больше никаких ключей: жидкость — функция раскладки. */

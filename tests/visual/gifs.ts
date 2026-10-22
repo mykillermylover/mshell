@@ -4,7 +4,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { render, scenarioList } from '../support/scenarios.ts';
+import { render, scenarioList } from '../support/scenarios';
 
 const out = new URL('out/', import.meta.url).pathname;
 mkdirSync(out, { recursive: true });

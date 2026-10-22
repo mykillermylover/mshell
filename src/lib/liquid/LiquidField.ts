@@ -24,6 +24,8 @@ export interface FieldStyle {
   snapDuration: number; // длительность твина магнита/выпихивания, мс
   revealDuration: number; // длительность выезда/скрытия Pop и Float, мс
   hoverDepth: number; // толщина губы и input hover-зоны, px
+  hoverDelay: number; // задержка открытия hover-попапа, мс
+  hideDelay: number; // задержка закрытия после ухода, мс
 }
 
 // GtkSnapshot.push_blur принимает «радиус» ≈ 3.2σ. Это калибровка GTK,

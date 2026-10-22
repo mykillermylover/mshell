@@ -89,9 +89,13 @@ test('анимации: дефолты и лимиты', () => {
   assert.deepEqual(LIMITS.style.revealDuration, [0, 2000]);
 });
 
-test('hover: дефолт и лимиты зоны', () => {
+test('hover: дефолты и лимиты зоны и задержек', () => {
   assert.equal(DEFAULTS.style.hoverDepth, 6);
   assert.deepEqual(LIMITS.style.hoverDepth, [1, 64]);
+  assert.equal(DEFAULTS.style.hoverDelay, 120);
+  assert.equal(DEFAULTS.style.hideDelay, 300);
+  assert.deepEqual(LIMITS.style.hoverDelay, [0, 2000]);
+  assert.deepEqual(LIMITS.style.hideDelay, [0, 2000]);
 });
 
 test('LIMITS: покрывает все ключи style', () => {

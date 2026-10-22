@@ -42,6 +42,9 @@ export const DEFAULTS = {
     revealDuration: 400, // длительность выезда/скрытия Pop и Float, мс
     // Толщина губы и input hover-зоны (см. lib/windows/popLayout.ts).
     hoverDepth: 6,
+    // 0 — мгновенно, как без задержек.
+    hoverDelay: 120,
+    hideDelay: 300,
   } satisfies FieldStyle,
 } satisfies Record<string, Section>;
 
@@ -60,6 +63,8 @@ const STYLE_LIMITS = {
   snapDuration: [0, 2000],
   revealDuration: [0, 2000],
   hoverDepth: [1, 64],
+  hoverDelay: [0, 2000],
+  hideDelay: [0, 2000],
 } as const satisfies Record<keyof FieldStyle, readonly [number, number]>;
 
 /** Лимиты style: применяются при загрузке, update и прямом .set(). */

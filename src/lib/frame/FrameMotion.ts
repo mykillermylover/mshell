@@ -5,8 +5,8 @@ import GLib from 'gi://GLib';
 import { type Reactive, snapshot } from '../config';
 import type { FieldStyle, Rect } from '../liquid/LiquidField';
 import { snapTo } from '../snap';
-import type { WindowBody } from '../windows/body';
 import { Float } from '../windows/Float';
+import type { Window } from '../windows/window';
 
 interface Tween {
   fromX: number;
@@ -28,7 +28,7 @@ export interface MotionDeps {
   field: Gtk.Widget;
   fixed: Gtk.Fixed;
   style: Reactive<FieldStyle>;
-  bodies: () => WindowBody[];
+  bodies: () => Window[];
 }
 
 /** Движение окон: drag, примагничивание, твины и тик-цикл. */

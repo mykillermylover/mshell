@@ -124,6 +124,24 @@ export function handleDebug(frame: Frame, args: string[]): string | undefined {
       frame.debug.snap(float);
       return 'ok';
     }
+    case 'pin': {
+      const pop = frame.debug.pop(args[1] ?? '');
+      if (!pop) {
+        return 'bad pin';
+      }
+
+      pop.pin();
+      return 'ok';
+    }
+    case 'unpin': {
+      const pop = frame.debug.pop(args[1] ?? '');
+      if (!pop) {
+        return 'bad unpin';
+      }
+
+      pop.unpin();
+      return 'ok';
+    }
     case 'frames': {
       return String(frame.frames);
     }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { buildScene } from '../src/lib/liquid/scene.ts';
+import { buildScene } from '../src/lib/liquid/scene';
 
 const frame = { w: 1260, h: 840, border: 4, screenRadius: 10 };
 const style = { windowRadius: 12, meltRadius: 10, waistReach: 44 };

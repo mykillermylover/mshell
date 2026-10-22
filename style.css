@@ -12,6 +12,14 @@ window.frame { background: transparent; box-shadow: none; border: none; }
 /* Hover-зона попапа: фон рисует LiquidField, контент — обычные виджеты. */
 .hover-zone { color: #d3c6aa; }
 .hover-row { padding: 4px 12px; }
+.pin-button {
+  padding: 4px 10px;
+  background: none;
+  box-shadow: none;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  color: inherit;
+}
 
 /* Плавающие окна: заголовок — «ручка», за неё таскаем. */
 .float .frame-body { padding-top: 6px; }
