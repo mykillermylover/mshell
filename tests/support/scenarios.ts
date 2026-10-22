@@ -1,11 +1,11 @@
-import { DEFAULTS } from '../../lib/config/index.ts';
+import { DEFAULTS } from '../../src/lib/config/index.ts';
 import {
   bridges,
   type BridgeSpec,
   bridgeSpecFor,
   sigmaOf,
-} from '../../lib/liquid/bridges.ts';
-import type { Body, FrameSpec } from '../../lib/liquid/geometry.ts';
+} from '../../src/lib/liquid/bridges.ts';
+import type { Body, FrameSpec } from '../../src/lib/liquid/geometry.ts';
 import { type Raster, renderGoo, type Scene } from './raster.ts';
 
 export const FIELD = { width: 1260, height: 840, border: 4, screenRadius: 10 };

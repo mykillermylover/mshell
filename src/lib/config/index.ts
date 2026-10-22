@@ -1,6 +1,6 @@
 import type { Accessor } from 'ags';
 
-import type { FieldStyle } from '../liquid/LiquidField';
+import type { FieldStyle } from '../liquid/LiquidField.ts';
 import { isEqual, isObject, isSamePrimitive } from './guards.ts';
 
 /** Лист конфига: значение, которое кладётся в JSON и сравнивается по данным. */

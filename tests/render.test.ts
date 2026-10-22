@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import type { Body } from '../lib/liquid/geometry.ts';
+import type { Body } from '../src/lib/liquid/geometry.ts';
 import { addedArea, cornerRoomDirty, reaches } from './support/raster.ts';
 import { body, FIELD, NOTES, render } from './support/scenarios.ts';
 import { scenarioList } from './support/scenarios.ts';

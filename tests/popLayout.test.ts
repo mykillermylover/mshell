@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { hoverInput, popLayout } from '../lib/windows/popLayout.ts';
+import { hoverInput, popLayout } from '../src/lib/windows/popLayout.ts';
 
 const style = { border: 4, screenRadius: 10 };
 

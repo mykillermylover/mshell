@@ -1,10 +1,10 @@
-import { type Bridge, bridges, bridgeSpecFor } from './bridges.ts';
+import { type Bridge, bridges, bridgeSpecFor } from './bridges';
 import {
   type Body,
   type Box,
   clampRadius,
   type FrameSpec,
-} from './geometry.ts';
+} from './geometry';
 
 export interface SceneStyle {
   windowRadius: number;

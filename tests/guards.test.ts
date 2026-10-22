@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { isEqual } from '../lib/config/guards.ts';
+import { isEqual } from '../src/lib/config/guards.ts';
 
 test('примитивы сравниваются по значению', () => {
   assert.equal(isEqual(12, 12), true);

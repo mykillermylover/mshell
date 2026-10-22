@@ -5,8 +5,6 @@ import { boundsOf, type WindowBody } from './body';
 import { type Edge, type EdgeAlign, hoverInput, popLayout } from './popLayout';
 import { type Content, padded } from './ui';
 
-export type { Edge, EdgeAlign } from './popLayout';
-
 export interface HoverSpec {
   depth?: number; // толщина губы/input, px (>= 1); по умолчанию style.hoverDepth
   content?: Content; // компонент внутри зоны

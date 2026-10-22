@@ -1,8 +1,8 @@
 // CPU-модель слоя жидкости: те же тела и капсулы, box-blur ≈ Gaussian, порог 0.5.
 // Это модель алгоритма, а не пиксельная копия GPU: проверяем топологию и
 // непрерывность, а не цвет и сглаживание краёв.
-import type { Bridge } from '../../lib/liquid/bridges.ts';
-import type { Body } from '../../lib/liquid/geometry.ts';
+import type { Bridge } from '../../src/lib/liquid/bridges.ts';
+import type { Body } from '../../src/lib/liquid/geometry.ts';
 
 export interface Scene {
   width: number;

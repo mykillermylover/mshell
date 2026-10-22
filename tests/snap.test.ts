@@ -6,8 +6,8 @@ import {
   contactBetween,
   contactsWithFrame,
   type FrameSpec,
-} from '../lib/liquid/geometry.ts';
-import { type SnapEnv, snapTo } from '../lib/snap.ts';
+} from '../src/lib/liquid/geometry.ts';
+import { type SnapEnv, snapTo } from '../src/lib/snap.ts';
 
 const frame: FrameSpec = { w: 1000, h: 600, border: 4, screenRadius: 10 };
 const env: SnapEnv = { frame, reach: 44 };
