@@ -11,7 +11,7 @@ import { FrameInput } from './FrameInput';
 import { FrameMotion } from './FrameMotion';
 
 export type { FloatSpec } from '../windows/Float';
-export type { Edge, PopSpec } from '../windows/Pop';
+export type { PopSpec } from '../windows/Pop';
 
 export type FrameStyle = FieldStyle;
 

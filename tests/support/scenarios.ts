@@ -1,12 +1,13 @@
-import { DEFAULTS } from '../../src/lib/config/index.ts';
+import { DEFAULTS } from '@lib/config/index';
 import {
   bridges,
   type BridgeSpec,
   bridgeSpecFor,
   sigmaOf,
-} from '../../src/lib/liquid/bridges.ts';
-import type { Body, FrameSpec } from '../../src/lib/liquid/geometry.ts';
-import { type Raster, renderGoo, type Scene } from './raster.ts';
+} from '@lib/liquid/bridges';
+import type { Body, FrameSpec } from '@lib/liquid/geometry';
+
+import { type Raster, renderGoo, type Scene } from './raster';
 
 export const FIELD = { width: 1260, height: 840, border: 4, screenRadius: 10 };
 // Эталон — настройки приложения по умолчанию (config.json их не меняет для
