@@ -97,16 +97,19 @@ export const halfWidth = (contact: Contact, spec: BridgeSpec) => {
  */
 export const bridges = (bodies: Body[], spec: BridgeSpec): Bridge[] => {
   const out: Bridge[] = [];
-  const add = (contact: Contact, intoB: number) => {
+  // Заход в тело не больше самого тела: у тонкой губы капсула иначе прорастает
+  // насквозь, и её blur рисует свечение в комнате мимо тела.
+  const into = (body: Body) => Math.min(spec.intoBody, body.w, body.h);
+  const add = (contact: Contact, intoB: number, intoA = spec.intoBody) => {
     const half = halfWidth(contact, spec);
     if (half < MIN_HALF_WIDTH) {
       return;
     }
-    const length = contact.gap + spec.intoBody + intoB;
+    const length = contact.gap + intoA + intoB;
     if (length <= 0) {
       return;
     } // перелёт глубже нахлёста: тела уже слиты
-    const shift = (contact.gap + intoB - spec.intoBody) / 2;
+    const shift = (contact.gap + intoB - intoA) / 2;
     const angle = Math.atan2(contact.ny, contact.nx);
     out.push({
       centerX: contact.a.x + contact.nx * shift,
@@ -117,15 +120,16 @@ export const bridges = (bodies: Body[], spec: BridgeSpec): Bridge[] => {
     });
   };
   for (const body of bodies) {
+    const limit = into(body);
     for (const contact of contactsWithFrame(body, spec.frame)) {
-      add(contact, 0);
+      add(contact, 0, limit);
     }
   }
   for (let i = 0; i < bodies.length; i++) {
     for (let j = i + 1; j < bodies.length; j++) {
       const contact = contactBetween(bodies[i], bodies[j]);
       if (contact) {
-        add(contact, spec.intoBody);
+        add(contact, into(bodies[j]), into(bodies[i]));
       }
     }
   }

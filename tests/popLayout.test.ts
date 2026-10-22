@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { blurReach, popLayout } from '../lib/windows/popLayout.ts';
+import { hoverInput, popLayout } from '../lib/windows/popLayout.ts';
 
 const style = { border: 4, screenRadius: 10 };
 
@@ -171,10 +171,31 @@ test('popLayout: hover, align start/end не трогает frame-side margin', 
   assert.equal(top.anchor.marginTop, 0);
 });
 
-test('blurReach: дефолтные настройки — 15 px', () => {
-  assert.equal(blurReach(10), 15);
-});
+test('hoverInput: губа плюс полоса рамки до края экрана', () => {
+  const body = { x: 100, y: 100, w: 50, h: 9 };
 
-test('blurReach: растёт с meltRadius', () => {
-  assert.ok(blurReach(20) > blurReach(10));
+  assert.deepEqual(hoverInput(body, 'top', 4), {
+    x: 100,
+    y: 96,
+    w: 50,
+    h: 13,
+  });
+  assert.deepEqual(hoverInput(body, 'bottom', 4), {
+    x: 100,
+    y: 100,
+    w: 50,
+    h: 13,
+  });
+  assert.deepEqual(hoverInput(body, 'left', 4), {
+    x: 96,
+    y: 100,
+    w: 54,
+    h: 9,
+  });
+  assert.deepEqual(hoverInput(body, 'right', 4), {
+    x: 100,
+    y: 100,
+    w: 54,
+    h: 9,
+  });
 });

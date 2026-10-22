@@ -1,7 +1,7 @@
 // Чистая раскладка попапа: прижатие Box к кромке рамки, align вдоль края,
 // порядок детей (spacer у рамки, Revealer, зона на дальней кромке) и толщина.
 // Без GJS — тестируется в node.
-import { visibleOverlap } from '../liquid/bridges.ts';
+import type { Rect } from '../liquid/LiquidField';
 
 export type Edge = 'top' | 'bottom' | 'left' | 'right';
 export type EdgeAlign = 'start' | 'center' | 'end';
@@ -33,8 +33,9 @@ export interface PopLayout {
  *
  * Без hover frame-side отступ — это margin Box'а: overlay не читает его для
  * позиции, а content box сжимается на величину margin. С hover отступ
- * становится реальным spacer'ом внутри Box: spacer входит в тело, поэтому
- * полоса рамки попадает в фон и input region, а зона не теряет толщину.
+ * становится реальным spacer'ом внутри Box: зона не теряет толщину. В тело
+ * поля spacer не входит (рамку рисует LiquidField), а input закрытой зоны
+ * достраивается на него до края экрана.
  */
 export const popLayout = (
   edge: Edge,
@@ -134,8 +135,22 @@ export const popLayout = (
 };
 
 /**
- * Input-reach hover-зоны: видимая часть мостика (2σ) от внутренней кромки.
- * Скрытые +2 px и бледный хвост α' > 0 в input не входят; border не входит —
- * он лишь сдвигает кромку.
+ * Input закрытой hover-зоны: тело плюс полоса рамки до края экрана.
+ * Никакого вывода из рендера: что видно (губа), то и ловится.
  */
-export const blurReach = (meltRadius: number) => visibleOverlap(meltRadius);
+export const hoverInput = (body: Rect, edge: Edge, border: number): Rect => {
+  switch (edge) {
+    case 'top': {
+      return { ...body, y: body.y - border, h: body.h + border };
+    }
+    case 'bottom': {
+      return { ...body, h: body.h + border };
+    }
+    case 'left': {
+      return { ...body, x: body.x - border, w: body.w + border };
+    }
+    default: {
+      return { ...body, w: body.w + border };
+    }
+  }
+};

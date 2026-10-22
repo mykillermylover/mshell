@@ -2,13 +2,13 @@ import { Gtk } from 'ags/gtk4';
 
 import type { Rect } from '../liquid/LiquidField';
 import { boundsOf, type WindowBody } from './body';
-import { blurReach, type Edge, type EdgeAlign, popLayout } from './popLayout';
+import { type Edge, type EdgeAlign, hoverInput, popLayout } from './popLayout';
 import { type Content, padded } from './ui';
 
 export type { Edge, EdgeAlign } from './popLayout';
 
 export interface HoverSpec {
-  depth?: number; // толщина зоны, px; по умолчанию style.hoverDepth
+  depth?: number; // толщина губы/input, px (>= 1); по умолчанию style.hoverDepth
   content?: Content; // компонент внутри зоны
   hideOnReveal?: boolean; // скрыть зону, пока попап раскрыт
 }
@@ -19,7 +19,7 @@ export interface PopSpec {
   edge: Edge;
   align?: EdgeAlign; // положение вдоль края
   content: Content; // вызывается по разу на монитор; фон НЕ задавать
-  hover?: HoverSpec; // нет — попап без hover-логики
+  hover?: true | HoverSpec; // true — дефолтные значения; нет — без hover
 }
 
 export interface HoverCallbacks {
@@ -63,8 +63,8 @@ const filler = () => {
 
 /**
  * Выдвижной слот рамки: попап (Revealer) у внутренней кромки и hover-зона
- * на дальней кромке. Всё — один Box; его границы идут в Frame.bodies(),
- * поэтому фон, input и hover считаются по одной геометрии.
+ * на дальней кромке. Всё — один Box. Тело поля — Box без полосы рамки;
+ * input закрытой зоны — то же тело плюс полоса рамки до края экрана.
  *
  * У hover-попапа frame-side отступ — реальный spacer внутри Box, а не margin:
  * margin overlay не двигает, но съедает content box, из-за чего зона теряла
@@ -79,6 +79,7 @@ export class Pop implements WindowBody {
   private readonly zoneRevealer: Gtk.Revealer | null;
   private readonly spacerFiller: Gtk.Box | null;
   private readonly zoneFiller: Gtk.Box | null;
+  private readonly hover: HoverSpec | null;
 
   constructor(
     readonly spec: PopSpec,
@@ -87,7 +88,6 @@ export class Pop implements WindowBody {
       screenRadius: number;
       revealDuration: number;
       hoverDepth: number;
-      meltRadius: number;
     },
     root: Gtk.Widget,
     hover: HoverCallbacks | null,
@@ -98,6 +98,8 @@ export class Pop implements WindowBody {
     });
     revealer.set_child(padded(spec.content()));
 
+    const hoverSpec = spec.hover === true ? {} : (spec.hover ?? null);
+    this.hover = hoverSpec;
     const widget = new Gtk.Box();
     let spacer: Gtk.Box | null = null;
     let zone: Gtk.Box | null = null;
@@ -105,7 +107,7 @@ export class Pop implements WindowBody {
     let spacerFiller: Gtk.Box | null = null;
     let zoneFiller: Gtk.Box | null = null;
 
-    if (spec.hover) {
+    if (hoverSpec) {
       // Полоса рамки как часть тела: spacer, а не margin.
       spacer = new Gtk.Box();
       spacerFiller = filler();
@@ -113,8 +115,8 @@ export class Pop implements WindowBody {
 
       zone = new Gtk.Box();
       zone.add_css_class('hover-zone');
-      if (spec.hover.content) {
-        zone.append(spec.hover.content() as Gtk.Widget);
+      if (hoverSpec.content) {
+        zone.append(hoverSpec.content() as Gtk.Widget);
       } else {
         zoneFiller = filler();
         zone.append(zoneFiller);
@@ -141,9 +143,9 @@ export class Pop implements WindowBody {
       }
     }
 
-    if (spec.hover && hover) {
-      // Input region шире тела (blurReach), поэтому hover считаем на окне
-      // по inputBounds: пустые дети и blur-полоса вне тела не дают enter.
+    if (hoverSpec && hover) {
+      // Input = тело + полоса рамки, поэтому hover считаем на окне по
+      // inputBounds: пустые дети не дают enter, а region меняется с зоной.
       let inside = false;
       const check = (x: number, y: number) => {
         const rect = this.inputBounds(root);
@@ -190,7 +192,7 @@ export class Pop implements WindowBody {
       // hideOnReveal: зона уезжает сразу с началом открытия (SLIDE, без
       // fade) и возвращается с началом закрытия.
       const sync = () => {
-        if (!spec.hover!.hideOnReveal) {
+        if (!hoverSpec!.hideOnReveal) {
           zoneRevealer!.reveal_child = true;
           return;
         }
@@ -258,7 +260,7 @@ export class Pop implements WindowBody {
    */
   bounds(relativeTo: Gtk.Widget): Rect | null {
     const rect = boundsOf(this.widget, relativeTo);
-    if (!rect || !this.spec.hover) {
+    if (!rect || !this.hover) {
       return rect;
     }
 
@@ -286,89 +288,43 @@ export class Pop implements WindowBody {
   }
 
   /**
-   * Input шире видимой губы: у закрытой зоны он включает полосу рамки (до
-   * края экрана) и видимую часть blur-мостика (2σ) в комнате.
+   * Input закрытой зоны = губа + полоса рамки до края экрана. Открытой —
+   * только тело. `depth = 0` выключает ховер: input нет.
    */
   inputBounds(relativeTo: Gtk.Widget): Rect | null {
     const raw = boundsOf(this.widget, relativeTo);
     if (!raw) {
       return null;
     }
-    if (!this.spec.hover) {
+    if (!this.hover) {
       return raw;
     }
 
-    // Не через bounds(): у невидимой зоны (depth = 0) тело нулевое, но input
-    // всё равно нужен.
     const rect = this.bodyRect(raw);
 
-    // Полностью открыт: тело уже покрывает blur-полосу, расширение не нужно.
-    // Иначе выход в добавленные пиксели не давал бы leave.
+    // Полностью открыт: только тело; уход на рамку должен давать leave.
     if (this.revealer.child_revealed) {
       return rect;
     }
-
-    const style = this.style();
-    const border = style.border;
-    const extension = Math.max(
-      0,
-      blurReach(style.meltRadius) - this.visibleDepth(),
-    );
-
-    // frame-side всегда достраиваем до края экрана, room-side — по эффекту.
-    switch (this.spec.edge) {
-      case 'top': {
-        return {
-          ...rect,
-          y: rect.y - border,
-          h: rect.h + border + extension,
-        };
-      }
-      case 'bottom': {
-        return {
-          ...rect,
-          y: rect.y - extension,
-          h: rect.h + border + extension,
-        };
-      }
-      case 'left': {
-        return {
-          ...rect,
-          x: rect.x - border,
-          w: rect.w + border + extension,
-        };
-      }
-      default: {
-        return {
-          ...rect,
-          x: rect.x - extension,
-          w: rect.w + border + extension,
-        };
-      }
-    }
+    return hoverInput(rect, this.spec.edge, this.style().border);
   }
 
-  /** Текущая толщина видимой зоны по основной оси края. */
-  private visibleDepth() {
-    if (!this.zone) {
+  /** Толщина губы по текущему конфигу. */
+  private depth(style = this.style()) {
+    if (!this.hover) {
       return 0;
     }
-    return this.spec.edge === 'top' || this.spec.edge === 'bottom'
-      ? this.zone.get_height()
-      : this.zone.get_width();
+    return Math.max(1, this.hover.depth ?? style.hoverDepth);
   }
 
   /** Раскладка по текущему конфигу. */
   private layout(style = this.style()) {
-    const depth = this.spec.hover
-      ? (this.spec.hover.depth ?? style.hoverDepth)
-      : 0;
     return popLayout(
       this.spec.edge,
       this.spec.align ?? 'center',
       { border: style.border, screenRadius: style.screenRadius },
-      depth,
-      Boolean(this.spec.hover),
+      this.depth(style),
+      Boolean(this.hover),
     );
   }
 

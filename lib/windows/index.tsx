@@ -89,9 +89,7 @@ addPop({
 addPop({
   id: 'settings',
   edge: 'right',
-  hover: {
-    depth: 9,
-  },
+  hover: true,
   content: Settings,
 });
 addPop({ id: 'launcher', edge: 'bottom', content: Launcher });

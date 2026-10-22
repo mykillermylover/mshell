@@ -101,6 +101,22 @@ test('перелёт: ширина не меньше контактной', () =
   assert.ok(near(halfWidth(deep, spec), 17));
 });
 
+test('тонкая губа: мостик не выходит за тело', () => {
+  const top = body(500, frame.border, 100, 9);
+  const [vertical] = bridges([top], spec);
+  assert.ok(near(vertical.length, 9));
+  assert.ok(near(vertical.centerY - vertical.length / 2, top.y));
+  assert.ok(near(vertical.centerY + vertical.length / 2, top.y + top.h));
+
+  const right = body(frame.w - frame.border - 9, 300, 9, 100);
+  const [horizontal] = bridges([right], spec);
+  assert.ok(near(horizontal.length, 9));
+  assert.ok(near(horizontal.centerX - horizontal.length / 2, right.x));
+  assert.ok(
+    near(horizontal.centerX + horizontal.length / 2, right.x + right.w),
+  );
+});
+
 test('порядок тел не влияет на набор мостиков', () => {
   const a = body(200, 200);
   const b = body(240, 240);

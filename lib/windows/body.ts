@@ -11,9 +11,8 @@ export interface WindowBody {
   bounds(relativeTo: Gtk.Widget): Rect | null;
 
   /**
-   * Область ввода: может быть шире видимого тела. У hover-попапа она
-   * достраивается до blurReach, чтобы ховер ловился по blur-эффекту,
-   * даже если видимая губа короче.
+   * Область ввода: может быть шире видимого тела. У закрытой hover-зоны
+   * она включает губу и полосу рамки до края экрана.
    */
   inputBounds(relativeTo: Gtk.Widget): Rect | null;
 

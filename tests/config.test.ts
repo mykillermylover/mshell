@@ -91,7 +91,7 @@ test('анимации: дефолты и лимиты', () => {
 
 test('hover: дефолт и лимиты зоны', () => {
   assert.equal(DEFAULTS.style.hoverDepth, 6);
-  assert.deepEqual(LIMITS.style.hoverDepth, [0, 64]);
+  assert.deepEqual(LIMITS.style.hoverDepth, [1, 64]);
 });
 
 test('LIMITS: покрывает все ключи style', () => {

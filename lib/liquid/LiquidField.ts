@@ -23,7 +23,7 @@ export interface FieldStyle {
   waistReach: number; // до какого зазора мостики делают каплю шире, px (0 — выкл)
   snapDuration: number; // длительность твина магнита/выпихивания, мс
   revealDuration: number; // длительность выезда/скрытия Pop и Float, мс
-  hoverDepth: number; // видимая губа hover-зоны, px (input шире: blurReach)
+  hoverDepth: number; // толщина губы и input hover-зоны, px
 }
 
 // GtkSnapshot.push_blur принимает «радиус» ≈ 3.2σ. Это калибровка GTK,

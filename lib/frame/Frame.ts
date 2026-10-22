@@ -91,8 +91,8 @@ export class Frame {
     this.field.cfg = style;
     this.field.rects = () => {
       const rects = this.rects();
-      // Сцена рисует видимые тела, а input может быть шире: у hover-попапа
-      // он достроен до blurReach, чтобы ховер ловился по blur-эффекту.
+      // Сцена рисует видимые тела, а input может быть шире: у закрытой
+      // hover-зоны он включает губу и полосу рамки до края экрана.
       this.input.sync(this.inputs());
       return rects;
     };
@@ -202,7 +202,6 @@ export class Frame {
         screenRadius: this.style.screenRadius(),
         revealDuration: this.style.revealDuration(),
         hoverDepth: this.style.hoverDepth(),
-        meltRadius: this.style.meltRadius(),
       }),
       this.window,
       spec.hover
