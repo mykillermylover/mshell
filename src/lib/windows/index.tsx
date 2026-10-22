@@ -1,3 +1,4 @@
+import Test from '@widgets/Test';
 import { Gtk } from 'ags/gtk4';
 
 import type { FloatSpec } from './Float';
@@ -93,6 +94,13 @@ addPop({
   content: Settings,
 });
 addPop({ id: 'launcher', edge: 'bottom', content: Launcher });
+addPop({
+  id: 'workspaces',
+  edge: 'top',
+  hover: true,
+  align: 'end',
+  content: Test,
+});
 
 // Плавающие: таскаются за заголовок; ags request toggle notes
 addFloat({ id: 'notes', title: 'Notes', x: 200, y: 260, content: Notes });

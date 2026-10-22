@@ -4,7 +4,7 @@ import {
   contactBetween,
   contactsWithFrame,
   type FrameSpec,
-} from './liquid/geometry.ts';
+} from './liquid/geometry';
 
 /** Допуск закрытия выбранного контакта, px. */
 const RESIDUAL = 0.5;

@@ -14,7 +14,7 @@ INSTANCE=ags
 
 # Только исходники: рекурсия по корню зацепила бы node_modules, @girs,
 # build, result и .git — шелл перезапускался бы от любого служебного файла.
-WATCH=(app.tsx style.css lib)
+WATCH=(app.tsx style.css src)
 
 WATCHER=
 

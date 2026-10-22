@@ -6,7 +6,7 @@ import {
   contactBetween,
   contactsWithFrame,
   type FrameSpec,
-} from './geometry.ts';
+} from './geometry';
 
 export interface Bridge {
   centerX: number;
