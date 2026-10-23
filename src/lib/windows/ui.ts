@@ -5,12 +5,14 @@ import type { Rect } from '../liquid/LiquidField';
 /** Контент окна — то, что возвращает JSX-компонент. */
 export type Content = () => JSX.Element;
 
+/** gnim типизирует результат JSX как GObject.Object; на деле это Gtk.Widget. */
+export const asWidget = (child: JSX.Element): Gtk.Widget => child as Gtk.Widget;
+
 /** Обёртка контента окна: отступы и прозрачный фон (фон рисует LiquidField). */
 export const padded = (child: JSX.Element) => {
   const body = new Gtk.Box();
   body.add_css_class('frame-body');
-  // gnim типизирует результат JSX как GObject.Object; на деле это Gtk.Widget.
-  body.append(child as Gtk.Widget);
+  body.append(asWidget(child));
   return body;
 };
 

@@ -1,12 +1,14 @@
-import { config } from '@lib/config/app';
+import { config, hookExit } from '@lib/config/app';
 import { Shell } from '@lib/shell';
-import { FLOATS, POPS } from '@lib/windows';
 import { createBinding } from 'ags';
 import app from 'ags/gtk4/app';
 
+import { INITIAL_FLOATS, INITIAL_POPS } from './src/windows';
 import style from './style.css';
 
-const shell = new Shell(POPS, FLOATS);
+hookExit(config.flush);
+
+const shell = new Shell(INITIAL_POPS, INITIAL_FLOATS);
 
 app.start({
   css: style,

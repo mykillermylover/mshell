@@ -1,6 +1,5 @@
 import { Gtk } from 'ags/gtk4';
 import app from 'ags/gtk4/app';
-import { timeout, type Timer } from 'ags/time';
 import GLib from 'gi://GLib';
 import GLibUnix from 'gi://GLibUnix';
 
@@ -35,12 +34,10 @@ const SIGINT = 2;
 // Gtk.Application. Плюс сигналы сеанса: лог-аут Hyprland, kill, Ctrl+C.
 let exitHooked = false;
 
-function hookExit(flush: () => void): void {
+export function hookExit(flush: () => void): void {
   if (exitHooked) {
     return;
   }
-
-  exitHooked = true;
 
   const quit = Gtk.Application.prototype.quit;
   Gtk.Application.prototype.quit = function (this: Gtk.Application) {
@@ -59,6 +56,8 @@ function hookExit(flush: () => void): void {
   };
   GLibUnix.signal_add(GLib.PRIORITY_DEFAULT, SIGTERM, stop);
   GLibUnix.signal_add(GLib.PRIORITY_DEFAULT, SIGINT, stop);
+
+  exitHooked = true;
 }
 
 /**
@@ -87,7 +86,7 @@ function init(): Config {
   }
 
   const listeners = new Set<() => void>();
-  let pending: Timer | null = null;
+  let pending: number | null = null;
 
   function save(): void {
     pending = null;
@@ -109,14 +108,20 @@ function init(): Config {
   }
 
   function changed(): void {
+    // Дебаунс: серия правок подряд (ползунок) даёт одну запись в конце.
+    // Планируем до уведомления: исключение в подписчике не должно отменять
+    // сохранение уже принятого значения.
+    if (pending !== null) {
+      GLib.source_remove(pending);
+    }
+    pending = GLib.timeout_add(GLib.PRIORITY_DEFAULT, SAVE_DELAY_MS, () => {
+      save();
+      return GLib.SOURCE_REMOVE;
+    });
+
     for (const listener of listeners) {
       listener();
     }
-
-    // Дебаунс: серия правок подряд (ползунок) даёт одну запись в конце.
-    // ags/time — штатный таймер AGS вместо глобальных setTimeout GJS.
-    pending?.cancel();
-    pending = timeout(SAVE_DELAY_MS, save);
   }
 
   const values = reactive(tree, changed, LIMITS);
@@ -137,16 +142,13 @@ function init(): Config {
         return; // дебаунс уже записал — второй раз не пишем
       }
 
-      pending.cancel();
+      GLib.source_remove(pending);
       save();
     },
   };
 
   // Методы живут рядом с деревом, а не внутри: дерево — то, что пишется в файл.
   const instance: Config = Object.assign({}, values, methods);
-
-  // Запись на выход — обязанность конфига, а не приложения.
-  hookExit(methods.flush);
 
   if (!exists) {
     save(); // первый запуск: файл создаётся сразу с дефолтами

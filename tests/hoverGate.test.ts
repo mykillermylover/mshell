@@ -12,7 +12,6 @@ interface Timer {
 /** Фейковый планировщик: время двигаем вручную через flush(). */
 const setup = () => {
   let open = false;
-  let pinned = false;
   const calls: string[] = [];
   const timers: Timer[] = [];
 
@@ -26,10 +25,6 @@ const setup = () => {
       calls.push('close');
     },
     isOpen: () => open,
-    isPinned: () => pinned,
-    setPinned: (value) => {
-      pinned = value;
-    },
     schedule: (ms, run) => {
       const timer = { ms, run, canceled: false };
       timers.push(timer);
@@ -44,7 +39,6 @@ const setup = () => {
     calls,
     timers,
     isOpen: () => open,
-    isPinned: () => pinned,
     setOpen: (value: boolean) => {
       open = value;
     },
@@ -115,42 +109,23 @@ test('нулевые задержки срабатывают синхронно'
   assert.deepEqual(env.calls, ['open', 'close']);
 });
 
-test('pin: открывает и не даёт leave закрыть окно', () => {
-  const env = setup();
-
-  env.gate.pin();
-  assert.equal(env.isOpen(), true);
-  assert.equal(env.isPinned(), true);
-
-  env.gate.leave(300);
-  env.flush();
-
-  assert.deepEqual(env.calls, ['open']);
-  assert.equal(env.isOpen(), true);
-});
-
-test('pin отменяет уже запланированное закрытие', () => {
+test('enter при открытом окне ничего не планирует', () => {
   const env = setup();
   env.setOpen(true);
-  env.gate.leave(300);
 
-  env.gate.pin();
+  env.gate.enter(120);
   env.flush();
 
-  assert.deepEqual(env.calls, ['open']);
-  assert.equal(env.isOpen(), true);
+  assert.deepEqual(env.calls, []);
 });
 
-test('unpin: следующий leave снова закрывает', () => {
+test('leave при закрытом окне ничего не планирует', () => {
   const env = setup();
 
-  env.gate.pin();
-  env.gate.unpin();
   env.gate.leave(300);
   env.flush();
 
-  assert.deepEqual(env.calls, ['open', 'close']);
-  assert.equal(env.isOpen(), false);
+  assert.deepEqual(env.calls, []);
 });
 
 test('cancel: снимает запланированный переход', () => {

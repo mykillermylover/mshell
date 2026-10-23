@@ -50,22 +50,17 @@ export const buildPopRevealer = (edge: Edge) =>
     revealChild: false,
   });
 
-export interface HoverWiring {
-  root: Gtk.Widget;
+interface HoverSlot {
   content: Gtk.Widget | null;
   hideOnReveal: boolean;
-  /** Input-область закрытой/открытой зоны: по ней считается enter/leave. */
-  bounds(): Rect | null;
-  enter(): void;
-  leave(): void;
 }
 
-export interface PopSlotOptions {
+interface PopSlotOptions {
   edge: Edge;
   layout: PopLayout;
   revealer: Gtk.Revealer;
   content: Gtk.Widget;
-  hover: HoverWiring | null;
+  hover: HoverSlot | null;
 }
 
 /** GTK-часть попапа: раскладка, зона, подписки и геометрия виджета. */
@@ -77,12 +72,13 @@ export interface PopSlot {
   subscribe(fn: () => void): () => void;
   bounds(relativeTo: Gtk.Widget): Rect | null;
   apply(duration: number, layout: PopLayout): void;
+  cleanup(): void;
 }
 
 /**
  * Собрать слот: Revealer у внутренней кромки, hover-зона на дальней и
- * spacer с полосой рамки. Всю GTK-механику держит этот модуль; Pop
- * отдаёт только геометрию и колбэки.
+ * spacer с полосой рамки. Здесь только GTK-виджеты и подписки; hover-
+ * контроллер один на кадр, геометрию считает Pop.
  */
 export const buildPopSlot = (options: PopSlotOptions): PopSlot => {
   const { edge, layout, revealer, content, hover } = options;
@@ -125,49 +121,7 @@ export const buildPopSlot = (options: PopSlotOptions): PopSlot => {
     }
   }
 
-  if (hover) {
-    // Input = тело + полоса рамки, поэтому hover считаем по bounds, а не
-    // по enter/leave детей: пустые дети событий не дают.
-    let inside = false;
-    const check = (x: number, y: number) => {
-      const rect = hover.bounds();
-      const now =
-        rect !== null &&
-        x >= rect.x &&
-        x < rect.x + rect.w &&
-        y >= rect.y &&
-        y < rect.y + rect.h;
-
-      if (now === inside) {
-        return;
-      }
-
-      inside = now;
-      if (now) {
-        hover.enter();
-      } else {
-        hover.leave();
-      }
-    };
-
-    const motion = new Gtk.EventControllerMotion();
-    motion.connect(
-      'motion',
-      (_motion: Gtk.EventControllerMotion, x: number, y: number) => check(x, y),
-    );
-    motion.connect(
-      'enter',
-      (_motion: Gtk.EventControllerMotion, x: number, y: number) => check(x, y),
-    );
-    motion.connect('leave', () => {
-      if (inside) {
-        inside = false;
-        hover.leave();
-      }
-    });
-    hover.root.add_controller(motion);
-  }
-
+  let syncId = 0;
   if (hover && zoneRevealer) {
     // hideOnReveal: зона уезжает сразу с началом открытия (SLIDE, без
     // fade) и возвращается с началом закрытия.
@@ -175,7 +129,7 @@ export const buildPopSlot = (options: PopSlotOptions): PopSlot => {
     const sync = () => {
       zoneRev.reveal_child = hover.hideOnReveal ? !revealer.reveal_child : true;
     };
-    revealer.connect('notify::reveal-child', sync);
+    syncId = revealer.connect('notify::reveal-child', sync);
     sync();
   }
 
@@ -243,5 +197,10 @@ export const buildPopSlot = (options: PopSlotOptions): PopSlot => {
     subscribe,
     bounds: (relativeTo) => boundsOf(widget, relativeTo),
     apply,
+    cleanup: () => {
+      if (syncId !== 0) {
+        revealer.disconnect(syncId);
+      }
+    },
   };
 };

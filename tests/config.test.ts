@@ -36,18 +36,45 @@ test('reactive: то же значение — без уведомления', (
   assert.equal(changes, 0);
 });
 
+test('accessor листа: peek, as, subscribe и отписка', () => {
+  let changes = 0;
+  const tree = reactive({ a: 1 }, () => changes++);
+  let leafChanges = 0;
+
+  const off = tree.a.subscribe(() => leafChanges++);
+  const doubled = tree.a.as((value) => value * 2);
+  const called = tree.a((value) => value * 2);
+
+  assert.equal(tree.a.peek(), 1);
+  assert.equal(doubled.peek(), 2);
+  assert.equal(called(), 2);
+
+  tree.a.set(2);
+  assert.equal(leafChanges, 1);
+  assert.equal(changes, 1);
+  assert.equal(doubled(), 4);
+
+  tree.a.set(2);
+  assert.equal(leafChanges, 1);
+
+  off();
+  tree.a.set(3);
+  assert.equal(leafChanges, 1);
+  assert.equal(changes, 2);
+});
+
 test('merge: частичный файл ложится поверх дефолтов', () => {
-  const tree = fromJson('{"style": {"meltRadius": 8}}');
-  assert.equal(tree.style.meltRadius, 8);
-  assert.equal(tree.style.waistReach, DEFAULTS.style.waistReach);
-  assert.equal(DEFAULTS.style.meltRadius, 10, 'дефолты не мутируются');
+  const tree = fromJson('{"style": {"blurRadius": 8}}');
+  assert.equal(tree.style.blurRadius, 8);
+  assert.equal(tree.style.snapReach, DEFAULTS.style.snapReach);
+  assert.equal(DEFAULTS.style.blurRadius, 10, 'дефолты не мутируются');
 });
 
 test('merge: чужие типы и ключи не проходят', () => {
   const tree = fromJson(
-    '{"style": {"meltRadius": "8", "bogus": 1}, "other": {"x": 1}}',
+    '{"style": {"blurRadius": "8", "bogus": 1}, "other": {"x": 1}}',
   );
-  assert.equal(tree.style.meltRadius, DEFAULTS.style.meltRadius);
+  assert.equal(tree.style.blurRadius, DEFAULTS.style.blurRadius);
   assert.ok(!('bogus' in tree.style));
   assert.ok(!('other' in tree));
 });

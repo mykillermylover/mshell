@@ -4,58 +4,40 @@ import Gsk from 'gi://Gsk';
 import { register } from 'gnim/gobject';
 
 import { type Reactive, snapshot } from '../config';
-import { type Bridge, sigmaOf } from './bridges';
-import type { Box } from './geometry';
-import { buildScene } from './scene';
+import type { FieldStyle } from '../style';
+import { type Body, type Box, clampRadius } from './geometry';
 
 /** Прямоугольник в координатах поля: синоним Box из геометрии. */
 export type Rect = Box;
 
-export interface FieldStyle {
-  border: number; // толщина рамки, px
-  screenRadius: number; // радиус углов экрана, px (точный)
-  windowRadius: number; // радиус углов окон, px (точный)
-  // Радиус «кривой», которой жидкость соединяет тела (окно↔окно, окно↔рамка), px.
-  // При таком зазоре между кромками они уже слипаются, а внутренний угол стыка
-  // скругляется примерно этим радиусом — одно число задаёт и дальность, и кривизну.
-  meltRadius: number;
-  sharp: number; // крутизна порога; 2.2 даёт край ≈1.5px
-  waistReach: number; // до какого зазора мостики делают каплю шире, px (0 — выкл)
-  snapDuration: number; // длительность твина магнита/выпихивания, мс
-  revealDuration: number; // длительность выезда/скрытия Pop и Float, мс
-  hoverDepth: number; // толщина губы и input hover-зоны, px
-  hoverDelay: number; // задержка открытия hover-попапа, мс
-  hideDelay: number; // задержка закрытия после ухода, мс
-}
-
 // GtkSnapshot.push_blur принимает «радиус» ≈ 3.2σ. Это калибровка GTK,
-// не пользовательская настройка: σ задаётся meltRadius.
+// не пользовательская настройка: σ задаётся blurRadius.
 const GTK_BLUR_RADIUS_PER_SIGMA = 3.2;
 // Точка порога: 0.5 — ровно середина альфы, кромка тела остаётся на месте.
 const ALPHA_MIDPOINT = 0.5;
 // Рамка уходит за экран на 5σ + 16 px, чтобы blur не съел её видимый край.
 const BLUR_MARGIN_SIGMAS = 5;
 const FRAME_MARGIN_PX = 16;
+// σ из blurRadius: размытие — «колокол», 1.35 — прежняя калибровка слияния кромок.
+const SIGMA_PER_MELT = 1 / 1.35;
+const MIN_SIGMA = 1;
 
 /**
- * Поле «жидкости» (alpha clipping): тела (рамка + окна) рисуются как есть, поверх —
- * те же тела и мостики между ними, пропущенные через размытие и порог по альфе.
- * Итог = чёткие тела ∪ жидкость.
+ * Поле «жидкости» (alpha clipping): рамка и окна рисуются как есть, поверх —
+ * те же тела, пропущенные через размытие и порог по альфе.
+ * Итог = чёткие тела ∪ размытое поле.
  *
  * Порог и размытие — два узла Gsk на GPU (цвет-матрица поверх blur).
- * Геометрия мостиков дешёвая и пересчитывается в JS на каждый снапшот —
- * при перетаскивании это не заметно.
  *
  * Почему радиусы углов остаются точными:
- *  - Углы окон. Размытие скругляет выпуклые углы ВНУТРЬ тела, поэтому жидкость лежит
- *    под чётким телом и не видна. Добавляется только материал снаружи: мостики
- *    между телами и вогнутые стыки.
+ *  - Углы окон. Размытие скругляет выпуклые углы ВНУТРЬ тела, поэтому жидкость
+ *    лежит под чётким телом и не видна.
  *  - Углы экрана. В слое жидкости рамка рисуется тем же кольцом, что и чёткая
- *    (drawFrame), поэтому жидкость идёт по всей кромке, включая дугу: мостик к углу
- *    вливается в материал рамки, а не висит отдельным комком. У вогнутой дуги
- *    blur немного заходит в комнату (~1.5 px при meltRadius = 10; тем больше,
- *    чем больше meltRadius), поэтому screenRadius должен совпадать с rounding
- *    из Hyprland: тогда сдвиг совпадает со скруглением композитора и незаметен.
+ *    (drawFrame), поэтому blur идёт по всей кромке, включая дугу. У вогнутой
+ *    дуги blur немного заходит в комнату (~1.5 px при blurRadius = 10; тем
+ *    больше, чем больше blurRadius), поэтому screenRadius должен совпадать
+ *    с rounding из Hyprland: тогда сдвиг совпадает со скруглением композитора
+ *    и незаметен.
  */
 @register({ GTypeName: 'FrameLiquidField' })
 export class LiquidField extends Gtk.Widget {
@@ -68,15 +50,10 @@ export class LiquidField extends Gtk.Widget {
     if (width <= 0 || height <= 0) {
       return;
     }
-    const {
-      border,
-      screenRadius,
-      windowRadius,
-      meltRadius,
-      sharp,
-      waistReach,
-    } = snapshot(this.cfg);
-    const sigma = sigmaOf(meltRadius);
+    const { border, screenRadius, windowRadius, blurRadius, sharp } = snapshot(
+      this.cfg,
+    );
+    const sigma = Math.max(MIN_SIGMA, blurRadius * SIGMA_PER_MELT);
 
     const cssColor = this.get_color(); // CSS: .frame-shape { color: ... }
     const solid = new Gdk.RGBA({
@@ -85,12 +62,10 @@ export class LiquidField extends Gtk.Widget {
       blue: cssColor.blue,
       alpha: 1,
     });
-    const rects = this.rects();
-    const scene = buildScene(
-      rects,
-      { w: width, h: height, border, screenRadius },
-      { windowRadius, meltRadius, waistReach },
-    );
+    const bodies: Body[] = this.rects().map((rect) => {
+      const body = { ...rect, cornerRadius: windowRadius };
+      return { ...body, cornerRadius: clampRadius(body) };
+    });
 
     const margin = Math.ceil(sigma * BLUR_MARGIN_SIGMAS) + FRAME_MARGIN_PX;
 
@@ -114,7 +89,7 @@ export class LiquidField extends Gtk.Widget {
     };
 
     const drawWindows = () => {
-      for (const body of scene.bodies) {
+      for (const body of bodies) {
         const bounds = new Graphene.Rect().init(body.x, body.y, body.w, body.h);
         const rounded = new Gsk.RoundedRect().init_from_rect(
           bounds,
@@ -127,44 +102,10 @@ export class LiquidField extends Gtk.Widget {
     };
 
     /**
-     * Капсула мостика: поворачиваем систему координат вокруг её центра,
-     * рисуем скруглённый прямоугольник [-L/2, -W/2, L, W] и возвращаем координаты.
-     * Радиус — min(L, W)/2: больше половины меньшей стороны Gsk не примет; при
-     * малом зазоре L < W, и торец выходит скруглённым по длине мостика.
-     */
-    const drawBridges = (list: Bridge[]) => {
-      for (const bridge of list) {
-        snap.save();
-        snap.transform(
-          Gsk.Transform.new()
-            .translate(
-              new Graphene.Point().init(bridge.centerX, bridge.centerY),
-            )!
-            .rotate((bridge.angle * 180) / Math.PI)!,
-        );
-        const rect = new Graphene.Rect().init(
-          -bridge.length / 2,
-          -bridge.width / 2,
-          bridge.length,
-          bridge.width,
-        );
-        snap.push_rounded_clip(
-          new Gsk.RoundedRect().init_from_rect(
-            rect,
-            Math.min(bridge.length, bridge.width) / 2,
-          ),
-        );
-        snap.append_color(solid, rect);
-        snap.pop();
-        snap.restore();
-      }
-    };
-
-    /**
-     * Один слой жидкости: тела размываются на sigmaLocal и проходят порог по альфе
-     * α' = sharp·σ·(α − 0.5) + 0.5. Порог стоит ПОСЛЕ размытия, поэтому у прямой
-     * кромки уровень α=0.5 остаётся ровно на кромке тела при любом σ: окна не
-     * раздуваются, размытие только добавляет материал между телами.
+     * Один слой жидкости: тела размываются на sigmaLocal и проходят порог по
+     * альфе α' = sharp·σ·(α − 0.5) + 0.5. Порог стоит ПОСЛЕ размытия, поэтому
+     * у прямой кромки уровень α=0.5 остаётся ровно на кромке тела при любом σ:
+     * окна не раздуваются, размытие только смягчает края.
      */
     const drawGoo = (sigmaLocal: number) => {
       const alphaGain = sharp * sigmaLocal;
@@ -194,19 +135,16 @@ export class LiquidField extends Gtk.Widget {
       );
       snap.push_color_matrix(matrix, offset);
       snap.push_blur(sigmaLocal * GTK_BLUR_RADIUS_PER_SIGMA);
-      // Рамка — тем же кольцом, что и в чётком слое: жидкость идёт по дугам углов.
+      // Рамка — тем же кольцом, что и в чётком слое: жидкость идёт по дугам.
       drawFrame();
       drawWindows();
-      // Мостики между близкими телами: капсула через зазор, размытие
-      // превращает её в широкую каплю; радиусы тел уже зажаты в buildScene.
-      drawBridges(scene.bridges);
       snap.pop();
       snap.pop();
     };
 
     snap.push_opacity(cssColor.alpha);
 
-    // 1. жидкость: размытие + порог; рамка в ней — кольцом, как в чётком слое
+    // 1. жидкость: размытие + порог
     drawGoo(sigma);
 
     // 2. чёткие тела (точные радиусы) — всегда поверх жидкости

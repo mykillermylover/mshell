@@ -1,8 +1,4 @@
 {
-    "dependencies": {
-        "ags": "*",
-        "gnim": "*"
-    },
     "devDependencies": {
         "@eslint/js": "^9.20.0",
         "@types/node": "^22.20.5",
@@ -14,8 +10,12 @@
         "eslint-plugin-simple-import-sort": "^12.1.1",
         "eslint-plugin-unicorn": "^56.0.1",
         "prettier": "^3.5.0",
+        "tsx": "^4.23.15",
         "typescript": "^5.7.3",
         "typescript-eslint": "^8.24.0"
+    },
+    "engines": {
+        "node": ">=22"
     },
     "main": "app.tsx",
     "name": "mshell-dev",
@@ -27,7 +27,8 @@
         "bundle": "mkdir -p build && ags bundle app.tsx ./build/mshell-dev",
         "lint": "eslint --ignore-pattern '@girs/**'",
         "lint-fix": "eslint --ignore-pattern '@girs/**' --fix",
-        "test": "node --import ./tests/support/resolve.ts --test tests/*.test.ts",
+        "test": "TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test \"tests/**/*.test.ts\"",
+        "test:types": "tsc -p tsconfig.test.json --noEmit",
         "dev": "bash './dev.sh'"
     },
     "type": "module"

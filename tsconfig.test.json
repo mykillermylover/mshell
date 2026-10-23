@@ -1,0 +1,33 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "baseUrl": ".",
+        "jsx": "preserve",
+        "jsxImportSource": "test-jsx",
+        "paths": {
+            "@lib/*": [
+                "./src/lib/*"
+            ],
+            "@widgets/*": [
+                "./src/widgets/*"
+            ],
+            "ags": [
+                "./tests/support/ags.ts"
+            ],
+            "test-jsx/jsx-runtime": [
+                "./tests/types/jsx-runtime.d.ts"
+            ]
+        },
+        "types": [
+            "node"
+        ]
+    },
+    "include": [
+        "tests/**/*.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        "result",
+        "build"
+    ]
+}

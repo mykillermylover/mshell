@@ -1,5 +1,8 @@
 // Debug-команды для живых прогонов. Включаются только при MSHELL_DEBUG=1:
 // в продакшене остаются toggle/open/close/closeall.
+import { Gtk } from 'ags/gtk4';
+
+import { snapshot } from './config';
 import { config } from './config/app';
 import type { Frame } from './frame/Frame';
 
@@ -15,6 +18,8 @@ const numberArg = (value: string | undefined) => {
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 };
+
+let spawnSeq = 0;
 
 export function handleDebug(frame: Frame, args: string[]): string | undefined {
   const [cmd, id] = args;
@@ -125,7 +130,7 @@ export function handleDebug(frame: Frame, args: string[]): string | undefined {
       return 'ok';
     }
     case 'pin': {
-      const pop = frame.debug.pop(args[1] ?? '');
+      const pop = id ? frame.debug.pop(id) : undefined;
       if (!pop) {
         return 'bad pin';
       }
@@ -134,12 +139,34 @@ export function handleDebug(frame: Frame, args: string[]): string | undefined {
       return 'ok';
     }
     case 'unpin': {
-      const pop = frame.debug.pop(args[1] ?? '');
+      const pop = id ? frame.debug.pop(id) : undefined;
       if (!pop) {
         return 'bad unpin';
       }
 
       pop.unpin();
+      return 'ok';
+    }
+    case 'spawn': {
+      const count = numberArg(args[1]);
+      if (count === null || count < 1) {
+        return 'bad spawn';
+      }
+
+      for (let i = 0; i < count; i++) {
+        const index = spawnSeq++;
+        frame.addFloat({
+          id: `bench-${index}`,
+          title: `Bench ${index}`,
+          x: 100 + (index % 5) * 180,
+          y: 100 + Math.floor(index / 5) * 120,
+          content: () =>
+            new Gtk.Label({
+              label: `bench ${index}`,
+            }) as unknown as JSX.Element,
+        });
+      }
+
       return 'ok';
     }
     case 'frames': {
@@ -153,7 +180,8 @@ export function handleDebug(frame: Frame, args: string[]): string | undefined {
       }
 
       config.update('style', { [key]: value });
-      return `${key} = ${value}`;
+      const applied = (snapshot(config.style) as Record<string, number>)[key];
+      return `${key} = ${applied}`;
     }
     default: {
       return undefined;

@@ -18,6 +18,7 @@ const debugEnabled = GLib.getenv('MSHELL_DEBUG') === '1';
 export class Shell {
   private frames = new Map<Gdk.Monitor, Frame>();
   private queued = false;
+  private refreshQueued = false;
 
   constructor(
     private readonly pops: PopSpec[],
@@ -61,11 +62,23 @@ export class Shell {
     });
   }
 
-  /** Любая правка конфига (в том числе через `tune`) перерисовывает форму. */
+  /**
+   * Любая правка конфига (в том числе через `tune`) перерисовывает форму.
+   * Склеиваем пачку правок в один refresh: слайдер не должен давать
+   * по полному снапшоту на каждый пиксель.
+   */
   refresh() {
-    for (const frame of this.frames.values()) {
-      frame.refresh();
+    if (this.refreshQueued) {
+      return;
     }
+    this.refreshQueued = true;
+    GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+      this.refreshQueued = false;
+      for (const frame of this.frames.values()) {
+        frame.refresh();
+      }
+      return GLib.SOURCE_REMOVE;
+    });
   }
 
   request(argv: string[], respond: (r: string) => void) {
@@ -74,22 +87,35 @@ export class Shell {
     );
     const args = named ? argv.slice(1) : argv;
     const [cmd, id] = args;
+
+    // Без коннектора closeall относится ко всем мониторам, а не только
+    // к focused: имя команды обещает именно это.
+    if (cmd === 'closeall' && !named) {
+      for (const frame of this.frames.values()) {
+        frame.closeAll();
+      }
+      return respond('ok');
+    }
+
     const frame = named ?? this.focusedFrame();
     if (!frame) {
       return respond('no frame');
     }
 
     switch (cmd) {
-      case 'toggle': {
-        frame.toggle(id);
-        return respond('ok');
-      }
-      case 'open': {
-        frame.open(id);
-        return respond('ok');
-      }
+      case 'toggle':
+      case 'open':
       case 'close': {
-        frame.close(id);
+        if (!id || !frame.has(id)) {
+          return respond(`unknown window: ${id ?? ''}`);
+        }
+        if (cmd === 'toggle') {
+          frame.toggle(id);
+        } else if (cmd === 'open') {
+          frame.open(id);
+        } else {
+          frame.close(id);
+        }
         return respond('ok');
       }
       case 'closeall': {

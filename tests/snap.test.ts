@@ -6,8 +6,8 @@ import {
   contactBetween,
   contactsWithFrame,
   type FrameSpec,
-} from '../src/lib/liquid/geometry';
-import { type SnapEnv, snapTo } from '../src/lib/snap';
+} from '@lib/liquid/geometry';
+import { type SnapEnv, snapTo } from '@lib/snap';
 
 const frame: FrameSpec = { w: 1000, h: 600, border: 4, screenRadius: 10 };
 const env: SnapEnv = { frame, reach: 44 };
@@ -43,7 +43,16 @@ test('диагональ: касание скруглёнными уголкам
   assert.ok(near(result.y, 192.97));
 });
 
-test('граница waistReach: на reach тянет, дальше — нет', () => {
+test('закрытая hover-губа — полноценный сосед магнита', () => {
+  // Тонкая губа у верхней кромки: Float не должен примагнититься к рамке
+  // «сквозь» неё и лечь поверх. Это осознанное решение, не баг.
+  const lip = body(400, 4, 420, 6);
+  const self = body(500, 20, 180, 100);
+
+  assert.deepEqual(snapTo(env, self, [lip]), { x: 500, y: 10 });
+});
+
+test('граница snapReach: на reach тянет, дальше — нет', () => {
   assert.deepEqual(snapTo(env, body(48, 250)), { x: 4, y: 250 });
   assert.equal(snapTo(env, body(49, 250)), null);
 });

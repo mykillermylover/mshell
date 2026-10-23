@@ -1,24 +1,26 @@
 import type { Accessor, Setter } from 'ags';
-import { createRoot, createState } from 'ags';
+import { createState } from 'ags';
 import type { Gtk } from 'ags/gtk4';
-import { timeout, type Timer } from 'ags/time';
+import GLib from 'gi://GLib';
 
 import type { Rect } from '../liquid/LiquidField';
-import { type WindowApi, WindowContext } from './api';
+import { createWindowContent, type WindowApi, type WindowHost } from './api';
 import { HoverGate } from './hoverGate';
 import { type Content, padded } from './ui';
 
-export interface WindowOptions {
+interface WindowOptions {
   id: string;
   content: Content;
   revealer: Gtk.Revealer;
+  /** Участвует ли окно в эксклюзивности попапов. */
+  exclusive?: boolean;
+  /** Кадр, в котором живёт окно. */
+  host: WindowHost;
   /** Окно открылось: хост может применить эксклюзивность. */
   activate?(): void;
   /** Задержки hover из конфига; без них enter/leave ничего не делают. */
   delays?(): { open: number; hide: number };
 }
-
-const noop = () => {};
 
 /**
  * Одно окно: открытость, pin, hover-таймеры и api для контента.
@@ -28,12 +30,15 @@ export abstract class Window {
   readonly id: string;
   readonly revealer: Gtk.Revealer;
   readonly api: WindowApi;
+  /** Участвует ли окно в эксклюзивности попапов. */
+  readonly exclusive: boolean;
   /** Контент в своём scope; обёрнут отступами, но ещё не вставлен в окно. */
   protected readonly contentWidget: Gtk.Box;
 
   private _pinned: Accessor<boolean>;
   private _setPinned: Setter<boolean>;
   private readonly gate: HoverGate | null;
+  private readonly host: WindowHost;
   private readonly activate: (() => void) | undefined;
   private readonly delays: WindowOptions['delays'];
   private readonly disposeContent: () => void;
@@ -41,6 +46,8 @@ export abstract class Window {
   protected constructor(options: WindowOptions) {
     this.id = options.id;
     this.revealer = options.revealer;
+    this.exclusive = options.exclusive ?? false;
+    this.host = options.host;
     this.activate = options.activate;
     this.delays = options.delays;
 
@@ -52,33 +59,36 @@ export abstract class Window {
           open: () => this.open(),
           close: () => this.close(),
           isOpen: () => this.isOpen,
-          isPinned: () => this.isPinned,
-          setPinned: (value) => {
-            this.pinned = value;
-          },
           schedule: (ms, run) => {
-            const timer: Timer = timeout(ms, run);
-            return () => timer.cancel();
+            const id = GLib.timeout_add(GLib.PRIORITY_DEFAULT, ms, () => {
+              run();
+              return GLib.SOURCE_REMOVE;
+            });
+            return () => {
+              GLib.source_remove(id);
+            };
           },
         })
       : null;
 
     this.api = {
       id: options.id,
+      monitor: options.host.monitor,
       pinned: this._pinned,
       pin: () => this.pin(),
       unpin: () => this.unpin(),
       togglePin: () => this.togglePin(),
       open: () => this.open(),
       close: () => this.close(),
-      toggle: () => (this.isOpen ? this.close() : this.open()),
+      toggle: () => this.toggle(),
+      addFloat: (spec) => this.host.addFloat(spec),
+      remove: (id) => this.host.remove(id),
     };
 
-    let dispose = noop;
-    this.contentWidget = createRoot((rootDispose) => {
-      dispose = rootDispose;
-      return WindowContext.provide(this.api, () => padded(options.content()));
-    });
+    const { content, dispose } = createWindowContent(this.api, () =>
+      padded(options.content()),
+    );
+    this.contentWidget = content;
     this.disposeContent = dispose;
   }
 
@@ -98,10 +108,6 @@ export abstract class Window {
     return this.revealer.reveal_child !== this.revealer.child_revealed;
   }
 
-  get isPinned(): boolean {
-    return this.pinned;
-  }
-
   open() {
     this.gate?.cancel();
     this.revealer.reveal_child = true;
@@ -116,20 +122,34 @@ export abstract class Window {
 
   /** Закрыться, если не закреплено: так хост применяет эксклюзивность. */
   dismiss() {
-    if (!this.isPinned) {
+    if (!this.pinned) {
       this.close();
     }
   }
 
   enter() {
+    if (this.pinned) {
+      return;
+    }
     if (this.delays) {
       this.gate?.enter(this.delays().open);
     }
   }
 
   leave() {
+    if (this.pinned) {
+      return;
+    }
     if (this.delays) {
       this.gate?.leave(this.delays().hide);
+    }
+  }
+
+  toggle() {
+    if (this.isOpen) {
+      this.close();
+    } else {
+      this.open();
     }
   }
 
@@ -143,7 +163,7 @@ export abstract class Window {
   }
 
   togglePin() {
-    if (this.isPinned) {
+    if (this.pinned) {
       this.unpin();
     } else {
       this.pin();
@@ -167,7 +187,18 @@ export abstract class Window {
     this.disposeContent();
   }
 
-  abstract bounds(relativeTo: Gtk.Widget): Rect | null;
-  abstract inputBounds(relativeTo: Gtk.Widget): Rect | null;
+  /** Проверить hover-зону в точке; у обычных окон — no-op. */
+  probe(_x: number, _y: number, _relativeTo: Gtk.Widget): void {}
+
+  /** Курсор покинул поверхность; у обычных окон — no-op. */
+  hoverOut(): void {}
+
+  abstract measure(relativeTo: Gtk.Widget): WindowMeasure;
   abstract apply(): void;
+}
+
+/** Видимое тело и input-область окна; считаются за один проход. */
+export interface WindowMeasure {
+  body: Rect | null;
+  input: Rect | null;
 }

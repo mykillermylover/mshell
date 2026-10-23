@@ -1,8 +1,9 @@
 import { Gtk } from 'ags/gtk4';
 
-import type { Rect } from '../liquid/LiquidField';
+import type { FieldStyle } from '../style';
+import type { WindowHost } from './api';
 import { boundsOf, type Content } from './ui';
-import { Window } from './window';
+import { Window, type WindowMeasure } from './window';
 
 /** Плавающее окно: таскается за заголовок, у рамки примагничивается и сливается с ней. */
 export interface FloatSpec {
@@ -23,14 +24,15 @@ export class Float extends Window {
 
   constructor(
     readonly spec: FloatSpec,
-    private duration: () => number,
+    private style: () => FieldStyle,
+    host: WindowHost,
   ) {
     const revealer = new Gtk.Revealer({
       transitionType: Gtk.RevealerTransitionType.SLIDE_DOWN,
-      transitionDuration: duration(),
+      transitionDuration: style().revealDuration,
       revealChild: spec.open ?? true,
     });
-    super({ id: spec.id, content: spec.content, revealer });
+    super({ id: spec.id, content: spec.content, revealer, host });
 
     const grip = new Gtk.Box({ spacing: 8 });
     grip.add_css_class('float-grip');
@@ -54,24 +56,21 @@ export class Float extends Window {
     this.y = spec.y;
   }
 
-  bounds(relativeTo: Gtk.Widget): Rect | null {
+  measure(relativeTo: Gtk.Widget): WindowMeasure {
     const rect = boundsOf(this.revealer, relativeTo);
     if (!rect) {
-      return null;
+      return { body: null, input: null };
     }
     // x/y — логическая позиция в Fixed: move() применяет её сразу, а
     // compute_bounds отдаёт аллокацию прошлого кадра. Магнит на drag-end
     // должен видеть позицию, которую только что поставили.
-    return { ...rect, x: this.x, y: this.y };
-  }
-
-  inputBounds(relativeTo: Gtk.Widget): Rect | null {
-    return this.bounds(relativeTo);
+    const body = { ...rect, x: this.x, y: this.y };
+    return { body, input: body };
   }
 
   /** Обновить длительность по текущему конфигу. */
   apply() {
-    this.revealer.transitionDuration = this.duration();
+    this.revealer.transitionDuration = this.style().revealDuration;
   }
 
   /** Размер, который окно хочет само (не зависит от текущей раскладки). */

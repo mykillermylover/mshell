@@ -3,8 +3,10 @@ import { Gtk } from 'ags/gtk4';
 import GLib from 'gi://GLib';
 
 import { type Reactive, snapshot } from '../config';
-import type { FieldStyle, Rect } from '../liquid/LiquidField';
+import { easeOutBack } from '../easing';
+import type { Rect } from '../liquid/LiquidField';
 import { snapTo } from '../snap';
+import type { FieldStyle } from '../style';
 import { Float } from '../windows/Float';
 import type { Window } from '../windows/window';
 
@@ -16,10 +18,6 @@ interface Tween {
   startedAt: number | null;
   duration: number;
 }
-
-// лёгкий «перелёт» при примагничивании
-const easeOutBack = (t: number) =>
-  1 + 3 * Math.pow(t - 1, 3) + 2 * Math.pow(t - 1, 2);
 
 /** Сколько кадров держать тик после изменения раскладки. */
 const POKE_FRAMES = 2;
@@ -74,6 +72,14 @@ export class FrameMotion {
   /** Для drag-end и debug: примагнитить окно. */
   snap(float: Float) {
     this.snapFloat(float);
+  }
+
+  /** Окно убирают: забыть его твин и drag, чтобы не двигать удалённый виджет. */
+  forget(float: Float) {
+    this.tweens.delete(float);
+    if (this.drag?.float === float) {
+      this.drag = null;
+    }
   }
 
   /**
@@ -149,7 +155,7 @@ export class FrameMotion {
     const fieldHeight = this.deps.field.get_height();
     const border = this.deps.style.border();
     // Окно живёт в комнате, а не на рамке: иначе зазор к рамке становится
-    // отрицательным, мостик прыгает на полную ширину, а угол теряется.
+    // отрицательным и тело геометрически перекрывает обводку.
     const maxX = Math.max(
       border,
       fieldWidth - border - float.revealer.get_width(),
@@ -165,7 +171,7 @@ export class FrameMotion {
     );
   }
 
-  /** Отпустили окно ближе waistReach к краю или соседу → тянем вплотную. */
+  /** Отпустили окно ближе snapReach к краю или соседу → тянем вплотную. */
   private snapFloat(float: Float) {
     const target = this.snapTarget(float);
     if (target) {
@@ -182,24 +188,25 @@ export class FrameMotion {
   }
 
   /**
-   * Отпустили окно ближе waistReach к краю или соседу → оно втягивается вплотную.
-   * Это та же дистанция, на которой появляются мостики-капли: сцепились — прилипло.
+   * Отпустили окно ближе snapReach к краю или соседу → оно втягивается вплотную.
    */
   private snapTarget(float: Float): { x: number; y: number } | null {
-    const { border, screenRadius, waistReach, windowRadius } = snapshot(
+    const { border, screenRadius, snapReach, windowRadius } = snapshot(
       this.deps.style,
     );
-    const self = float.bounds(this.deps.field);
+    const self = float.measure(this.deps.field).body;
     if (!self) {
       return null;
     }
 
-    // Соседи — все видимые тела поля, не только Float: выехавший Pop тоже
-    // должен притягивать окно и слипаться с ним.
+    // Соседи — все тела поля, не только Float: выехавший Pop тоже должен
+    // притягивать окно. Закрытые hover-губы участвуют намеренно: это видимый
+    // материал попапа, и Float не должен примагнититься «сквозь» него или лечь
+    // поверх. Анимирующиеся — тоже: их текущее тело и есть цель.
     const others = this.deps
       .bodies()
       .filter((body) => body !== float)
-      .map((body) => body.bounds(this.deps.field))
+      .map((body) => body.measure(this.deps.field).body)
       .filter((rect): rect is Rect => rect !== null)
       .map((rect) => ({ ...rect, cornerRadius: windowRadius }));
 
@@ -211,7 +218,7 @@ export class FrameMotion {
           border,
           screenRadius,
         },
-        reach: waistReach,
+        reach: snapReach,
       },
       { ...self, cornerRadius: windowRadius },
       others,

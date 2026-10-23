@@ -1,7 +1,7 @@
 // Чистая раскладка попапа: прижатие Box к кромке рамки, align вдоль края,
 // порядок детей (spacer у рамки, Revealer, зона на дальней кромке) и толщина.
 // Без GJS — тестируется в node.
-import type { Rect } from '../liquid/LiquidField';
+import type { Box } from '../liquid/geometry';
 
 export type Edge = 'top' | 'bottom' | 'left' | 'right';
 export type EdgeAlign = 'start' | 'center' | 'end';
@@ -138,7 +138,7 @@ export const popLayout = (
  * Input закрытой hover-зоны: тело плюс полоса рамки до края экрана.
  * Никакого вывода из рендера: что видно (губа), то и ловится.
  */
-export const hoverInput = (body: Rect, edge: Edge, border: number): Rect => {
+export const hoverInput = (body: Box, edge: Edge, border: number): Box => {
   switch (edge) {
     case 'top': {
       return { ...body, y: body.y - border, h: body.h + border };

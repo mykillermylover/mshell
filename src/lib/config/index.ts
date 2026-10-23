@@ -1,6 +1,7 @@
-import type { Accessor } from 'ags';
+import { Accessor } from 'ags';
 
-import type { FieldStyle } from '../liquid/LiquidField';
+import { mixin } from '../mixin';
+import type { FieldStyle } from '../style';
 import { isEqual, isObject, isSamePrimitive } from './guards';
 
 /** Лист конфига: значение, которое кладётся в JSON и сравнивается по данным. */
@@ -9,7 +10,7 @@ export type Leaf = string | number | boolean;
 /** Статика: лист или вложенная секция. */
 export type Section = { [key: string]: Leaf | Section };
 
-/** Реактивное значение: читается как Accessor, меняется через set. */
+/** Лист конфига: Accessor плюс запись. */
 export type State<T> = Accessor<T> & { set(value: T): void };
 
 /** Узел реактивного дерева: состояние листа или вложенная секция. */
@@ -35,8 +36,8 @@ export const DEFAULTS = {
     border: 4, // толщина рамки
     screenRadius: 10, // углы экрана (= rounding в Hyprland)
     windowRadius: 12, // углы окон
-    meltRadius: 10, // радиус кривой, которой жидкость соединяет тела, px
-    waistReach: 44, // до какого зазора капли шире, чем даёт одно размытие; окно прилипает в этом же радиусе (px)
+    blurRadius: 10, // радиус размытия: σ = blurRadius / 1.35
+    snapReach: 44, // дальность магнита: на каком зазоре окно притягивается, px
     sharp: 2.2, // крутизна порога по альфе: чем больше, тем чётче край (≈1.5px при 2.2)
     snapDuration: 340, // длительность твина магнита/выпихивания, мс
     revealDuration: 400, // длительность выезда/скрытия Pop и Float, мс
@@ -57,8 +58,8 @@ const STYLE_LIMITS = {
   border: [0, 32],
   screenRadius: [0, 64],
   windowRadius: [0, 64],
-  meltRadius: [1, 64],
-  waistReach: [0, 200],
+  blurRadius: [1, 64],
+  snapReach: [0, 200],
   sharp: [0.1, 20],
   snapDuration: [0, 2000],
   revealDuration: [0, 2000],
@@ -109,27 +110,40 @@ function state<T>(
   range?: readonly [number, number],
 ): State<T> {
   let value = clampNumber(init, range);
+  const listeners = new Set<() => void>();
 
-  const get = (() => value) as State<T>;
-  get.set = (next) => {
-    // NaN/Infinity из вычислений не должны попадать в настройки.
-    if (typeof next === 'number' && !Number.isFinite(next)) {
-      return;
-    }
+  const read = new Accessor<T>(
+    () => value,
+    (listener) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  );
 
-    const nextValue = clampNumber(next, range);
+  return mixin(read, {
+    set(next: T) {
+      // NaN/Infinity из вычислений не должны попадать в настройки.
+      if (typeof next === 'number' && !Number.isFinite(next)) {
+        return;
+      }
 
-    // Сравниваем данные, а не ссылки: новый объект с теми же значениями —
-    // не изменение. Листья-примитивы здесь сходятся к Object.is.
-    if (isEqual(nextValue, value)) {
-      return;
-    }
+      const nextValue = clampNumber(next, range);
 
-    value = nextValue;
-    changed();
-  };
+      // Сравниваем данные, а не ссылки: новый объект с теми же значениями —
+      // не изменение. Листья-примитивы здесь сходятся к Object.is.
+      if (isEqual(nextValue, value)) {
+        return;
+      }
 
-  return get;
+      value = nextValue;
+      for (const listener of listeners) {
+        listener();
+      }
+      changed();
+    },
+  });
 }
 
 /** Статика → дерево реактивных значений. Объект — секция, остальное — лист. */

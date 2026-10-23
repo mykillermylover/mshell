@@ -1,20 +1,9 @@
+import { useWindowApi } from '@lib/windows/api';
+import type { FloatSpec } from '@lib/windows/Float';
+import type { PopSpec } from '@lib/windows/Pop';
 import Settings from '@widgets/Settings';
 import Test from '@widgets/Test';
 import { Gtk } from 'ags/gtk4';
-
-import type { FloatSpec } from './Float';
-import type { PopSpec } from './Pop';
-
-export const POPS: PopSpec[] = [];
-export const FLOATS: FloatSpec[] = [];
-
-function addPop(spec: PopSpec) {
-  POPS.push(spec);
-}
-
-function addFloat(spec: FloatSpec) {
-  FLOATS.push(spec);
-}
 
 // Контент окон. Фон и отступы не задавать: фон рисует поле жидкости,
 // отступы — .frame-body в style.css.
@@ -39,10 +28,15 @@ function Player() {
 }
 
 function PlayerHover() {
+  const win = useWindowApi();
+
   return (
     <box class="hover-row" spacing={8}>
       <image iconName="media-playback-start-symbolic" />
       <label label="Player" />
+      <button class="pin-button" onClicked={() => win.togglePin()}>
+        <label label={win.pinned((p) => (p ? 'unpin' : 'pin'))} />
+      </button>
     </box>
   );
 }
@@ -75,28 +69,32 @@ function Mixer() {
   );
 }
 
-// Выезжают из краёв: ags request toggle player
-addPop({
-  id: 'player',
-  edge: 'top',
-  hover: { content: PlayerHover, hideOnReveal: true },
-  content: Player,
-});
-addPop({
-  id: 'settings',
-  edge: 'right',
-  hover: true,
-  content: Settings,
-});
-addPop({ id: 'launcher', edge: 'bottom', content: Launcher });
-addPop({
-  id: 'workspaces',
-  edge: 'top',
-  hover: true,
-  align: 'end',
-  content: Test,
-});
+/** Стартовые попапы: создаются синхронно при инициализации каждого кадра. */
+export const INITIAL_POPS: PopSpec[] = [
+  {
+    id: 'player',
+    edge: 'top',
+    hover: { content: PlayerHover, hideOnReveal: false },
+    content: Player,
+  },
+  {
+    id: 'settings',
+    edge: 'right',
+    hover: true,
+    content: Settings,
+  },
+  { id: 'launcher', edge: 'bottom', content: Launcher },
+  {
+    id: 'workspaces',
+    edge: 'top',
+    hover: true,
+    align: 'end',
+    content: Test,
+  },
+];
 
-// Плавающие: таскаются за заголовок; ags request toggle notes
-addFloat({ id: 'notes', title: 'Notes', x: 200, y: 260, content: Notes });
-addFloat({ id: 'mixer', title: 'Mixer', x: 560, y: 340, content: Mixer });
+/** Стартовые Float: создаются синхронно; динамические — через Frame.addFloat. */
+export const INITIAL_FLOATS: FloatSpec[] = [
+  { id: 'notes', title: 'Notes', x: 200, y: 260, content: Notes },
+  { id: 'mixer', title: 'Mixer', x: 560, y: 340, content: Mixer },
+];

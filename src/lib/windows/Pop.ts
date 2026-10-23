@@ -1,10 +1,14 @@
 import type { Gtk } from 'ags/gtk4';
 
 import type { Rect } from '../liquid/LiquidField';
+import type { FieldStyle } from '../style';
+import { createWindowContent, type WindowHost } from './api';
 import { type Edge, type EdgeAlign, hoverInput, popLayout } from './popLayout';
 import { buildPopRevealer, buildPopSlot, type PopSlot } from './popSlot';
-import type { Content } from './ui';
-import { Window } from './window';
+import { asWidget, type Content } from './ui';
+import { Window, type WindowMeasure } from './window';
+
+const noop = () => {};
 
 export interface HoverSpec {
   depth?: number; // толщина губы/input, px (>= 1); по умолчанию style.hoverDepth
@@ -22,27 +26,22 @@ export interface PopSpec {
 }
 
 /**
- * Слот рамки: геометрия тела и правила hover. GTK-механика (Revealer'ы,
- * зона, подписки, контроллер движения) — в popSlot.ts; открытость, pin
+ * Слот рамки: геометрия тела и правила hover. GTK-виджеты и подписки —
+ * в popSlot.ts; контроллер движения — один на Frame; открытость, pin
  * и api — в Window.
  */
 export class Pop extends Window {
   readonly widget: Gtk.Box;
   private readonly slot: PopSlot;
   private readonly hover: HoverSpec | null;
+  private readonly disposeHover: () => void;
+  private hovering = false;
 
   constructor(
     readonly spec: PopSpec,
-    private style: () => {
-      border: number;
-      screenRadius: number;
-      revealDuration: number;
-      hoverDepth: number;
-      hoverDelay: number;
-      hideDelay: number;
-    },
-    root: Gtk.Widget,
+    private style: () => FieldStyle,
     onActivate: () => void,
+    host: WindowHost,
   ) {
     const hoverSpec = spec.hover === true ? {} : (spec.hover ?? null);
     const revealer = buildPopRevealer(spec.edge);
@@ -50,6 +49,8 @@ export class Pop extends Window {
       id: spec.id,
       content: spec.content,
       revealer,
+      exclusive: true,
+      host,
       activate: onActivate,
       delays: hoverSpec
         ? () => ({ open: style().hoverDelay, hide: style().hideDelay })
@@ -57,6 +58,14 @@ export class Pop extends Window {
     });
 
     this.hover = hoverSpec;
+
+    const hoverContent = hoverSpec
+      ? createWindowContent(this.api, () =>
+          hoverSpec.content ? asWidget(hoverSpec.content()) : null,
+        )
+      : null;
+    this.disposeHover = hoverContent?.dispose ?? noop;
+
     this.slot = buildPopSlot({
       edge: spec.edge,
       layout: this.layout(),
@@ -64,12 +73,8 @@ export class Pop extends Window {
       content: this.contentWidget,
       hover: hoverSpec
         ? {
-            root,
-            content: (hoverSpec.content?.() as Gtk.Widget | undefined) ?? null,
+            content: hoverContent?.content ?? null,
             hideOnReveal: hoverSpec.hideOnReveal ?? false,
-            bounds: () => this.inputBounds(root),
-            enter: () => this.enter(),
-            leave: () => this.leave(),
           }
         : null,
     });
@@ -81,24 +86,76 @@ export class Pop extends Window {
     return this.slot.animating;
   }
 
+  dispose() {
+    this.slot.cleanup();
+    this.disposeHover();
+    super.dispose();
+  }
+
+  /**
+   * Input = тело + полоса рамки, поэтому hover считаем по measure, а не по
+   * enter/leave детей: пустые дети событий не дают.
+   */
+  probe(x: number, y: number, relativeTo: Gtk.Widget) {
+    if (!this.hover) {
+      return;
+    }
+    const rect = this.measure(relativeTo).input;
+    const now =
+      rect !== null &&
+      x >= rect.x &&
+      x < rect.x + rect.w &&
+      y >= rect.y &&
+      y < rect.y + rect.h;
+
+    if (now === this.hovering) {
+      return;
+    }
+
+    this.hovering = now;
+    if (now) {
+      this.enter();
+    } else {
+      this.leave();
+    }
+  }
+
+  hoverOut() {
+    if (this.hovering) {
+      this.hovering = false;
+      this.leave();
+    }
+  }
+
   subscribe(fn: () => void): () => void {
     return this.slot.subscribe(fn);
   }
 
   /**
    * Видимое тело: всё, кроме полосы рамки (`spacer`). Рамку рисует
-   * LiquidField, поэтому в тело поля она не входит. Иначе тело перекрывает
-   * кромку, мостик к рамке вырождается (gap < 0), и при сужении тела нормаль
-   * переворачивается — в конце закрытия эффект скачет.
+   * LiquidField, поэтому в тело поля она не входит.
+   *
+   * Input закрытой зоны = губа + полоса рамки до края экрана. Открытой —
+   * только тело. Оба считаются из одного `compute_bounds`.
    */
-  bounds(relativeTo: Gtk.Widget): Rect | null {
-    const rect = this.slot.bounds(relativeTo);
-    if (!rect || !this.hover) {
-      return rect;
+  measure(relativeTo: Gtk.Widget): WindowMeasure {
+    const raw = this.slot.bounds(relativeTo);
+    if (!raw) {
+      return { body: null, input: null };
+    }
+    if (!this.hover) {
+      return { body: raw, input: raw };
     }
 
-    const body = this.bodyRect(rect);
-    return body.w >= 1 && body.h >= 1 ? body : null;
+    const body = this.bodyRect(raw);
+    const input = this.slot.revealed
+      ? body
+      : hoverInput(body, this.spec.edge, this.style().border);
+
+    return {
+      body: body.w >= 1 && body.h >= 1 ? body : null,
+      input,
+    };
   }
 
   /** Тело без полосы рамки; нулевое при `depth = 0` (невидимая зона). */
@@ -118,28 +175,6 @@ export class Pop extends Window {
         return { ...rect, w: rect.w - border };
       }
     }
-  }
-
-  /**
-   * Input закрытой зоны = губа + полоса рамки до края экрана. Открытой —
-   * только тело. `depth = 0` выключает ховер: input нет.
-   */
-  inputBounds(relativeTo: Gtk.Widget): Rect | null {
-    const raw = this.slot.bounds(relativeTo);
-    if (!raw) {
-      return null;
-    }
-    if (!this.hover) {
-      return raw;
-    }
-
-    const rect = this.bodyRect(raw);
-
-    // Полностью открыт: только тело; уход на рамку должен давать leave.
-    if (this.slot.revealed) {
-      return rect;
-    }
-    return hoverInput(rect, this.spec.edge, this.style().border);
   }
 
   /** Толщина губы по текущему конфигу. */
