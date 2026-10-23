@@ -7,7 +7,7 @@ import { Gtk } from 'ags/gtk4';
 
 import type { Edge, EdgeAlign } from './popLayout';
 
-/** Контент окна — то, что возвращает JSX-компонент. */
+/** Контент окна - то, что возвращает JSX-компонент. */
 export type Content = () => JSX.Element;
 
 /** Настройки hover-зоны попапа. */
@@ -23,7 +23,7 @@ export interface PopSpec {
   edge: Edge;
   align?: EdgeAlign; // положение вдоль края
   content: Content; // вызывается по разу на монитор; фон НЕ задавать
-  hover?: true | HoverSpec; // true — дефолтные значения; нет — без hover
+  hover?: true | HoverSpec; // true - дефолтные значения; нет - без hover
 }
 
 /** Плавающее окно: таскается за заголовок, у рамки примагничивается и сливается с ней. */
@@ -45,7 +45,7 @@ export interface WindowApi {
   readonly id: string;
   /** Монитор, на котором живёт окно. */
   readonly monitor: Gdk.Monitor;
-  /** Закреплено ли окно — реактивно, для UI. */
+  /** Закреплено ли окно - реактивно, для UI. */
   readonly pinned: Accessor<boolean>;
   pin(): void;
   unpin(): void;

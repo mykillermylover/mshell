@@ -34,7 +34,7 @@ export class FrameMotion {
   private tweens = new Map<Float, Tween>();
   private ticking = false;
   private pokes = 0;
-  /** Обработано тиков — для debug-команды frames. */
+  /** Обработано тиков - для debug-команды frames. */
   frames = 0;
 
   constructor(private readonly deps: MotionDeps) {
@@ -198,10 +198,10 @@ export class FrameMotion {
       return null;
     }
 
-    // Соседи — все тела поля, не только Float: выехавший Pop тоже должен
+    // Соседи - все тела поля, не только Float: выехавший Pop тоже должен
     // притягивать окно. Закрытые hover-губы участвуют намеренно: это видимый
     // материал попапа, и Float не должен примагнититься «сквозь» него или лечь
-    // поверх. Анимирующиеся — тоже: их текущее тело и есть цель.
+    // поверх. Анимирующиеся - тоже: их текущее тело и есть цель.
     const others = this.deps
       .bodies()
       .filter((body) => body !== float)
@@ -236,7 +236,7 @@ export class FrameMotion {
 
   /**
    * Тик-цикл живёт, только пока что-то движется (перетаскивание, примагничивание, анимация
-   * Revealer) или пока не отработали poke(). В покое тиков нет — композитор не будят.
+   * Revealer) или пока не отработали poke(). В покое тиков нет - композитор не будят.
    */
   tick() {
     if (this.ticking) {
@@ -259,7 +259,7 @@ export class FrameMotion {
           const x = tween.fromX + (tween.toX - tween.fromX) * eased;
           const y = tween.fromY + (tween.toY - tween.fromY) * eased;
           // Перелёт easeOutBack должен заходить за рамку и за соседа, поэтому
-          // комнату на время твина не держим — только поверхность слоя.
+          // комнату на время твина не держим - только поверхность слоя.
           this.place(
             float,
             Math.max(0, Math.min(x, fieldWidth - float.revealer.get_width())),

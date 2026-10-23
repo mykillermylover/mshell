@@ -18,15 +18,15 @@ export type ReactiveSection = { [key: string]: ReactiveNode };
 
 /**
  * Дерево, где каждый лист заменён на State; форма повторяет статику.
- * Плюс доступ по имени — по нему ходят обходы и патчи.
+ * Плюс доступ по имени - по нему ходят обходы и патчи.
  */
 export type Reactive<T> = {
   [K in keyof T]: T[K] extends Leaf ? State<T[K]> : Reactive<T[K]>;
 };
 
 /**
- * Весь конфиг — одна константа: новые параметры добавляются сюда, код вокруг
- * ничего не знает. Секции — объекты, листья — примитивы; вложенность любая.
+ * Весь конфиг - одна константа: новые параметры добавляются сюда, код вокруг
+ * ничего не знает. Секции - объекты, листья - примитивы; вложенность любая.
  */
 export const DEFAULTS = {
   style: {
@@ -40,7 +40,7 @@ export const DEFAULTS = {
     revealDuration: 400, // длительность выезда/скрытия Pop и Float, мс
     // Толщина губы и input hover-зоны (см. lib/windows/popLayout.ts).
     hoverDepth: 6,
-    // 0 — мгновенно, как без задержек.
+    // 0 - мгновенно, как без задержек.
     hoverDelay: 120,
     hideDelay: 300,
   },
@@ -73,7 +73,7 @@ export const LIMITS = {
   style: STYLE_LIMITS,
 } as const satisfies Limits;
 
-/** Статика конфига — тип, на который опирается всё остальное. */
+/** Статика конфига - тип, на который опирается всё остальное. */
 export type ConfigValues = typeof DEFAULTS;
 
 /** То же дерево с необязательными ключами на всех уровнях. */
@@ -131,7 +131,7 @@ function state<T>(
 
       const nextValue = clampNumber(next, range);
 
-      // Сравниваем данные, а не ссылки: новый объект с теми же значениями —
+      // Сравниваем данные, а не ссылки: новый объект с теми же значениями -
       // не изменение. Листья-примитивы здесь сходятся к Object.is.
       if (isEqual(nextValue, value)) {
         return;
@@ -146,7 +146,7 @@ function state<T>(
   });
 }
 
-/** Статика → дерево реактивных значений. Объект — секция, остальное — лист. */
+/** Статика → дерево реактивных значений. Объект - секция, остальное - лист. */
 export function reactive<T extends object>(
   init: T,
   changed: () => void,
@@ -173,12 +173,12 @@ export function reactive<T extends object>(
     );
   }
 
-  // Дерево собрано по форме T — это знает только этот цикл.
+  // Дерево собрано по форме T - это знает только этот цикл.
   return tree as Reactive<T>;
 }
 
 /**
- * Обход реактивного дерева: узел-функция — состояние, вызываем; секцию
+ * Обход реактивного дерева: узел-функция - состояние, вызываем; секцию
  * обходим дальше. Возвращает статику того же вида.
  */
 function read(node: ReactiveNode): Leaf | Section {
@@ -203,7 +203,7 @@ export function snapshot<T extends object>(tree: Reactive<T>): T {
 
 /**
  * Дефолты + значения из файла. Берётся только то, что есть в дефолтах и
- * совпадает по типу; остальное молча остаётся дефолтным — JSON не типизирован.
+ * совпадает по типу; остальное молча остаётся дефолтным - JSON не типизирован.
  */
 export function merge<T extends Section>(defaults: T, raw: DeepPartial<T>): T {
   const source: Record<string, unknown> = raw;
@@ -240,7 +240,7 @@ export function patchInto(
   values: DeepPartial<Section>,
 ): void {
   if (typeof tree === 'function') {
-    return; // лист не секция — патчить нечего
+    return; // лист не секция - патчить нечего
   }
 
   for (const [key, value] of Object.entries(values)) {

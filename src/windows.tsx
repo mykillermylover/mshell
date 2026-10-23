@@ -5,7 +5,7 @@ import Test from '@widgets/Test';
 import { Gtk } from 'ags/gtk4';
 
 // Контент окон. Фон и отступы не задавать: фон рисует поле жидкости,
-// отступы — .frame-body в style.css.
+// отступы - .frame-body в style.css.
 function Card(props: { title: string; body: string; w: number; h: number }) {
   return (
     <box
@@ -50,7 +50,7 @@ function Notes() {
   return (
     <Card
       title="Тащи к краю"
-      body="Рядом с рамкой — слипнется"
+      body="Рядом с рамкой - слипнется"
       w={240}
       h={110}
     />
@@ -92,7 +92,7 @@ export const INITIAL_POPS: PopSpec[] = [
   },
 ];
 
-/** Стартовые Float: создаются синхронно; динамические — через Frame.addFloat. */
+/** Стартовые Float: создаются синхронно; динамические - через Frame.addFloat. */
 export const INITIAL_FLOATS: FloatSpec[] = [
   { id: 'notes', title: 'Notes', x: 200, y: 260, content: Notes },
   { id: 'mixer', title: 'Mixer', x: 560, y: 340, content: Mixer },

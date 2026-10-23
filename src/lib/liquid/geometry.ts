@@ -1,4 +1,4 @@
-// Геометрия жидкости: тела — скруглённые прямоугольники, кромка рамки — прямые
+// Геометрия жидкости: тела - скруглённые прямоугольники, кромка рамки - прямые
 // участки стен и дуги внутренних углов. Здесь только поиск ближайших точек,
 // глобальных «якорей» и состояния нет.
 export interface Box {
@@ -12,7 +12,7 @@ export interface Box {
 export type Rect = Box;
 
 export interface Body extends Box {
-  /** Радиус скругления углов тела (для окон — `windowRadius`). */
+  /** Радиус скругления углов тела (для окон - `windowRadius`). */
   cornerRadius: number;
 }
 
@@ -21,12 +21,12 @@ export interface Point {
   y: number;
 }
 
-/** Точки контакта: a — на первом теле, b — на втором; nx, ny — нормаль a→b. */
+/** Точки контакта: a - на первом теле, b - на втором; nx, ny - нормаль a→b. */
 export interface Contact {
   a: Point;
   b: Point;
   gap: number;
-  /** Длина общего участка прямых сторон (0 — стык уголками/дугой). */
+  /** Длина общего участка прямых сторон (0 - стык уголками/дугой). */
   seam: number;
   nx: number;
   ny: number;
@@ -57,7 +57,7 @@ export const coreOf = (body: Body): Box => {
 /**
  * Зазор между двумя отрезками одной оси и точки, между которыми он меряется.
  *
- * Если отрезки не пересекаются — ближайшие концы. Если пересекаются — берём
+ * Если отрезки не пересекаются - ближайшие концы. Если пересекаются - берём
  * СЕРЕДИНУ общего участка: она рождается в точке касания и дальше едет
  * непрерывно. Иначе на переходе «диагональ → ребро» точка прыгала бы с угла
  * на середину стороны.
@@ -73,7 +73,7 @@ const axisGap = (a0: number, a1: number, b0: number, b1: number) => {
   return { from: mid, to: mid, gap: 0 };
 };
 
-/** Ближайшие точки двух тел; null — сердцевины перекрылись (тела уже слиты). */
+/** Ближайшие точки двух тел; null - сердцевины перекрылись (тела уже слиты). */
 export const contactBetween = (first: Body, second: Body): Contact | null => {
   const r1 = clampRadius(first);
   const r2 = clampRadius(second);
@@ -89,9 +89,9 @@ export const contactBetween = (first: Body, second: Body): Contact | null => {
   }
   const nx = dx / dist;
   const ny = dy / dist;
-  // Стык — пересечение ПРЯМЫХ участков сторон (то есть сердцевин): скругления
+  // Стык - пересечение ПРЯМЫХ участков сторон (то есть сердцевин): скругления
   // углов в стыкующееся ребро не входят. В момент «диагональ → ребро» он
-  // рождается из нуля и дальше растёт непрерывно — без скачка ширины капли.
+  // рождается из нуля и дальше растёт непрерывно - без скачка ширины капли.
   let seam = 0;
 
   if (x.gap > 0) {
@@ -120,7 +120,7 @@ export const contactBetween = (first: Body, second: Body): Contact | null => {
  * Контакты тела с кромкой рамки: 4 прямых участка и 4 дуги внутренних углов.
  *
  * Каждая фигура считается независимо, поэтому на 45° обе стены равноудалены
- * и обе дают контакт — выбора «какая ближе» нет, скачка нет по построению.
+ * и обе дают контакт - выбора «какая ближе» нет, скачка нет по построению.
  * Порядок результата: [верх, низ, лево, право, ЛВ, ПВ, ЛН, ПН].
  */
 export const contactsWithFrame = (body: Body, frame: FrameSpec): Contact[] => {
@@ -131,20 +131,20 @@ export const contactsWithFrame = (body: Body, frame: FrameSpec): Contact[] => {
   const right = frame.w - frame.border;
   const bottom = frame.h - frame.border;
   // Радиус дуги внутреннего угла и её центр. append_border рисует рамку так,
-  // что заданный screenRadius — это радиус ВНУТРЕННЕГО угла, а центр дуги
+  // что заданный screenRadius - это радиус ВНУТРЕННЕГО угла, а центр дуги
   // лежит на border внутрь от края экрана; прямые полосы жидкости начинаются
   // там, где кончается дуга: border + screenRadius.
   const arc = frame.screenRadius;
 
   /** Контакт по точке q на кромке рамки: тело ищем со своей стороны. */
   const fromEdge = (q: Point, seam: number): Contact => {
-    // Ближайшая к q точка сердцевины тела — «квадратная» проекция.
+    // Ближайшая к q точка сердцевины тела - «квадратная» проекция.
     const qx = Math.max(core.x, Math.min(q.x, core.x + core.w));
     const qy = Math.max(core.y, Math.min(q.y, core.y + core.h));
     const dx = q.x - qx;
     const dy = q.y - qy;
     const dist = Math.hypot(dx, dy);
-    // При касании (dist = 0) нормаль не определена; берём любую — длина
+    // При касании (dist = 0) нормаль не определена; берём любую - длина
     // капсулы от этого не зависит, торец всё равно внутри тела.
     const nx = dist === 0 ? 1 : dx / dist;
     const ny = dist === 0 ? 0 : dy / dist;
@@ -159,7 +159,7 @@ export const contactsWithFrame = (body: Body, frame: FrameSpec): Contact[] => {
     };
   };
 
-  /** Прямая стена: вдоль — середина стыка, поперёк — перпендикуляр. */
+  /** Прямая стена: вдоль - середина стыка, поперёк - перпендикуляр. */
   const side = (
     horizontal: boolean,
     fixed: number,
@@ -169,7 +169,7 @@ export const contactsWithFrame = (body: Body, frame: FrameSpec): Contact[] => {
     const span = horizontal
       ? axisGap(core.x, core.x + core.w, from, to)
       : axisGap(core.y, core.y + core.h, from, to);
-    // Стык — прямая часть стороны окна (между скруглениями), попавшая на
+    // Стык - прямая часть стороны окна (между скруглениями), попавшая на
     // прямой участок стены. Тот же смысл, что у contactBetween: seam из нуля.
     const spanFrom = horizontal ? core.x : core.y;
     const spanTo = horizontal ? core.x + core.w : core.y + core.h;
@@ -187,7 +187,7 @@ export const contactsWithFrame = (body: Body, frame: FrameSpec): Contact[] => {
   ];
 
   // Дуги: центр угла и знак сектора, смотрящего В УГОЛ экрана (от комнаты).
-  // Дуга — вогнутая граница материала рамки; тело стоит с другой стороны,
+  // Дуга - вогнутая граница материала рамки; тело стоит с другой стороны,
   // поэтому точка дуги ищется со стороны угла.
   const corners = [
     { cx: left + arc, cy: top + arc, sx: -1, sy: -1 }, // ЛВ
@@ -198,7 +198,7 @@ export const contactsWithFrame = (body: Body, frame: FrameSpec): Contact[] => {
   const arcs = corners.map((c) => {
     // Направление от центра дуги к ближайшей точке сердцевины, прижатое к
     // сектору дуги. Тело в комнате лежит по другую сторону от сектора, и
-    // прижатие даёт ноль — тогда точка — середина дуги (sx, sy — диагональ):
+    // прижатие даёт ноль - тогда точка - середина дуги (sx, sy - диагональ):
     // на кромке и без прыжка при движении окна. Для тела сбоку от дуги
     // прижатие даёт конец дуги, совпадающий с концом прямой стены.
     const px = Math.max(core.x, Math.min(c.cx, core.x + core.w));

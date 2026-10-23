@@ -50,7 +50,7 @@ export class Float extends Window {
     if (!rect) {
       return { body: null, input: null };
     }
-    // x/y — логическая позиция в Fixed: move() применяет её сразу, а
+    // x/y - логическая позиция в Fixed: move() применяет её сразу, а
     // compute_bounds отдаёт аллокацию прошлого кадра. Магнит на drag-end
     // должен видеть позицию, которую только что поставили.
     const body = { ...rect, x: this.x, y: this.y };

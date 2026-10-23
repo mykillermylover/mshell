@@ -4,7 +4,7 @@ import { Gtk } from 'ags/gtk4';
 import { boundsOf } from './api';
 import type { Edge, PopLayout } from './popLayout';
 
-// Попап уезжает от своего края, зона — к краю. Одно знание на оба Revealer.
+// Попап уезжает от своего края, зона - к краю. Одно знание на оба Revealer.
 const SLIDE = {
   top: {
     pop: Gtk.RevealerTransitionType.SLIDE_DOWN,

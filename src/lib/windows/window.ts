@@ -192,10 +192,10 @@ export abstract class Window {
     this.disposeContent();
   }
 
-  /** Проверить hover-зону в точке; у обычных окон — no-op. */
+  /** Проверить hover-зону в точке; у обычных окон - no-op. */
   probe(_x: number, _y: number, _relativeTo: Gtk.Widget): void {}
 
-  /** Курсор покинул поверхность; у обычных окон — no-op. */
+  /** Курсор покинул поверхность; у обычных окон - no-op. */
   hoverOut(): void {}
 
   abstract measure(relativeTo: Gtk.Widget): WindowMeasure;

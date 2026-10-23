@@ -15,9 +15,9 @@ import { buildPopRevealer, buildPopSlot, type PopSlot } from './popSlot';
 import { Window, type WindowMeasure } from './window';
 
 /**
- * Слот рамки: геометрия тела и правила hover. GTK-виджеты и подписки —
- * в popSlot.ts; контроллер движения — один на Frame; открытость, pin
- * и api — в Window.
+ * Слот рамки: геометрия тела и правила hover. GTK-виджеты и подписки -
+ * в popSlot.ts; контроллер движения - один на Frame; открытость, pin
+ * и api - в Window.
  */
 export class Pop extends Window {
   readonly widget: Gtk.Box;
@@ -131,7 +131,7 @@ export class Pop extends Window {
    * Видимое тело: всё, кроме полосы рамки (`spacer`). Рамку рисует
    * LiquidField, поэтому в тело поля она не входит.
    *
-   * Input закрытой зоны = губа + полоса рамки до края экрана. Открытой —
+   * Input закрытой зоны = губа + полоса рамки до края экрана. Открытой -
    * только тело. Оба считаются из одного `compute_bounds`.
    */
   measure(relativeTo: Gtk.Widget): WindowMeasure {

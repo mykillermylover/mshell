@@ -29,8 +29,8 @@ const SIGINT = 2;
 
 // Точки, куда процесс реально завершается. AGS 3 в quit() сразу вызывает
 // exit(): Gtk.Application::shutdown не эмитится, а DBus-обработчик `ags quit`
-// держит собственную привязку app.quit из конструктора App — подменить её
-// нельзя. Общий путь любого quit(), включая DBus-копию, — прототип
+// держит собственную привязку app.quit из конструктора App - подменить её
+// нельзя. Общий путь любого quit(), включая DBus-копию, - прототип
 // Gtk.Application. Плюс сигналы сеанса: лог-аут Hyprland, kill, Ctrl+C.
 let exitHooked = false;
 
@@ -60,16 +60,6 @@ export function hookExit(flush: () => void): void {
   exitHooked = true;
 }
 
-/**
- * Конфиг поверх ~/.config/mshell/config.json: чтение с фоллбеком к дефолтам
- * по каждому ключу, запись с дебаунсом. Битый файл не роняет оболочку и не
- * перезаписывается — предупреждение в лог, дальше дефолты.
- *
- * Один на процесс: создаётся при импорте модуля, фабрику наружу не отдаём —
- * два конфига означали бы два независимых дерева значений.
- */
-export const config: Config = init();
-
 function init(): Config {
   const exists = GLib.file_test(PATH, GLib.FileTest.EXISTS);
   let tree: ConfigValues = DEFAULTS;
@@ -81,7 +71,7 @@ function init(): Config {
       tree = merge(DEFAULTS, JSON.parse(text) as DeepPartial<ConfigValues>);
     } catch (error) {
       const why = error instanceof Error ? error.message : String(error);
-      console.warn(`config: ${PATH}: ${why} — работаем на дефолтах`);
+      console.warn(`config: ${PATH}: ${why} - работаем на дефолтах`);
     }
   }
 
@@ -139,7 +129,7 @@ function init(): Config {
     },
     flush: () => {
       if (pending === null) {
-        return; // дебаунс уже записал — второй раз не пишем
+        return; // дебаунс уже записал - второй раз не пишем
       }
 
       GLib.source_remove(pending);
@@ -147,7 +137,7 @@ function init(): Config {
     },
   };
 
-  // Методы живут рядом с деревом, а не внутри: дерево — то, что пишется в файл.
+  // Методы живут рядом с деревом, а не внутри: дерево - то, что пишется в файл.
   const instance: Config = Object.assign({}, values, methods);
 
   if (!exists) {
@@ -156,3 +146,13 @@ function init(): Config {
 
   return instance;
 }
+
+/**
+ * Конфиг поверх ~/.config/mshell/config.json: чтение с фоллбеком к дефолтам
+ * по каждому ключу, запись с дебаунсом. Битый файл не роняет оболочку и не
+ * перезаписывается - предупреждение в лог, дальше дефолты.
+ *
+ * Один на процесс: создаётся при импорте модуля, фабрику наружу не отдаём -
+ * два конфига означали бы два независимых дерева значений.
+ */
+export const config: Config = init();

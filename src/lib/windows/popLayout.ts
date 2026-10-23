@@ -1,6 +1,6 @@
 // Чистая раскладка попапа: прижатие Box к кромке рамки, align вдоль края,
 // порядок детей (spacer у рамки, Revealer, зона на дальней кромке) и толщина.
-// Без GJS — тестируется в node.
+// Без GJS - тестируется в node.
 import type { Box } from '@lib/liquid/geometry';
 
 export type Edge = 'top' | 'bottom' | 'left' | 'right';
@@ -21,17 +21,17 @@ export interface PopLayout {
     marginTop: number;
     marginBottom: number;
   };
-  /** Порядок детей Box от его начала; spacer — только у hover-попапа. */
+  /** Порядок детей Box от его начала; spacer - только у hover-попапа. */
   children: Array<'spacer' | 'revealer' | 'zone'>;
   spacer: { widthRequest: number; heightRequest: number };
   zone: { widthRequest: number; heightRequest: number };
 }
 
 /**
- * Вдоль края — align; для start/end добавляется отступ от угла
- * border + screenRadius. Поперёк — прижатие к кромке рамки.
+ * Вдоль края - align; для start/end добавляется отступ от угла
+ * border + screenRadius. Поперёк - прижатие к кромке рамки.
  *
- * Без hover frame-side отступ — это margin Box'а: overlay не читает его для
+ * Без hover frame-side отступ - это margin Box'а: overlay не читает его для
  * позиции, а content box сжимается на величину margin. С hover отступ
  * становится реальным spacer'ом внутри Box: зона не теряет толщину. В тело
  * поля spacer не входит (рамку рисует LiquidField), а input закрытой зоны

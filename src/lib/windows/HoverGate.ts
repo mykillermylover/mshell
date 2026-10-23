@@ -1,5 +1,5 @@
 // Hover-задержки: чистая логика без GJS. Планировщик внедряется, поэтому
-// поведение проверяется в node без GTK. Pin — забота Window, не gate.
+// поведение проверяется в node без GTK. Pin - забота Window, не gate.
 type Cancel = () => void;
 
 interface HoverGateDeps {

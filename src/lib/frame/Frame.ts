@@ -16,9 +16,9 @@ import { FrameMotion } from './FrameMotion';
 /**
  * Хост поля на один монитор:
  *   Overlay
- *    ├─ LiquidField — рисует рамку и ВСЕ окна как единое поле (форма = то, что лежит в раскладке)
- *    ├─ Fixed       — плавающие окна (Float)
- *    └─ Pop×N       — компоненты попапов (Box из Revealer'а и hover-зоны)
+ *    ├─ LiquidField - рисует рамку и ВСЕ окна как единое поле (форма = то, что лежит в раскладке)
+ *    ├─ Fixed - плавающие окна (Float)
+ *    └─ Pop×N - компоненты попапов (Box из Revealer'а и hover-зоны)
  * Окна прозрачны и рисуют только содержимое; фон за них рисует LiquidField.
  * Каждый кадр форма берётся из Frame.measure() (Window.measure), поэтому
  * анимация и форма не расходятся.
@@ -68,7 +68,7 @@ export class Frame {
     snap: (float: Float) => this.motion.snap(float),
   };
 
-  /** Обработано тиков — для debug-команды frames. */
+  /** Обработано тиков - для debug-команды frames. */
   get frames(): number {
     return this.motion.frames;
   }
@@ -133,7 +133,7 @@ export class Frame {
       this.addPop(spec);
     }
 
-    // Overlay размещает детей при любом изменении размера любого окна внутри —
+    // Overlay размещает детей при любом изменении размера любого окна внутри -
     // это бесплатный хук «контент поменял размер, форму надо обновить».
     overlay.connect('get-child-position', () => {
       this.motion.poke();
@@ -299,7 +299,7 @@ export class Frame {
 
   /**
    * Тела и input-области в координатах поля за один проход по окнам.
-   * Больше никаких ключей: жидкость — функция раскладки.
+   * Больше никаких ключей: жидкость - функция раскладки.
    */
   private measure(): { rects: Rect[]; inputs: Rect[] } {
     const rects: Rect[] = [];
