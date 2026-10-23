@@ -6,9 +6,6 @@ import { snapshot } from './config';
 import { config } from './config/app';
 import type { Frame } from './frame/Frame';
 
-const has = (object: object, key: string) =>
-  Object.prototype.hasOwnProperty.call(object, key);
-
 // Параметры debug-замера нагрузки: проход 200 px за 3 с.
 const BENCH_MARGIN = 250;
 const BENCH_TRAVEL = 200;
@@ -49,11 +46,11 @@ export function handleDebug(frame: Frame, args: string[]): string | undefined {
         center: [centerX, centerY],
       };
       const where = args[2];
-      if (!has(positions, where)) {
+      if (!Object.hasOwn(positions, where)) {
         return 'bad place';
       }
 
-      frame.debug.reveal(float);
+      float.open();
       frame.debug.move(float, ...positions[where]);
       return 'ok';
     }
@@ -65,7 +62,7 @@ export function handleDebug(frame: Frame, args: string[]): string | undefined {
         return 'bad at';
       }
 
-      frame.debug.reveal(float);
+      float.open();
       frame.debug.move(float, x, y);
       return 'ok';
     }
@@ -80,8 +77,8 @@ export function handleDebug(frame: Frame, args: string[]): string | undefined {
       const { w, h } = frame.debug.size();
       const [firstWidth, firstHeight] = first.natural();
       const [, secondHeight] = second.natural();
-      frame.debug.reveal(first);
-      frame.debug.reveal(second);
+      first.open();
+      second.open();
       frame.debug.move(
         first,
         w / 2 - gap / 2 - firstWidth,
@@ -188,7 +185,7 @@ export function handleDebug(frame: Frame, args: string[]): string | undefined {
     case 'tune': {
       const key = args[1];
       const value = numberArg(args[2]);
-      if (!key || value === null || !has(config.style, key)) {
+      if (!key || value === null || !Object.hasOwn(config.style, key)) {
         return 'bad tune';
       }
 

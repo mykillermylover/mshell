@@ -24,7 +24,7 @@ import { FrameMotion } from './FrameMotion';
  * анимация и форма не расходятся.
  */
 export class Frame {
-  readonly surface: Astal.Window;
+  private readonly surface: Astal.Window;
   readonly connector: string | null;
   private field = new LiquidField();
   private fixed = new Gtk.Fixed();
@@ -49,9 +49,6 @@ export class Frame {
     rects: () => this.measure().rects,
     inputs: () => this.measure().inputs,
     region: () => this.input.boxes,
-    reveal: (float: Float) => {
-      float.open();
-    },
     move: (float: Float, x: number, y: number) => {
       this.motion.move(float, x, y);
     },
@@ -74,7 +71,7 @@ export class Frame {
   }
 
   constructor(
-    readonly monitor: Gdk.Monitor,
+    monitor: Gdk.Monitor,
     pops: PopSpec[],
     floats: FloatSpec[],
     private style: Reactive<FieldStyle>,

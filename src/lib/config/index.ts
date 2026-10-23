@@ -1,4 +1,4 @@
-import { isEqual, isObject, isSamePrimitive, mixin } from '@lib/utils';
+import { isObject, isSamePrimitive, mixin } from '@lib/utils';
 import { Accessor } from 'ags';
 
 /** Лист конфига: значение, которое кладётся в JSON и сравнивается по данным. */
@@ -131,9 +131,8 @@ function state<T>(
 
       const nextValue = clampNumber(next, range);
 
-      // Сравниваем данные, а не ссылки: новый объект с теми же значениями -
-      // не изменение. Листья-примитивы здесь сходятся к Object.is.
-      if (isEqual(nextValue, value)) {
+      // Листья - примитивы: сравнения по значению достаточно.
+      if (Object.is(nextValue, value)) {
         return;
       }
 

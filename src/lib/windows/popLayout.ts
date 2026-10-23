@@ -3,7 +3,9 @@
 // Без GJS - тестируется в node.
 import type { Box } from '@lib/liquid/geometry';
 
-export type Edge = 'top' | 'bottom' | 'left' | 'right';
+export type HorizontalEdge = 'top' | 'bottom';
+export type VerticalEdge = 'left' | 'right';
+export type Edge = HorizontalEdge | VerticalEdge;
 export type EdgeAlign = 'start' | 'center' | 'end';
 
 export interface LayoutStyle {
@@ -27,6 +29,40 @@ export interface PopLayout {
   zone: { widthRequest: number; heightRequest: number };
 }
 
+type Margins = Record<
+  'marginStart' | 'marginEnd' | 'marginTop' | 'marginBottom',
+  number
+>;
+
+/**
+ * Сдвиг вдоль края: `distance` > 0 — вправо (верх/низ) или вниз (лево/право).
+ * Марджины GTK неотрицательны, поэтому движение «наружу» от угла упирается
+ * в кромку: итоговое отклонение насыщается, а не отбрасывается.
+ */
+const shiftAlong = (
+  margins: Margins,
+  start: 'marginStart' | 'marginTop',
+  end: 'marginEnd' | 'marginBottom',
+  align: EdgeAlign,
+  distance: number,
+): void => {
+  if (align === 'center') {
+    // Центр сдвигается на (marginStart - marginEnd) / 2.
+    if (distance > 0) {
+      margins[start] += 2 * distance;
+    } else {
+      margins[end] += -2 * distance;
+    }
+    return;
+  }
+
+  if (align === 'start') {
+    margins[start] = Math.max(0, margins[start] + distance);
+  } else {
+    margins[end] = Math.max(0, margins[end] - distance);
+  }
+};
+
 /**
  * Вдоль края - align; для start/end добавляется отступ от угла
  * border + screenRadius. Поперёк - прижатие к кромке рамки.
@@ -43,8 +79,9 @@ export const popLayout = (
   style: LayoutStyle,
   depth: number,
   hover: boolean,
+  offset = 0,
 ): PopLayout => {
-  const offset = style.border + style.screenRadius;
+  const corner = style.border + style.screenRadius;
   const horizontal = edge === 'top' || edge === 'bottom';
 
   const margins = {
@@ -76,17 +113,25 @@ export const popLayout = (
 
   if (horizontal) {
     if (align === 'start') {
-      margins.marginStart = offset;
+      margins.marginStart = corner;
     }
     if (align === 'end') {
-      margins.marginEnd = offset;
+      margins.marginEnd = corner;
     }
   } else {
     if (align === 'start') {
-      margins.marginTop = offset;
+      margins.marginTop = corner;
     }
     if (align === 'end') {
-      margins.marginBottom = offset;
+      margins.marginBottom = corner;
+    }
+  }
+
+  if (offset !== 0) {
+    if (horizontal) {
+      shiftAlong(margins, 'marginStart', 'marginEnd', align, offset);
+    } else {
+      shiftAlong(margins, 'marginTop', 'marginBottom', align, offset);
     }
   }
 

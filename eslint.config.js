@@ -13,7 +13,6 @@ export default tseslint.config(
       'build/**',
       '.direnv/**',
       '.superpowers/**',
-      'tests/visual/out/**',
     ],
   },
   eslint.configs.recommended,

@@ -133,10 +133,8 @@ export class Shell {
   }
 
   private focusedFrame(): Frame | undefined {
+    const frames = [...this.frames.values()];
     const name = AstalHyprland.get_default().focusedMonitor?.name;
-    return (
-      [...this.frames.values()].find((frame) => frame.connector === name) ??
-      [...this.frames.values()][0]
-    );
+    return frames.find((frame) => frame.connector === name) ?? frames[0];
   }
 }

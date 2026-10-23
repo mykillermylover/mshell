@@ -2,25 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  type Body,
   contactBetween,
   contactsWithFrame,
   type FrameSpec,
 } from '@lib/liquid/geometry';
 
-const body = (
-  x: number,
-  y: number,
-  w = 100,
-  h = 100,
-  cornerRadius = 12,
-): Body => ({
-  x,
-  y,
-  w,
-  h,
-  cornerRadius,
-});
+import { makeBody } from './support/body';
+
+const body = makeBody(100);
 const near = (a: number, b: number, eps = 1e-6) => Math.abs(a - b) < eps;
 const at = (t: number) => contactBetween(body(100, 100), body(240, 240 - t));
 

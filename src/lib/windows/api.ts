@@ -5,7 +5,7 @@ import { createContext, createRoot } from 'ags';
 import type { Gdk } from 'ags/gtk4';
 import { Gtk } from 'ags/gtk4';
 
-import type { Edge, EdgeAlign } from './popLayout';
+import type { EdgeAlign, HorizontalEdge, VerticalEdge } from './popLayout';
 
 /** Контент окна - то, что возвращает JSX-компонент. */
 export type Content = () => JSX.Element;
@@ -17,14 +17,26 @@ export interface HoverSpec {
   hideOnReveal?: boolean; // скрыть зону, пока попап раскрыт
 }
 
-/** Окно, выезжающее из края рамки (открывается/закрывается). */
-export interface PopSpec {
+interface PopBase {
   id: string;
-  edge: Edge;
   align?: EdgeAlign; // положение вдоль края
   content: Content; // вызывается по разу на монитор; фон НЕ задавать
   hover?: true | HoverSpec; // true - дефолтные значения; нет - без hover
 }
+
+type VerticalPopSpec = PopBase & { edge: VerticalEdge; offsetY?: number };
+type HorizontalPopSpec = PopBase & { edge: HorizontalEdge; offsetX?: number };
+
+export function isVerticalEdge(spec: PopSpec): spec is VerticalPopSpec {
+  return spec.edge === 'left' || spec.edge === 'right';
+}
+
+/**
+ * Окно, выезжающее из края рамки (открывается/закрывается).
+ * Сдвиг вдоль края типизирован по стороне: у верх/низ - offsetX,
+ * у лево/право - offsetY. Положительное значение - вправо/вниз.
+ */
+export type PopSpec = HorizontalPopSpec | VerticalPopSpec;
 
 /** Плавающее окно: таскается за заголовок, у рамки примагничивается и сливается с ней. */
 export interface FloatSpec {

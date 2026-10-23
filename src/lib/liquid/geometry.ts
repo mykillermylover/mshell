@@ -49,7 +49,7 @@ export const clampRadius = (body: Body) =>
  * (сумма Минковского). Поэтому все расстояния считаем между сердцевинами
  * и вычитаем R1 + R2.
  */
-export const coreOf = (body: Body): Box => {
+const coreOf = (body: Body): Box => {
   const r = clampRadius(body);
   return { x: body.x + r, y: body.y + r, w: body.w - 2 * r, h: body.h - 2 * r };
 };

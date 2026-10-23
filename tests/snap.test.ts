@@ -2,23 +2,18 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  type Body,
   contactBetween,
   contactsWithFrame,
   type FrameSpec,
 } from '@lib/liquid/geometry';
 import { type SnapEnv, snapTo } from '@lib/snap';
 
+import { makeBody } from './support/body';
+
 const frame: FrameSpec = { w: 1000, h: 600, border: 4, screenRadius: 10 };
 const env: SnapEnv = { frame, reach: 44 };
 
-const body = (
-  x: number,
-  y: number,
-  w = 180,
-  h = 100,
-  cornerRadius = 12,
-): Body => ({ x, y, w, h, cornerRadius });
+const body = makeBody(180);
 
 const near = (a: number, b: number, eps = 0.05) => Math.abs(a - b) <= eps;
 

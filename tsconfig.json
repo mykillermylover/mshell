@@ -2,12 +2,10 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     "experimentalDecorators": false,
-    "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "allowUnreachableCode": false,
     "alwaysStrict": true,
     "baseUrl": "./src",
-    "checkJs": false,
     "incremental": true,
     "jsx": "react-jsx",
     "jsxImportSource": "ags/gtk4",
@@ -35,7 +33,6 @@
       ]
     },
     "pretty": true,
-    "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
     "strictNullChecks": true,

@@ -7,6 +7,7 @@ import {
   asWidget,
   createWindowContent,
   type HoverSpec,
+  isVerticalEdge,
   type PopSpec,
   type WindowHost,
 } from './api';
@@ -77,9 +78,8 @@ export class Pop extends Window {
 
   /** Прогреть preferred size после map: первый hover не платит за раскладку. */
   prewarm() {
+    // measure виджета рекурсивно измеряет детей (Revealer, контент).
     this.widget.get_preferred_size();
-    this.revealer.get_preferred_size();
-    this.contentWidget.get_preferred_size();
   }
 
   dispose() {
@@ -183,12 +183,17 @@ export class Pop extends Window {
 
   /** Раскладка по текущему конфигу. */
   private layout(style = this.style()) {
+    const offset = isVerticalEdge(this.spec)
+      ? (this.spec.offsetY ?? 0)
+      : (this.spec.offsetX ?? 0);
+
     return popLayout(
       this.spec.edge,
       this.spec.align ?? 'center',
       { border: style.border, screenRadius: style.screenRadius },
       this.depth(style),
       Boolean(this.hover),
+      offset,
     );
   }
 

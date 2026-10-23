@@ -2,7 +2,7 @@ import type { Accessor } from 'ags';
 import { createState } from 'ags';
 import type { Gdk, Gtk } from 'ags/gtk4';
 
-export function monitorOf(widget: Gtk.Widget): Gdk.Monitor | null {
+function monitorOf(widget: Gtk.Widget): Gdk.Monitor | null {
   const surface = widget.get_native()?.get_surface();
 
   if (!surface) {

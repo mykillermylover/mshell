@@ -171,6 +171,51 @@ test('popLayout: hover, align start/end не трогает frame-side margin', 
   assert.equal(top.anchor.marginTop, 0);
 });
 
+test('popLayout: offset сдвигает вдоль края, знак — вправо/вниз', () => {
+  const topRight = popLayout('top', 'center', style, 6, false, 40);
+  assert.equal(topRight.anchor.marginStart, 80);
+  assert.equal(topRight.anchor.marginEnd, 0);
+
+  const topLeft = popLayout('top', 'center', style, 6, false, -40);
+  assert.equal(topLeft.anchor.marginStart, 0);
+  assert.equal(topLeft.anchor.marginEnd, 80);
+
+  const leftDown = popLayout('left', 'center', style, 6, false, 30);
+  assert.equal(leftDown.anchor.marginTop, 60);
+  assert.equal(leftDown.anchor.marginBottom, 0);
+
+  const leftUp = popLayout('left', 'center', style, 6, false, -30);
+  assert.equal(leftUp.anchor.marginTop, 0);
+  assert.equal(leftUp.anchor.marginBottom, 60);
+});
+
+test('popLayout: offset у start/end сдвигает внутрь и упирается в кромку', () => {
+  assert.equal(
+    popLayout('top', 'start', style, 6, false, 40).anchor.marginStart,
+    54,
+  );
+  assert.equal(
+    popLayout('top', 'start', style, 6, false, -40).anchor.marginStart,
+    0,
+  );
+  assert.equal(
+    popLayout('top', 'end', style, 6, false, -40).anchor.marginEnd,
+    54,
+  );
+  assert.equal(
+    popLayout('top', 'end', style, 6, false, 40).anchor.marginEnd,
+    0,
+  );
+  assert.equal(
+    popLayout('left', 'start', style, 6, false, 40).anchor.marginTop,
+    54,
+  );
+  assert.equal(
+    popLayout('right', 'end', style, 6, false, -40).anchor.marginBottom,
+    54,
+  );
+});
+
 test('hoverInput: губа плюс полоса рамки до края экрана', () => {
   const body = { x: 100, y: 100, w: 50, h: 9 };
 

@@ -17,7 +17,6 @@
     "engines": {
         "node": ">=22"
     },
-    "main": "app.tsx",
     "name": "mshell-dev",
     "scripts": {
         "types": "ags types -d .",
