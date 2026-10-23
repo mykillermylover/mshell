@@ -86,6 +86,13 @@ export class Pop extends Window {
     return this.slot.animating;
   }
 
+  /** Прогреть preferred size после map: первый hover не платит за раскладку. */
+  prewarm() {
+    this.widget.get_preferred_size();
+    this.revealer.get_preferred_size();
+    this.contentWidget.get_preferred_size();
+  }
+
   dispose() {
     this.slot.cleanup();
     this.disposeHover();

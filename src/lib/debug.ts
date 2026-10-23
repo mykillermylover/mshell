@@ -129,6 +129,19 @@ export function handleDebug(frame: Frame, args: string[]): string | undefined {
       frame.debug.snap(float);
       return 'ok';
     }
+    case 'hover': {
+      const pop = id ? frame.debug.pop(id) : undefined;
+      if (!pop) {
+        return 'bad hover';
+      }
+
+      if (args[2] === 'off') {
+        pop.leave();
+      } else {
+        pop.enter();
+      }
+      return 'ok';
+    }
     case 'pin': {
       const pop = id ? frame.debug.pop(id) : undefined;
       if (!pop) {

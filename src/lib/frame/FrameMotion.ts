@@ -35,7 +35,7 @@ export class FrameMotion {
   private tweens = new Map<Float, Tween>();
   private ticking = false;
   private pokes = 0;
-  /** Обработано тиков — для замеров нагрузки (CPU / кадр). */
+  /** Обработано тиков — для debug-команды frames. */
   frames = 0;
 
   constructor(private readonly deps: MotionDeps) {

@@ -1,6 +1,7 @@
 import type { Gdk } from 'ags/gtk4';
 import { Astal, Gtk } from 'ags/gtk4';
 import app from 'ags/gtk4/app';
+import GLib from 'gi://GLib';
 
 import { type Reactive, snapshot } from '../config';
 import { LiquidField, type Rect } from '../liquid/LiquidField';
@@ -165,6 +166,16 @@ export class Frame {
       this.input.reset();
       // Пустой регион сразу: до первого снапшота слой не должен ловить клики.
       this.input.sync([]);
+
+      GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+        for (const body of this.windows.values()) {
+          if (body instanceof Pop) {
+            body.prewarm();
+          }
+        }
+        return GLib.SOURCE_REMOVE;
+      });
+
       this.motion.poke();
     });
     this.surface.present();
