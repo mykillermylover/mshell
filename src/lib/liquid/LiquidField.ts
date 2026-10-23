@@ -4,11 +4,13 @@ import Graphene from 'gi://Graphene';
 import Gsk from 'gi://Gsk';
 import { register } from 'gnim/gobject';
 
+import { type Bridge, bridges, bridgeShape, bridgeSpecFor } from './bridges';
 import { type Body, clampRadius, type Rect } from './geometry';
 
-// GtkSnapshot.push_blur принимает «радиус» ≈ 3.2σ. Это калибровка GTK,
-// не пользовательская настройка: σ задаётся blurRadius.
-const GTK_BLUR_RADIUS_PER_SIGMA = 3.2;
+// GtkSnapshot.push_blur принимает радиус, а GTK считает внутри σ = radius / 2
+// (gsk/gpu/shaders/gskgpublur.glsl). Значит, чтобы получить заданную σ,
+// радиус должен быть 2σ. Это калибровка GTK, не пользовательская настройка.
+const GTK_BLUR_RADIUS_PER_SIGMA = 2;
 // Точка порога: 0.5 - ровно середина альфы, кромка тела остаётся на месте.
 const ALPHA_MIDPOINT = 0.5;
 // Рамка уходит за экран на 5σ + 16 px, чтобы blur не съел её видимый край.
@@ -46,9 +48,8 @@ export class LiquidField extends Gtk.Widget {
     if (width <= 0 || height <= 0) {
       return;
     }
-    const { border, screenRadius, windowRadius, blurRadius, sharp } = snapshot(
-      this.cfg,
-    );
+    const { border, screenRadius, windowRadius, blurRadius, snapReach, sharp } =
+      snapshot(this.cfg);
     const sigma = Math.max(MIN_SIGMA, blurRadius * SIGMA_PER_MELT);
 
     const cssColor = this.get_color(); // CSS: .frame-shape { color: ... }
@@ -64,6 +65,16 @@ export class LiquidField extends Gtk.Widget {
     });
 
     const margin = Math.ceil(sigma * BLUR_MARGIN_SIGMAS) + FRAME_MARGIN_PX;
+
+    // Мостики — та же дальность, что у магнита: жидкость появляется там,
+    // где окно притянется, и тянется тонкой шейкой, а не широкой сваркой blur.
+    const liquidBridges = bridges(
+      bodies,
+      bridgeSpecFor(
+        { w: width, h: height, border, screenRadius },
+        { sigma, reach: snapReach },
+      ),
+    );
 
     // Видимая рамка: кольцо точного радиуса (её и рисуем поверх жидкости).
     const drawFrame = () => {
@@ -98,12 +109,46 @@ export class LiquidField extends Gtk.Widget {
     };
 
     /**
+     * Осевой мостик — скруглённая плашка без поворота (быстрый rounded-color op);
+     * диагональный — штрих с круглыми торцами, один узел без transform/clip.
+     * Никаких повёрнутых rounded clip: в Gsk они могут стоить лишний offscreen.
+     */
+    const drawBridges = (list: Bridge[]) => {
+      for (const bridge of list) {
+        const shape = bridgeShape(bridge);
+        if (!shape) {
+          continue;
+        }
+        if (shape.kind === 'rect') {
+          const rect = new Graphene.Rect().init(
+            shape.x,
+            shape.y,
+            shape.w,
+            shape.h,
+          );
+          snap.push_rounded_clip(
+            new Gsk.RoundedRect().init_from_rect(rect, shape.radius),
+          );
+          snap.append_color(solid, rect);
+          snap.pop();
+          continue;
+        }
+        const path = new Gsk.PathBuilder();
+        path.move_to(shape.x1, shape.y1);
+        path.line_to(shape.x2, shape.y2);
+        const stroke = new Gsk.Stroke(shape.width);
+        stroke.set_line_cap(Gsk.LineCap.ROUND);
+        snap.append_stroke(path.to_path(), stroke, solid);
+      }
+    };
+
+    /**
      * Один слой жидкости: тела размываются на sigmaLocal и проходят порог по
      * альфе α' = sharp·σ·(α − 0.5) + 0.5. Порог стоит ПОСЛЕ размытия, поэтому
      * у прямой кромки уровень α=0.5 остаётся ровно на кромке тела при любом σ:
      * окна не раздуваются, размытие только смягчает края.
      */
-    const drawGoo = (sigmaLocal: number) => {
+    const drawLiquid = (sigmaLocal: number) => {
       const alphaGain = sharp * sigmaLocal;
       const matrix = new Graphene.Matrix().init_from_float([
         1,
@@ -134,6 +179,7 @@ export class LiquidField extends Gtk.Widget {
       // Рамка - тем же кольцом, что и в чётком слое: жидкость идёт по дугам.
       drawFrame();
       drawWindows();
+      drawBridges(liquidBridges);
       snap.pop();
       snap.pop();
     };
@@ -141,7 +187,7 @@ export class LiquidField extends Gtk.Widget {
     snap.push_opacity(cssColor.alpha);
 
     // 1. жидкость: размытие + порог
-    drawGoo(sigma);
+    drawLiquid(sigma);
 
     // 2. чёткие тела (точные радиусы) - всегда поверх жидкости
     drawFrame();
