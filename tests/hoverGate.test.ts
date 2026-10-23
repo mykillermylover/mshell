@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { HoverGate } from '@lib/windows/hoverGate';
+import { HoverGate } from '@lib/windows/HoverGate';
 
 interface Timer {
   ms: number;

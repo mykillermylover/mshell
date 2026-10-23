@@ -1,22 +1,17 @@
+import { type FieldStyle, type Reactive, snapshot } from '@lib/config';
+import type { Rect } from '@lib/liquid/geometry';
+import { LiquidField } from '@lib/liquid/LiquidField';
+import type { FloatSpec, PopSpec, WindowHost } from '@lib/windows/api';
+import { Float } from '@lib/windows/Float';
+import { Pop } from '@lib/windows/Pop';
+import type { Window } from '@lib/windows/window';
 import type { Gdk } from 'ags/gtk4';
 import { Astal, Gtk } from 'ags/gtk4';
 import app from 'ags/gtk4/app';
 import GLib from 'gi://GLib';
 
-import { type Reactive, snapshot } from '../config';
-import { LiquidField, type Rect } from '../liquid/LiquidField';
-import type { FieldStyle } from '../style';
-import type { WindowHost } from '../windows/api';
-import { Float, type FloatSpec } from '../windows/Float';
-import { Pop, type PopSpec } from '../windows/Pop';
-import type { Window } from '../windows/window';
 import { FrameInput } from './FrameInput';
 import { FrameMotion } from './FrameMotion';
-
-export type { FloatSpec } from '../windows/Float';
-export type { PopSpec } from '../windows/Pop';
-
-export type FrameStyle = FieldStyle;
 
 /**
  * Хост поля на один монитор:
@@ -82,7 +77,7 @@ export class Frame {
     readonly monitor: Gdk.Monitor,
     pops: PopSpec[],
     floats: FloatSpec[],
-    private style: Reactive<FrameStyle>,
+    private style: Reactive<FieldStyle>,
   ) {
     this.connector = monitor.get_connector();
     this.host = {

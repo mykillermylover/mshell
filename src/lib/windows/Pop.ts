@@ -1,29 +1,18 @@
+import type { FieldStyle } from '@lib/config';
+import type { Rect } from '@lib/liquid/geometry';
+import { noop } from '@lib/utils';
 import type { Gtk } from 'ags/gtk4';
 
-import type { Rect } from '../liquid/LiquidField';
-import type { FieldStyle } from '../style';
-import { createWindowContent, type WindowHost } from './api';
-import { type Edge, type EdgeAlign, hoverInput, popLayout } from './popLayout';
+import {
+  asWidget,
+  createWindowContent,
+  type HoverSpec,
+  type PopSpec,
+  type WindowHost,
+} from './api';
+import { hoverInput, popLayout } from './popLayout';
 import { buildPopRevealer, buildPopSlot, type PopSlot } from './popSlot';
-import { asWidget, type Content } from './ui';
 import { Window, type WindowMeasure } from './window';
-
-const noop = () => {};
-
-export interface HoverSpec {
-  depth?: number; // толщина губы/input, px (>= 1); по умолчанию style.hoverDepth
-  content?: Content; // компонент внутри зоны
-  hideOnReveal?: boolean; // скрыть зону, пока попап раскрыт
-}
-
-/** Окно, выезжающее из края рамки (открывается/закрывается). */
-export interface PopSpec {
-  id: string;
-  edge: Edge;
-  align?: EdgeAlign; // положение вдоль края
-  content: Content; // вызывается по разу на монитор; фон НЕ задавать
-  hover?: true | HoverSpec; // true — дефолтные значения; нет — без hover
-}
 
 /**
  * Слот рамки: геометрия тела и правила hover. GTK-виджеты и подписки —

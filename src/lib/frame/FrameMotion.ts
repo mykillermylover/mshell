@@ -1,14 +1,13 @@
+import { type FieldStyle, type Reactive, snapshot } from '@lib/config';
+import type { Rect } from '@lib/liquid/geometry';
+import { snapTo } from '@lib/snap';
+import { Float } from '@lib/windows/Float';
+import type { Window } from '@lib/windows/window';
 import type { Gdk } from 'ags/gtk4';
 import { Gtk } from 'ags/gtk4';
 import GLib from 'gi://GLib';
 
-import { type Reactive, snapshot } from '../config';
-import { easeOutBack } from '../easing';
-import type { Rect } from '../liquid/LiquidField';
-import { snapTo } from '../snap';
-import type { FieldStyle } from '../style';
-import { Float } from '../windows/Float';
-import type { Window } from '../windows/window';
+import { easeOutBack } from './easing';
 
 interface Tween {
   fromX: number;

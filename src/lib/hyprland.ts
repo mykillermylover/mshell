@@ -1,4 +1,4 @@
-import { mixin } from '@lib/mixin';
+import { mixin } from '@lib/utils';
 import AstalHyprland from 'gi://AstalHyprland';
 
 const hyprlandDefault = AstalHyprland.get_default();

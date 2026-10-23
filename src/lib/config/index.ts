@@ -1,8 +1,5 @@
+import { isEqual, isObject, isSamePrimitive, mixin } from '@lib/utils';
 import { Accessor } from 'ags';
-
-import { mixin } from '../mixin';
-import type { FieldStyle } from '../style';
-import { isEqual, isObject, isSamePrimitive } from './guards';
 
 /** Лист конфига: значение, которое кладётся в JSON и сравнивается по данным. */
 export type Leaf = string | number | boolean;
@@ -46,8 +43,11 @@ export const DEFAULTS = {
     // 0 — мгновенно, как без задержек.
     hoverDelay: 120,
     hideDelay: 300,
-  } satisfies FieldStyle,
+  },
 } satisfies Record<string, Section>;
+
+/** Пользовательский стиль, общий для поля, окон и конфига. */
+export type FieldStyle = typeof DEFAULTS.style;
 
 /** Лимиты листа: [min, max] для числа либо вложенный объект для секции. */
 export type Limits = {

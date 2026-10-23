@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { easeOutBack } from '@lib/easing';
+import { easeOutBack } from '@lib/frame/easing';
 
 test('easeOutBack: фиксирует концы и даёт перелёт', () => {
   assert.equal(easeOutBack(0), 0);

@@ -6,7 +6,7 @@ import {
   contactBetween,
   contactsWithFrame,
   type FrameSpec,
-} from '../src/lib/liquid/geometry';
+} from '@lib/liquid/geometry';
 
 const body = (
   x: number,

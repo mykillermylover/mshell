@@ -1,12 +1,17 @@
+import type { Rect } from '@lib/liquid/geometry';
 import type { Accessor, Setter } from 'ags';
 import { createState } from 'ags';
 import type { Gtk } from 'ags/gtk4';
 import GLib from 'gi://GLib';
 
-import type { Rect } from '../liquid/LiquidField';
-import { createWindowContent, type WindowApi, type WindowHost } from './api';
-import { HoverGate } from './hoverGate';
-import { type Content, padded } from './ui';
+import {
+  type Content,
+  createWindowContent,
+  padded,
+  type WindowApi,
+  type WindowHost,
+} from './api';
+import { HoverGate } from './HoverGate';
 
 interface WindowOptions {
   id: string;

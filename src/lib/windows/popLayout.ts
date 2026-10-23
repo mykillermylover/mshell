@@ -1,7 +1,7 @@
 // Чистая раскладка попапа: прижатие Box к кромке рамки, align вдоль края,
 // порядок детей (spacer у рамки, Revealer, зона на дальней кромке) и толщина.
 // Без GJS — тестируется в node.
-import type { Box } from '../liquid/geometry';
+import type { Box } from '@lib/liquid/geometry';
 
 export type Edge = 'top' | 'bottom' | 'left' | 'right';
 export type EdgeAlign = 'start' | 'center' | 'end';

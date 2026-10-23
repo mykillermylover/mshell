@@ -1,8 +1,40 @@
+import type { Rect } from '@lib/liquid/geometry';
+import { noop } from '@lib/utils';
 import type { Accessor } from 'ags';
 import { createContext, createRoot } from 'ags';
 import type { Gdk } from 'ags/gtk4';
+import { Gtk } from 'ags/gtk4';
 
-import type { FloatSpec } from './Float';
+import type { Edge, EdgeAlign } from './popLayout';
+
+/** Контент окна — то, что возвращает JSX-компонент. */
+export type Content = () => JSX.Element;
+
+/** Настройки hover-зоны попапа. */
+export interface HoverSpec {
+  depth?: number; // толщина губы/input, px (>= 1); по умолчанию style.hoverDepth
+  content?: Content; // компонент внутри зоны
+  hideOnReveal?: boolean; // скрыть зону, пока попап раскрыт
+}
+
+/** Окно, выезжающее из края рамки (открывается/закрывается). */
+export interface PopSpec {
+  id: string;
+  edge: Edge;
+  align?: EdgeAlign; // положение вдоль края
+  content: Content; // вызывается по разу на монитор; фон НЕ задавать
+  hover?: true | HoverSpec; // true — дефолтные значения; нет — без hover
+}
+
+/** Плавающее окно: таскается за заголовок, у рамки примагничивается и сливается с ней. */
+export interface FloatSpec {
+  id: string;
+  title?: string;
+  x: number;
+  y: number;
+  content: Content;
+  open?: boolean;
+}
 
 /**
  * Возможности конкретного окна, доступные его контенту. Это handle окна и
@@ -49,8 +81,6 @@ export function useWindowApi(): WindowApi {
   return api;
 }
 
-const noop = () => {};
-
 /**
  * Построить контент окна в отдельном scope с его api. Используется и для
  * основного контента, и для hover-зоны: оба должны жить и умирать с окном.
@@ -66,3 +96,31 @@ export function createWindowContent<T>(
   });
   return { content, dispose };
 }
+
+/** gnim типизирует результат JSX как GObject.Object; на деле это Gtk.Widget. */
+export const asWidget = (child: JSX.Element): Gtk.Widget => child as Gtk.Widget;
+
+/** Обёртка контента окна: отступы и прозрачный фон (фон рисует LiquidField). */
+export const padded = (child: JSX.Element) => {
+  const body = new Gtk.Box();
+  body.add_css_class('frame-body');
+  body.append(asWidget(child));
+  return body;
+};
+
+/** Границы тела окна; null, если оно ещё не разложено. */
+export const boundsOf = (
+  widget: Gtk.Widget,
+  relativeTo: Gtk.Widget,
+): Rect | null => {
+  const [ok, bounds] = widget.compute_bounds(relativeTo);
+  if (!ok || bounds.get_width() < 1 || bounds.get_height() < 1) {
+    return null;
+  }
+  return {
+    x: bounds.get_x(),
+    y: bounds.get_y(),
+    w: bounds.get_width(),
+    h: bounds.get_height(),
+  };
+};

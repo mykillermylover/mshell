@@ -1,14 +1,10 @@
+import { type FieldStyle, type Reactive, snapshot } from '@lib/config';
 import { Gdk, Gtk } from 'ags/gtk4'; // первым: фиксирует Gtk 4 до загрузки Gsk
 import Graphene from 'gi://Graphene';
 import Gsk from 'gi://Gsk';
 import { register } from 'gnim/gobject';
 
-import { type Reactive, snapshot } from '../config';
-import type { FieldStyle } from '../style';
-import { type Body, type Box, clampRadius } from './geometry';
-
-/** Прямоугольник в координатах поля: синоним Box из геометрии. */
-export type Rect = Box;
+import { type Body, clampRadius, type Rect } from './geometry';
 
 // GtkSnapshot.push_blur принимает «радиус» ≈ 3.2σ. Это калибровка GTK,
 // не пользовательская настройка: σ задаётся blurRadius.

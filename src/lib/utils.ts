@@ -1,22 +1,56 @@
-import type { Accessor } from 'ags';
-import { createState } from 'ags';
-import type { Gdk, Gtk } from 'ags/gtk4';
+// Общие утилиты без GJS: их импортируют и приложение, и node-тесты.
 
-export function monitorOf(widget: Gtk.Widget): Gdk.Monitor | null {
-  const surface = widget.get_native()?.get_surface();
+/** Пустая функция: значение по умолчанию для отписки/колбэка. */
+export const noop = () => {};
 
-  if (!surface) {
-    return null;
-  }
+/**
+ * Типизированный Object.assign: расширить объект/функцию методами,
+ * сохранив исходный тип. Без Proxy и без потери методов аксессора.
+ */
+export const mixin = <T extends object, M extends object>(
+  target: T,
+  methods: M,
+): T & M => Object.assign(target, methods);
 
-  return surface.get_display().get_monitor_at_surface(surface) ?? null;
+/** Обычный объект: не null и не массив. */
+export function isObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-export function useMonitor(): [
-  Accessor<Gdk.Monitor | null>,
-  (self: Gtk.Widget) => void,
-] {
-  const [monitor, setMonitor] = createState<Gdk.Monitor | null>(null);
+/**
+ * Совпадение по данным, а не по ссылке: примитивы — Object.is, объекты —
+ * рекурсивно по ключам. Нужно как раз для сравнения «того же» конфига,
+ * пришедшего новым объектом.
+ */
+export function isEqual(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) {
+    return true;
+  }
 
-  return [monitor, (self) => setMonitor(monitorOf(self))];
+  if (!isObject(a) || !isObject(b)) {
+    return false;
+  }
+
+  const keys = Object.keys(a);
+
+  if (keys.length !== Object.keys(b).length) {
+    return false;
+  }
+
+  return keys.every((key) => key in b && isEqual(a[key], b[key]));
+}
+
+/**
+ * Значение того же примитивного типа, что и образец. Числа — только конечные:
+ * NaN/Infinity из JSON не должны попадать в настройки.
+ */
+export function isSamePrimitive(
+  value: unknown,
+  sample: unknown,
+): value is string | number | boolean {
+  if (typeof value !== typeof sample) {
+    return false;
+  }
+
+  return typeof value !== 'number' || Number.isFinite(value);
 }

@@ -8,6 +8,9 @@ export interface Box {
   h: number;
 }
 
+/** Прямоугольник в координатах поля. */
+export type Rect = Box;
+
 export interface Body extends Box {
   /** Радиус скругления углов тела (для окон — `windowRadius`). */
   cornerRadius: number;

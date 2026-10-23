@@ -1,8 +1,8 @@
+import type { Rect } from '@lib/liquid/geometry';
 import { Gtk } from 'ags/gtk4';
 
-import type { Rect } from '../liquid/LiquidField';
+import { boundsOf } from './api';
 import type { Edge, PopLayout } from './popLayout';
-import { boundsOf } from './ui';
 
 // Попап уезжает от своего края, зона — к краю. Одно знание на оба Revealer.
 const SLIDE = {

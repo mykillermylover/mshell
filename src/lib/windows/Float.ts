@@ -1,19 +1,8 @@
+import type { FieldStyle } from '@lib/config';
 import { Gtk } from 'ags/gtk4';
 
-import type { FieldStyle } from '../style';
-import type { WindowHost } from './api';
-import { boundsOf, type Content } from './ui';
+import { boundsOf, type FloatSpec, type WindowHost } from './api';
 import { Window, type WindowMeasure } from './window';
-
-/** Плавающее окно: таскается за заголовок, у рамки примагничивается и сливается с ней. */
-export interface FloatSpec {
-  id: string;
-  title?: string;
-  x: number;
-  y: number;
-  content: Content;
-  open?: boolean;
-}
 
 /** Плавающее окно: шапка-«ручка» с крестиком и тело с контентом. */
 export class Float extends Window {

@@ -1,5 +1,5 @@
 import { Hyprland } from '@lib/hyprland';
-import { useMonitor } from '@lib/utils';
+import { useMonitor } from '@widgets/monitor';
 import { createBinding, createComputed, For } from 'ags';
 import { Gtk } from 'ags/gtk4';
 import type AstalHyprland from 'gi://AstalHyprland';

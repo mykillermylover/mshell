@@ -1,6 +1,5 @@
+import type { FloatSpec, PopSpec } from '@lib/windows/api';
 import { useWindowApi } from '@lib/windows/api';
-import type { FloatSpec } from '@lib/windows/Float';
-import type { PopSpec } from '@lib/windows/Pop';
 import Settings from '@widgets/Settings';
 import Test from '@widgets/Test';
 import { Gtk } from 'ags/gtk4';

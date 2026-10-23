@@ -1,8 +1,7 @@
+import type { Rect } from '@lib/liquid/geometry';
 import type { Astal } from 'ags/gtk4';
 import type giCairo from 'cairo';
 import Cairo from 'gi://cairo';
-
-import type { Rect } from '../liquid/LiquidField';
 
 /**
  * Кликабельны тела окон и закрытые hover-зоны; остальная рамка и «жидкость»
