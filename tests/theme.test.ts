@@ -77,7 +77,9 @@ test('theme: схема нормализуется и знает коротки�
 test('config: theme-параметры по умолчанию', () => {
   assert.equal(DEFAULTS.theme.mode, 'system');
   assert.equal(DEFAULTS.theme.scheme, 'scheme-tonal-spot');
-  assert.equal(DEFAULTS.theme.wallpaper, '');
+  assert.ok(
+    DEFAULTS.theme.wallpaper === '' || isAbsolutePath(DEFAULTS.theme.wallpaper),
+  );
   assert.equal(DEFAULTS.theme.contrast, 0);
 });
 

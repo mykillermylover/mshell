@@ -5,6 +5,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import { requestPalette } from './generate';
+import { PALETTE_DIR, PALETTE_FILE } from './paths';
 import {
   isPaletteCss,
   normalizeThemePreference,
@@ -12,8 +13,6 @@ import {
   ThemePreference,
 } from './policy';
 
-const PALETTE_DIR = GLib.build_filenamev([GLib.get_user_cache_dir(), 'mshell']);
-const PALETTE_FILE = GLib.build_filenamev([PALETTE_DIR, 'palette.css']);
 const RELOAD_DELAY_MS = 150;
 
 // FileMonitor должен жить, пока живёт приложение.

@@ -86,9 +86,11 @@
           installPhase = ''
             runHook preInstall
 
+            # В share - только шаблон палитры для matugen.
             mkdir -p $out/bin
-            mkdir -p $out/share
-            cp -r * $out/share
+            install -Dm644 matugen/templates/mshell.css.tera \
+              $out/share/matugen/templates/mshell.css.tera
+
             ags bundle ${entry} $out/bin/${pname} -d "SRC='$out/share'"
 
             runHook postInstall
@@ -97,7 +99,7 @@
           preFixup = ''
             gappsWrapperArgs+=(
               --prefix GIO_EXTRA_MODULES : "${pkgs.glib-networking}/lib/gio/modules"
-              # scripts/palette.sh запускает matugen из PATH.
+              # matugen need to be in PATH
               --prefix PATH : "${pkgs.lib.makeBinPath [ pkgs.matugen ]}"
             )
           '';
