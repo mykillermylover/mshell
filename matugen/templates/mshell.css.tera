@@ -1,0 +1,13 @@
+:root {
+<* for name, value in colors *>
+  --{{ name }}: {{ value.light.hex }};
+<* endfor *>
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+<* for name, value in colors *>
+    --{{ name }}: {{ value.dark.hex }};
+<* endfor *>
+  }
+}

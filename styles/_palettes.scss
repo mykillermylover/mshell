@@ -1,0 +1,98 @@
+@use 'sass:color';
+
+// Fallback: Everforest. Полный набор ролей Material 3, чтобы переменные
+// существовали и без matugen; сгенерированная палитра перекрывает их
+// в рантайме.
+@function material(
+  $surface,
+  $on-surface,
+  $primary,
+  $secondary,
+  $tertiary,
+  $error,
+  $dark
+) {
+  $lowest: color.mix(#ffffff, $surface, 55%);
+  $bright: color.mix(#ffffff, $surface, 35%);
+
+  @if $dark {
+    $lowest: color.mix(#000000, $surface, 8%);
+    $bright: color.mix(#ffffff, $surface, 8%);
+  }
+
+  @return (
+    background: $surface,
+    on_background: $on-surface,
+    surface: $surface,
+    on_surface: $on-surface,
+    surface_dim: $surface,
+    surface_bright: $bright,
+    surface_container_lowest: $lowest,
+    surface_container_low: color.mix($on-surface, $surface, 4%),
+    surface_container: color.mix($on-surface, $surface, 8%),
+    surface_container_high: color.mix($on-surface, $surface, 12%),
+    surface_container_highest: color.mix($on-surface, $surface, 16%),
+    surface_variant: color.mix($on-surface, $surface, 12%),
+    on_surface_variant: color.mix($on-surface, $surface, 80%),
+    inverse_surface: $on-surface,
+    inverse_on_surface: $surface,
+    outline: color.mix($on-surface, $surface, 45%),
+    outline_variant: color.mix($on-surface, $surface, 24%),
+    primary: $primary,
+    on_primary: $surface,
+    primary_container: color.mix($primary, $surface, 30%),
+    on_primary_container: $on-surface,
+    primary_fixed: $primary,
+    primary_fixed_dim: $primary,
+    on_primary_fixed: $surface,
+    on_primary_fixed_variant: $on-surface,
+    inverse_primary: $primary,
+    secondary: $secondary,
+    on_secondary: $surface,
+    secondary_container: color.mix($secondary, $surface, 28%),
+    on_secondary_container: $on-surface,
+    secondary_fixed: $secondary,
+    secondary_fixed_dim: $secondary,
+    on_secondary_fixed: $surface,
+    on_secondary_fixed_variant: $on-surface,
+    tertiary: $tertiary,
+    on_tertiary: $surface,
+    tertiary_container: color.mix($tertiary, $surface, 28%),
+    on_tertiary_container: $on-surface,
+    tertiary_fixed: $tertiary,
+    tertiary_fixed_dim: $tertiary,
+    on_tertiary_fixed: $surface,
+    on_tertiary_fixed_variant: $on-surface,
+    error: $error,
+    on_error: $surface,
+    error_container: color.mix($error, $surface, 25%),
+    on_error_container: $on-surface,
+    surface_tint: $primary,
+    source_color: $primary,
+    scrim: #000000,
+    shadow: #000000,
+  );
+}
+
+$palettes: (
+  everforest: (
+    light: material(
+        #fdf6e3,
+        #4a6c60,
+        #8da101,
+        #3a94a5,
+        #df69ba,
+        #f85552,
+        false
+      ),
+    dark: material(
+        #3b576e,
+        #d3c6aa,
+        #a7c080,
+        #7fbbb3,
+        #d699b6,
+        #e67e80,
+        true
+      ),
+  ),
+);

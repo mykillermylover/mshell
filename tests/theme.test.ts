@@ -16,17 +16,17 @@ test('theme: неизвестный режим сводится к system', () =
   assert.equal(normalizeThemePreference(''), 'system');
 });
 
-test('palette: валидный CSS требует surface и fg', () => {
+test('palette: валидный CSS требует surface и on_surface', () => {
   const valid = `
-    :root { --mshell-surface: #111318; --mshell-fg: #e2e2e9; }
+    :root { --surface: #111318; --on_surface: #e2e2e9; }
     @media (prefers-color-scheme: dark) {
-      :root { --mshell-surface: #f9f9ff; --mshell-fg: #1a1c20; }
+      :root { --surface: #f9f9ff; --on_surface: #1a1c20; }
     }
   `;
 
   assert.equal(isPaletteCss(valid), true);
-  assert.equal(isPaletteCss(':root { --mshell-surface: #111318; }'), false);
-  assert.equal(isPaletteCss(':root { --mshell-fg: #e2e2e9; }'), false);
+  assert.equal(isPaletteCss(':root { --surface: #111318; }'), false);
+  assert.equal(isPaletteCss(':root { --on_surface: #e2e2e9; }'), false);
   assert.equal(isPaletteCss(''), false);
 });
 

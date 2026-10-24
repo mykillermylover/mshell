@@ -1,0 +1,14 @@
+// Плавающие окна: заголовок - «ручка», за неё таскаем.
+.float .frame-body {
+  padding-top: 6px;
+}
+
+.float-grip {
+  padding: 14px 24px 0 24px;
+  font-weight: 600;
+  color: var(--grip);
+
+  &:hover {
+    color: var(--fg);
+  }
+}

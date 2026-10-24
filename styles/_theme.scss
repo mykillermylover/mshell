@@ -1,0 +1,34 @@
+@use 'sass:map';
+
+@use 'palettes';
+
+@mixin vars($tokens) {
+  @each $name, $value in $tokens {
+    --#{$name}: #{$value};
+  }
+}
+
+:root {
+  @include vars(map.get(palettes.$palettes, everforest, light));
+
+  // Семантический слой: компоненты зависят только от этих имён.
+  --fg: var(--on_surface);
+  --fill: color-mix(in srgb, var(--surface) 96%, transparent);
+  --grip: color-mix(in srgb, var(--on_surface) 80%, transparent);
+  --hover: color-mix(
+    in srgb,
+    var(--on_surface) 12%,
+    transparent
+  );
+  --active: color-mix(
+    in srgb,
+    var(--on_surface) 20%,
+    transparent
+  );
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    @include vars(map.get(palettes.$palettes, everforest, dark));
+  }
+}

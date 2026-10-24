@@ -1,5 +1,6 @@
 import { config, hookExit } from '@lib/config/app';
 import { Shell } from '@lib/shell';
+import { initTheme } from '@lib/theme';
 import { createBinding } from 'ags';
 import app from 'ags/gtk4/app';
 
@@ -10,8 +11,10 @@ import style from './style.scss';
 const shell = new Shell(INITIAL_POPS, INITIAL_FLOATS);
 
 app.start({
-  css: style,
   main() {
+    // Свой провайдер: CSS из app.start не умеет prefers-color-scheme.
+    initTheme(style);
+
     // Хук выхода ставит GObject-патч и ловит сигналы сеанса: только в main.
     hookExit(config.flush);
     shell.reconcile();

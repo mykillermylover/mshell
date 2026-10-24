@@ -21,5 +21,5 @@ export function normalizeThemePreference(value: string): ThemePreference {
  * компоненты останутся без цвета, поэтому файл не применяем.
  */
 export function isPaletteCss(css: string): boolean {
-  return css.includes('--mshell-surface') && css.includes('--mshell-fg');
+  return css.includes('--surface') && css.includes('--on_surface');
 }
