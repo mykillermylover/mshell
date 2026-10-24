@@ -28,6 +28,9 @@ export type Reactive<T> = {
  * ничего не знает. Секции - объекты, листья - примитивы; вложенность любая.
  */
 export const DEFAULTS = {
+  theme: {
+    mode: 'system', // system | light | dark
+  },
   style: {
     border: 4, // толщина рамки
     screenRadius: 10, // углы экрана (= rounding в Hyprland)
