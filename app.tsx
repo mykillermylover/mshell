@@ -1,6 +1,6 @@
 import { config, hookExit } from '@lib/config/app';
 import { Shell } from '@lib/shell';
-import { initTheme } from '@lib/theme';
+import { applyThemeMode, initTheme } from '@lib/theme';
 import { createBinding } from 'ags';
 import app from 'ags/gtk4/app';
 
@@ -12,6 +12,7 @@ const shell = new Shell(INITIAL_POPS, INITIAL_FLOATS);
 
 app.start({
   main() {
+    applyThemeMode(config.theme.mode());
     // Свой провайдер: CSS из app.start не умеет prefers-color-scheme.
     initTheme(style);
 
@@ -21,7 +22,10 @@ app.start({
     // app.monitors — обычное свойство GObject: createBinding сам подписывается
     // на notify::monitors, поэтому руками сигналы модели ловить не нужно
     createBinding(app, 'monitors').subscribe(() => shell.scheduleReconcile());
-    config.subscribe(() => shell.refresh());
+    config.subscribe(() => {
+      applyThemeMode(config.theme.mode());
+      shell.refresh();
+    });
   },
   // ags request [<connector>] toggle|open|close|closeall <id>
   // Debug-команды — только при MSHELL_DEBUG=1, гейт в lib/shell.ts.

@@ -1,5 +1,34 @@
 import { Gdk, Gtk } from 'ags/gtk4';
 import Adw from 'gi://Adw';
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+
+import {
+  isPaletteCss,
+  normalizeThemePreference,
+  ThemePreference,
+} from './policy';
+
+const PALETTE_DIR = GLib.build_filenamev([GLib.get_user_cache_dir(), 'mshell']);
+const PALETTE_FILE = GLib.build_filenamev([PALETTE_DIR, 'palette.css']);
+const RELOAD_DELAY_MS = 150;
+
+// FileMonitor должен жить, пока живёт приложение.
+const monitors: Gio.FileMonitor[] = [];
+
+/** Системная схема или принудительная — для всего процесса AGS. */
+export function applyThemeMode(value: string) {
+  const mode = normalizeThemePreference(value);
+  const sm = Adw.StyleManager.get_default();
+
+  if (mode === ThemePreference.LIGHT) {
+    sm.color_scheme = Adw.ColorScheme.FORCE_LIGHT;
+  } else if (mode === ThemePreference.DARK) {
+    sm.color_scheme = Adw.ColorScheme.FORCE_DARK;
+  } else {
+    sm.color_scheme = Adw.ColorScheme.DEFAULT;
+  }
+}
 
 /**
  * CSS применяется своим провайдером, а не через app.start: только так
@@ -16,6 +45,7 @@ export function initTheme(css: string) {
 
   const sm = Adw.StyleManager.get_default();
   const provider = new Gtk.CssProvider();
+  let palette = '';
 
   provider.connect('parsing-error', (_p, section, error) => {
     const loc = section.get_start_location();
@@ -31,8 +61,40 @@ export function initTheme(css: string) {
       : Gtk.InterfaceColorScheme.LIGHT;
   };
 
+  /**
+   * Пропавший файл означает fallback, а битый - повод оставить
+   * последнюю рабочую палитру.
+   */
+  const read = () => {
+    if (!GLib.file_test(PALETTE_FILE, GLib.FileTest.EXISTS)) {
+      palette = '';
+      return;
+    }
+
+    try {
+      const [ok, bytes] = GLib.file_get_contents(PALETTE_FILE);
+      if (!ok) {
+        return;
+      }
+
+      const generated = new TextDecoder().decode(bytes);
+      if (isPaletteCss(generated)) {
+        palette = generated;
+      }
+    } catch (error) {
+      console.warn(`theme: cannot read ${PALETTE_FILE}: ${String(error)}`);
+    }
+  };
+
+  const reload = () => {
+    read();
+    provider.load_from_string(css + palette);
+  };
+
+  GLib.mkdir_with_parents(PALETTE_DIR, 0o755);
+
   sync();
-  provider.load_from_string(css);
+  reload();
   Gtk.StyleContext.add_provider_for_display(
     display,
     provider,
@@ -40,4 +102,31 @@ export function initTheme(css: string) {
   );
 
   sm.connect('notify::dark', sync);
+
+  let reloadId: number | null = null;
+
+  const schedule = () => {
+    if (reloadId !== null) {
+      GLib.source_remove(reloadId);
+    }
+
+    reloadId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, RELOAD_DELAY_MS, () => {
+      reloadId = null;
+      reload();
+      return GLib.SOURCE_REMOVE;
+    });
+  };
+
+  const monitor = Gio.File.new_for_path(PALETTE_DIR).monitor_directory(
+    Gio.FileMonitorFlags.NONE,
+    null,
+  );
+
+  monitor.connect('changed', (_monitor, file) => {
+    if (file?.get_basename() === 'palette.css') {
+      schedule();
+    }
+  });
+
+  monitors.push(monitor);
 }
