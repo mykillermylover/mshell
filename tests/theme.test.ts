@@ -1,8 +1,20 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { type DeepPartial, DEFAULTS, merge } from '@lib/config';
-import { isPaletteCss, normalizeThemePreference } from '@lib/theme/policy';
+import {
+  type DeepPartial,
+  DEFAULTS,
+  LIMITS,
+  merge,
+  reactive,
+} from '@lib/config';
+import {
+  isPaletteCss,
+  normalizeThemePreference,
+  normalizeThemeScheme,
+  ThemeScheme,
+} from '@lib/theme/policy';
+import { isAbsolutePath } from '@lib/utils';
 
 /** Как в приложении: содержимое файла → статика конфига. */
 const fromJson = (text: string) =>
@@ -14,6 +26,14 @@ test('theme: неизвестный режим сводится к system', () =
   assert.equal(normalizeThemePreference('system'), 'system');
   assert.equal(normalizeThemePreference('bogus'), 'system');
   assert.equal(normalizeThemePreference(''), 'system');
+});
+
+test('path: wallpaper принимается только абсолютным', () => {
+  assert.equal(isAbsolutePath('/home/u/wallpaper.jpg'), true);
+  assert.equal(isAbsolutePath('~/wallpaper.jpg'), false);
+  assert.equal(isAbsolutePath('$HOME/wallpaper.jpg'), false);
+  assert.equal(isAbsolutePath('wallpaper.jpg'), false);
+  assert.equal(isAbsolutePath(''), false);
 });
 
 test('palette: валидный CSS требует surface и on_surface', () => {
@@ -44,4 +64,37 @@ test('config: чужой тип и неизвестный ключ theme не п
 
   assert.equal(tree.theme.mode, 'system');
   assert.ok(!('bogus' in tree.theme));
+});
+
+test('theme: схема нормализуется и знает короткие имена', () => {
+  assert.equal(normalizeThemeScheme('scheme-neutral'), ThemeScheme.NEUTRAL);
+  assert.equal(normalizeThemeScheme('neutral'), ThemeScheme.NEUTRAL);
+  assert.equal(normalizeThemeScheme('scheme-smart'), ThemeScheme.SMART);
+  assert.equal(normalizeThemeScheme('bogus'), ThemeScheme.TONAL_SPOT);
+  assert.equal(normalizeThemeScheme(''), ThemeScheme.TONAL_SPOT);
+});
+
+test('config: theme-параметры по умолчанию', () => {
+  assert.equal(DEFAULTS.theme.mode, 'system');
+  assert.equal(DEFAULTS.theme.scheme, 'scheme-tonal-spot');
+  assert.equal(DEFAULTS.theme.wallpaper, '');
+  assert.equal(DEFAULTS.theme.contrast, 0);
+});
+
+test('config: wallpaper/scheme/contrast проходят merge', () => {
+  const tree = fromJson(
+    '{"theme":{"wallpaper":"/tmp/w.jpg","scheme":"neutral","contrast":0.5}}',
+  );
+
+  assert.equal(tree.theme.wallpaper, '/tmp/w.jpg');
+  assert.equal(tree.theme.scheme, 'neutral');
+  assert.equal(tree.theme.contrast, 0.5);
+});
+
+test('config: contrast зажимается лимитами', () => {
+  const tree = reactive({ theme: { contrast: 5 } }, () => {}, LIMITS);
+
+  assert.equal(tree.theme.contrast(), 1);
+  tree.theme.contrast.set(-5);
+  assert.equal(tree.theme.contrast(), -1);
 });

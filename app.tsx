@@ -1,6 +1,6 @@
 import { config, hookExit } from '@lib/config/app';
 import { Shell } from '@lib/shell';
-import { applyThemeMode, initTheme } from '@lib/theme';
+import { applyTheme, initTheme } from '@lib/theme';
 import { createBinding } from 'ags';
 import app from 'ags/gtk4/app';
 
@@ -12,8 +12,6 @@ const shell = new Shell(INITIAL_POPS, INITIAL_FLOATS);
 
 app.start({
   main() {
-    applyThemeMode(config.theme.mode());
-    // Свой провайдер: CSS из app.start не умеет prefers-color-scheme.
     initTheme(style);
 
     // Хук выхода ставит GObject-патч и ловит сигналы сеанса: только в main.
@@ -23,7 +21,7 @@ app.start({
     // на notify::monitors, поэтому руками сигналы модели ловить не нужно
     createBinding(app, 'monitors').subscribe(() => shell.scheduleReconcile());
     config.subscribe(() => {
-      applyThemeMode(config.theme.mode());
+      applyTheme();
       shell.refresh();
     });
   },

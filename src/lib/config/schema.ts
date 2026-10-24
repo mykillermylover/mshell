@@ -30,6 +30,9 @@ export type Reactive<T> = {
 export const DEFAULTS = {
   theme: {
     mode: 'system', // system | light | dark
+    scheme: 'scheme-tonal-spot', // тип схемы matugen
+    wallpaper: '/home/mihail/Shared/Wallpapers/wallpaper.jpg', // путь к картинке; пусто - не генерировать
+    contrast: 0, // -1..1, флаг matugen --contrast
   },
   style: {
     border: 4, // толщина рамки
@@ -70,8 +73,13 @@ const STYLE_LIMITS = {
   hideDelay: [0, 2000],
 } as const satisfies Record<keyof FieldStyle, readonly [number, number]>;
 
+const THEME_LIMITS = {
+  contrast: [-1, 1],
+} as const satisfies Limits;
+
 /** Лимиты style: применяются при загрузке, update и прямом .set(). */
 export const LIMITS = {
+  theme: THEME_LIMITS,
   style: STYLE_LIMITS,
 } as const satisfies Limits;
 

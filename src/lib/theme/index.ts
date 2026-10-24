@@ -1,11 +1,14 @@
+import { config } from '@lib/config/app';
 import { Gdk, Gtk } from 'ags/gtk4';
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
+import { requestPalette } from './generate';
 import {
   isPaletteCss,
   normalizeThemePreference,
+  normalizeThemeScheme,
   ThemePreference,
 } from './policy';
 
@@ -16,8 +19,11 @@ const RELOAD_DELAY_MS = 150;
 // FileMonitor должен жить, пока живёт приложение.
 const monitors: Gio.FileMonitor[] = [];
 
+// wallpaper|scheme|contrast последней запущенной генерации.
+let lastPaletteSignature = '';
+
 /** Системная схема или принудительная — для всего процесса AGS. */
-export function applyThemeMode(value: string) {
+function applyThemeMode(value: string) {
   const mode = normalizeThemePreference(value);
   const sm = Adw.StyleManager.get_default();
 
@@ -35,7 +41,34 @@ export function applyThemeMode(value: string) {
  * можно выставить prefers-color-scheme, без которого @media в GTK
  * всегда выбирает светлую ветку.
  */
+/** Запустить matugen, если изменились wallpaper, scheme или contrast. */
+function syncPalette(force = false) {
+  const wallpaper = config.theme.wallpaper();
+  if (!wallpaper) {
+    return;
+  }
+
+  const scheme = normalizeThemeScheme(config.theme.scheme());
+  const contrast = config.theme.contrast();
+  const signature = `${wallpaper}|${scheme}|${contrast}`;
+
+  if (!force && signature === lastPaletteSignature) {
+    return;
+  }
+
+  lastPaletteSignature = signature;
+  requestPalette({ wallpaper, scheme, contrast });
+}
+
+/** Единая точка: режим и палитра всегда применяются вместе. */
+export function applyTheme(force = false) {
+  applyThemeMode(config.theme.mode());
+  syncPalette(force);
+}
+
 export function initTheme(css: string) {
+  applyTheme(true);
+
   // Display один на Wayland-сессию; мониторы - это Gdk.Monitor внутри него.
   // Провайдер на display действует на все окна всех мониторов.
   const display = Gdk.Display.get_default();

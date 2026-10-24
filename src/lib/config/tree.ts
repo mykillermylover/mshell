@@ -11,11 +11,9 @@ import type {
   State,
 } from './schema';
 
-/** Обычный объект: не null и не массив. */
 const isObject = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
 
-/** Секция конфига - тот же обычный объект. */
 const isSection = (value: unknown): value is Section => isObject(value);
 
 /**

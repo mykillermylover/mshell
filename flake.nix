@@ -66,6 +66,8 @@
             bluez-tools
             glib-networking
             libadwaita
+            # Генератор палитры для scripts/palette.sh.
+            matugen
           ]);
       in
       {
@@ -95,6 +97,8 @@
           preFixup = ''
             gappsWrapperArgs+=(
               --prefix GIO_EXTRA_MODULES : "${pkgs.glib-networking}/lib/gio/modules"
+              # scripts/palette.sh запускает matugen из PATH.
+              --prefix PATH : "${pkgs.lib.makeBinPath [ pkgs.matugen ]}"
             )
           '';
         };
@@ -109,6 +113,8 @@
             inotify-tools
             nodejs
             claude-code
+            # Для scripts/palette.sh в дев-шелле; в билд попадает через extraPackages.
+            matugen
           ];
 
           shellHook = ''

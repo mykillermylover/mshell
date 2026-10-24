@@ -1,3 +1,4 @@
+import { focusWorkspace } from '@lib/hyprland';
 import { useMonitor } from '@widgets/monitor';
 import { createBinding, createComputed, For } from 'ags';
 import { Gtk } from 'ags/gtk4';
@@ -22,14 +23,7 @@ export default function Test() {
         {(item: AstalHyprland.Workspace) => {
           return (
             <box>
-              <Gtk.GestureClick
-                onPressed={() => {
-                  hyprland.dispatch(
-                    `hl.dsp.focus({ workspace = "${item.id}" })`,
-                    '',
-                  );
-                }}
-              />
+              <Gtk.GestureClick onPressed={() => focusWorkspace(item.id)} />
               <label label={item.id.toString()} />
             </box>
           );
