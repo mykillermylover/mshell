@@ -1,4 +1,4 @@
-import type { Rect } from '@lib/liquid/geometry';
+import type { Rect } from '@lib/geometry';
 import { noop } from '@lib/utils';
 import type { Accessor } from 'ags';
 import { createContext, createRoot } from 'ags';
@@ -12,7 +12,6 @@ export type Content = () => JSX.Element;
 
 /** Настройки hover-зоны попапа. */
 export interface HoverSpec {
-  depth?: number; // толщина губы/input, px (>= 1); по умолчанию style.hoverDepth
   content?: Content; // компонент внутри зоны
   hideOnReveal?: boolean; // скрыть зону, пока попап раскрыт
 }
@@ -45,7 +44,6 @@ export interface FloatSpec {
   x: number;
   y: number;
   content: Content;
-  open?: boolean;
 }
 
 /**
@@ -59,12 +57,7 @@ export interface WindowApi {
   readonly monitor: Gdk.Monitor;
   /** Закреплено ли окно - реактивно, для UI. */
   readonly pinned: Accessor<boolean>;
-  pin(): void;
-  unpin(): void;
   togglePin(): void;
-  open(): void;
-  close(): void;
-  toggle(): void;
   /** Создать Float в том же кадре/на том же мониторе. */
   addFloat(spec: FloatSpec): void;
   /** Убрать окно (по id) из этого кадра. */
@@ -110,21 +103,23 @@ export function createWindowContent<T>(
 }
 
 /** gnim типизирует результат JSX как GObject.Object; на деле это Gtk.Widget. */
-export const asWidget = (child: JSX.Element): Gtk.Widget => child as Gtk.Widget;
+export function asWidget(child: JSX.Element): Gtk.Widget {
+  return child as Gtk.Widget;
+}
 
 /** Обёртка контента окна: отступы и прозрачный фон (фон рисует LiquidField). */
-export const padded = (child: JSX.Element) => {
+export function padded(child: JSX.Element): Gtk.Box {
   const body = new Gtk.Box();
   body.add_css_class('frame-body');
   body.append(asWidget(child));
   return body;
-};
+}
 
 /** Границы тела окна; null, если оно ещё не разложено. */
-export const boundsOf = (
+export function boundsOf(
   widget: Gtk.Widget,
   relativeTo: Gtk.Widget,
-): Rect | null => {
+): Rect | null {
   const [ok, bounds] = widget.compute_bounds(relativeTo);
   if (!ok || bounds.get_width() < 1 || bounds.get_height() < 1) {
     return null;
@@ -135,4 +130,4 @@ export const boundsOf = (
     w: bounds.get_width(),
     h: bounds.get_height(),
   };
-};
+}

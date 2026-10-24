@@ -5,7 +5,7 @@ import {
   contactBetween,
   contactsWithFrame,
   type FrameSpec,
-} from '@lib/liquid/geometry';
+} from '@lib/geometry';
 
 import { makeBody } from './support/body';
 

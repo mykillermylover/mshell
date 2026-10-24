@@ -1,5 +1,5 @@
-import { type FieldStyle, type Reactive, snapshot } from '@lib/config';
-import type { Rect } from '@lib/liquid/geometry';
+import type { FieldStyle } from '@lib/config';
+import type { Rect } from '@lib/geometry';
 import { snapTo } from '@lib/snap';
 import { Float } from '@lib/windows/Float';
 import type { Window } from '@lib/windows/window';
@@ -20,11 +20,13 @@ interface Tween {
 
 /** Сколько кадров держать тик после изменения раскладки. */
 const POKE_FRAMES = 2;
+/** GdkFrameClock отдаёт микросекунды; твины и задержки - в миллисекундах. */
+const US_PER_MS = 1000;
 
 export interface MotionDeps {
   field: Gtk.Widget;
   fixed: Gtk.Fixed;
-  style: Reactive<FieldStyle>;
+  style: () => FieldStyle;
   bodies: () => Window[];
 }
 
@@ -35,7 +37,7 @@ export class FrameMotion {
   private ticking = false;
   private pokes = 0;
   /** Обработано тиков - для debug-команды frames. */
-  frames = 0;
+  tickCount = 0;
 
   constructor(private readonly deps: MotionDeps) {
     this.installDrag();
@@ -79,6 +81,66 @@ export class FrameMotion {
     if (this.drag?.float === float) {
       this.drag = null;
     }
+  }
+
+  /** Перерисовать пару кадров: хватает, чтобы подхватить итоговую раскладку после изменения. */
+  poke() {
+    this.pokes = POKE_FRAMES;
+    this.tick();
+  }
+
+  /**
+   * Тик-цикл живёт, только пока что-то движется (перетаскивание, примагничивание, анимация
+   * Revealer) или пока не отработали poke(). В покое тиков нет - композитор не будят.
+   */
+  tick() {
+    if (this.ticking) {
+      return;
+    }
+    this.ticking = true;
+    this.deps.field.add_tick_callback(
+      (_w: Gtk.Widget, clock: Gdk.FrameClock) => {
+        this.tickCount++;
+        const now = clock.get_frame_time() / US_PER_MS;
+        const fieldWidth = this.deps.field.get_width();
+        const fieldHeight = this.deps.field.get_height();
+        for (const [float, tween] of this.tweens) {
+          tween.startedAt ??= now;
+          const progress =
+            tween.duration > 0
+              ? Math.min(1, (now - tween.startedAt) / tween.duration)
+              : 1;
+          const eased = easeOutBack(progress);
+          const x = tween.fromX + (tween.toX - tween.fromX) * eased;
+          const y = tween.fromY + (tween.toY - tween.fromY) * eased;
+          // Перелёт easeOutBack должен заходить за рамку и за соседа, поэтому
+          // комнату на время твина не держим - только поверхность слоя.
+          this.place(
+            float,
+            Math.max(0, Math.min(x, fieldWidth - float.revealer.get_width())),
+            Math.max(0, Math.min(y, fieldHeight - float.revealer.get_height())),
+          );
+          if (progress >= 1) {
+            this.tweens.delete(float);
+          }
+        }
+        this.deps.field.queue_draw();
+
+        const busy =
+          !!this.drag ||
+          this.tweens.size > 0 ||
+          this.animating() ||
+          this.pokes > 0;
+        if (this.pokes > 0) {
+          this.pokes--;
+        }
+        if (!busy) {
+          this.ticking = false;
+          return GLib.SOURCE_REMOVE;
+        }
+        return GLib.SOURCE_CONTINUE;
+      },
+    );
   }
 
   /**
@@ -152,7 +214,7 @@ export class FrameMotion {
   private moveTo(float: Float, x: number, y: number) {
     const fieldWidth = this.deps.field.get_width();
     const fieldHeight = this.deps.field.get_height();
-    const border = this.deps.style.border();
+    const border = this.deps.style().border;
     // Окно живёт в комнате, а не на рамке: иначе зазор к рамке становится
     // отрицательным и тело геометрически перекрывает обводку.
     const maxX = Math.max(
@@ -170,7 +232,7 @@ export class FrameMotion {
     );
   }
 
-  /** Отпустили окно ближе snapReach к краю или соседу → тянем вплотную. */
+  /** Примагнитить окно: посчитать цель и запустить твин. */
   private snapFloat(float: Float) {
     const target = this.snapTarget(float);
     if (target) {
@@ -180,7 +242,7 @@ export class FrameMotion {
         toX: target.x,
         toY: target.y,
         startedAt: null,
-        duration: this.deps.style.snapDuration(),
+        duration: this.deps.style().snapDuration,
       });
     }
     this.tick();
@@ -190,9 +252,7 @@ export class FrameMotion {
    * Отпустили окно ближе snapReach к краю или соседу → оно втягивается вплотную.
    */
   private snapTarget(float: Float): { x: number; y: number } | null {
-    const { border, screenRadius, snapReach, windowRadius } = snapshot(
-      this.deps.style,
-    );
+    const { border, screenRadius, snapReach, windowRadius } = this.deps.style();
     const self = float.measure(this.deps.field).body;
     if (!self) {
       return null;
@@ -226,65 +286,5 @@ export class FrameMotion {
 
   private animating() {
     return this.deps.bodies().some((body) => body.animating);
-  }
-
-  /** Перерисовать пару кадров: хватает, чтобы подхватить итоговую раскладку после изменения. */
-  poke() {
-    this.pokes = POKE_FRAMES;
-    this.tick();
-  }
-
-  /**
-   * Тик-цикл живёт, только пока что-то движется (перетаскивание, примагничивание, анимация
-   * Revealer) или пока не отработали poke(). В покое тиков нет - композитор не будят.
-   */
-  tick() {
-    if (this.ticking) {
-      return;
-    }
-    this.ticking = true;
-    this.deps.field.add_tick_callback(
-      (_w: Gtk.Widget, clock: Gdk.FrameClock) => {
-        this.frames++;
-        const now = clock.get_frame_time() / 1000;
-        const fieldWidth = this.deps.field.get_width();
-        const fieldHeight = this.deps.field.get_height();
-        for (const [float, tween] of this.tweens) {
-          tween.startedAt ??= now;
-          const progress =
-            tween.duration > 0
-              ? Math.min(1, (now - tween.startedAt) / tween.duration)
-              : 1;
-          const eased = easeOutBack(progress);
-          const x = tween.fromX + (tween.toX - tween.fromX) * eased;
-          const y = tween.fromY + (tween.toY - tween.fromY) * eased;
-          // Перелёт easeOutBack должен заходить за рамку и за соседа, поэтому
-          // комнату на время твина не держим - только поверхность слоя.
-          this.place(
-            float,
-            Math.max(0, Math.min(x, fieldWidth - float.revealer.get_width())),
-            Math.max(0, Math.min(y, fieldHeight - float.revealer.get_height())),
-          );
-          if (progress >= 1) {
-            this.tweens.delete(float);
-          }
-        }
-        this.deps.field.queue_draw();
-
-        const busy =
-          !!this.drag ||
-          this.tweens.size > 0 ||
-          this.animating() ||
-          this.pokes > 0;
-        if (this.pokes > 0) {
-          this.pokes--;
-        }
-        if (!busy) {
-          this.ticking = false;
-          return GLib.SOURCE_REMOVE;
-        }
-        return GLib.SOURCE_CONTINUE;
-      },
-    );
   }
 }

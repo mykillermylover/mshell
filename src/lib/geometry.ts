@@ -1,17 +1,15 @@
 // Геометрия жидкости: тела - скруглённые прямоугольники, кромка рамки - прямые
 // участки стен и дуги внутренних углов. Здесь только поиск ближайших точек,
 // глобальных «якорей» и состояния нет.
-export interface Box {
+/** Прямоугольник в координатах поля. */
+export interface Rect {
   x: number;
   y: number;
   w: number;
   h: number;
 }
 
-/** Прямоугольник в координатах поля. */
-export type Rect = Box;
-
-export interface Body extends Box {
+export interface Body extends Rect {
   /** Радиус скругления углов тела (для окон - `windowRadius`). */
   cornerRadius: number;
 }
@@ -41,15 +39,16 @@ export interface FrameSpec {
 }
 
 /** Радиус, который реально влезает в тело (углы не больше половины стороны). */
-export const clampRadius = (body: Body) =>
-  Math.max(0, Math.min(body.cornerRadius, body.w / 2, body.h / 2));
+export function clampRadius(body: Body): number {
+  return Math.max(0, Math.min(body.cornerRadius, body.w / 2, body.h / 2));
+}
 
 /**
  * Сердцевина: скруглённый прямоугольник = прямоугольник ⊕ круг радиуса R
  * (сумма Минковского). Поэтому все расстояния считаем между сердцевинами
  * и вычитаем R1 + R2.
  */
-const coreOf = (body: Body): Box => {
+const coreOf = (body: Body): Rect => {
   const r = clampRadius(body);
   return { x: body.x + r, y: body.y + r, w: body.w - 2 * r, h: body.h - 2 * r };
 };
@@ -74,7 +73,7 @@ const axisGap = (a0: number, a1: number, b0: number, b1: number) => {
 };
 
 /** Ближайшие точки двух тел; null - сердцевины перекрылись (тела уже слиты). */
-export const contactBetween = (first: Body, second: Body): Contact | null => {
+export function contactBetween(first: Body, second: Body): Contact | null {
   const r1 = clampRadius(first);
   const r2 = clampRadius(second);
   const c1 = coreOf(first);
@@ -114,7 +113,7 @@ export const contactBetween = (first: Body, second: Body): Contact | null => {
     nx,
     ny,
   };
-};
+}
 
 /**
  * Контакты тела с кромкой рамки: 4 прямых участка и 4 дуги внутренних углов.
@@ -123,7 +122,7 @@ export const contactBetween = (first: Body, second: Body): Contact | null => {
  * и обе дают контакт - выбора «какая ближе» нет, скачка нет по построению.
  * Порядок результата: [верх, низ, лево, право, ЛВ, ПВ, ЛН, ПН].
  */
-export const contactsWithFrame = (body: Body, frame: FrameSpec): Contact[] => {
+export function contactsWithFrame(body: Body, frame: FrameSpec): Contact[] {
   const rw = clampRadius(body);
   const core = coreOf(body);
   const left = frame.border;
@@ -212,4 +211,4 @@ export const contactsWithFrame = (body: Body, frame: FrameSpec): Contact[] => {
   });
 
   return [...sides, ...arcs];
-};
+}

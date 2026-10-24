@@ -16,8 +16,7 @@ const debugEnabled = GLib.getenv('MSHELL_DEBUG') === '1';
  */
 export class Shell {
   private frames = new Map<Gdk.Monitor, Frame>();
-  private queued = false;
-  private refreshQueued = false;
+  private readonly queued = new Set<string>();
 
   constructor(
     private readonly pops: PopSpec[],
@@ -50,15 +49,7 @@ export class Shell {
    * склеиваем пачку изменений (подключили два монитора сразу - один reconcile).
    */
   scheduleReconcile() {
-    if (this.queued) {
-      return;
-    }
-    this.queued = true;
-    GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-      this.queued = false;
-      this.reconcile();
-      return GLib.SOURCE_REMOVE;
-    });
+    this.queueOnce('reconcile', () => this.reconcile());
   }
 
   /**
@@ -67,16 +58,10 @@ export class Shell {
    * по полному снапшоту на каждый пиксель.
    */
   refresh() {
-    if (this.refreshQueued) {
-      return;
-    }
-    this.refreshQueued = true;
-    GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-      this.refreshQueued = false;
+    this.queueOnce('refresh', () => {
       for (const frame of this.frames.values()) {
         frame.refresh();
       }
-      return GLib.SOURCE_REMOVE;
     });
   }
 
@@ -89,8 +74,9 @@ export class Shell {
 
     // Без коннектора closeall относится ко всем мониторам, а не только
     // к focused: имя команды обещает именно это.
-    if (cmd === 'closeall' && !named) {
-      for (const frame of this.frames.values()) {
+    if (cmd === 'closeall') {
+      const targets = named ? [named] : this.frames.values();
+      for (const frame of targets) {
         frame.closeAll();
       }
       return respond('ok');
@@ -117,10 +103,6 @@ export class Shell {
         }
         return respond('ok');
       }
-      case 'closeall': {
-        frame.closeAll();
-        return respond('ok');
-      }
     }
 
     if (debugEnabled) {
@@ -132,9 +114,22 @@ export class Shell {
     return respond(`unknown command: ${cmd}`);
   }
 
+  /** Idle-склейка: несколько вызовов подряд дают один проход. */
+  private queueOnce(key: string, run: () => void) {
+    if (this.queued.has(key)) {
+      return;
+    }
+    this.queued.add(key);
+    GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+      this.queued.delete(key);
+      run();
+      return GLib.SOURCE_REMOVE;
+    });
+  }
+
   private focusedFrame(): Frame | undefined {
     const frames = [...this.frames.values()];
-    const name = AstalHyprland.get_default().focusedMonitor?.name;
+    const name = AstalHyprland.get_default()?.focusedMonitor?.name;
     return frames.find((frame) => frame.connector === name) ?? frames[0];
   }
 }

@@ -1,5 +1,5 @@
 import { type FieldStyle, type Reactive, snapshot } from '@lib/config';
-import type { Rect } from '@lib/liquid/geometry';
+import type { Rect } from '@lib/geometry';
 import { LiquidField } from '@lib/liquid/LiquidField';
 import type { FloatSpec, PopSpec, WindowHost } from '@lib/windows/api';
 import { Float } from '@lib/windows/Float';
@@ -29,12 +29,14 @@ export class Frame {
   private field = new LiquidField();
   private fixed = new Gtk.Fixed();
   private windows = new Map<string, Window>();
+  /** Отписки окна от его Revealer'ов; снимаются в remove(). */
+  private readonly unsubscribes = new Map<string, () => void>();
   private readonly host: WindowHost;
   private readonly overlay: Gtk.Overlay;
   private readonly input: FrameInput;
   private readonly motion: FrameMotion;
 
-  /** Узкий доступ для debug-команд; см. lib/debug.ts. */
+  /** Узкий доступ для debug-команд; см. lib/debug.tsx. */
   readonly debug = {
     float: (id: string) => {
       const body = this.windows.get(id);
@@ -66,8 +68,8 @@ export class Frame {
   };
 
   /** Обработано тиков - для debug-команды frames. */
-  get frames(): number {
-    return this.motion.frames;
+  get tickCount(): number {
+    return this.motion.tickCount;
   }
 
   constructor(
@@ -92,11 +94,11 @@ export class Frame {
       exclusivity: Astal.Exclusivity.IGNORE, // место под рамку резервирует композитор (gaps_out)
       layer: Astal.Layer.TOP,
       keymode: Astal.Keymode.ON_DEMAND, // чтобы в окнах работал ввод с клавиатуры
-      cssClasses: ['frame'],
+      cssClasses: ['mshell-frame'],
     });
 
     this.input = new FrameInput(this.surface);
-    this.field.cfg = style;
+    this.field.configure(() => snapshot(this.style));
     this.field.rects = () => {
       // Один проход: сцена рисует видимые тела, input может быть шире
       // (у закрытой hover-зоны он включает губу и полосу рамки до края).
@@ -119,7 +121,7 @@ export class Frame {
     this.motion = new FrameMotion({
       field: this.field,
       fixed: this.fixed,
-      style,
+      style: () => snapshot(this.style),
       bodies: () => this.bodies(),
     });
 
@@ -153,10 +155,9 @@ export class Frame {
     });
     this.surface.add_controller(motion);
 
-    // Пустой регион ввода нужен сразу: иначе слой перехватит все клики.
+    // Пустой регион сразу: до первого снапшота слой не должен ловить клики.
     this.surface.connect('map', () => {
       this.input.reset();
-      // Пустой регион сразу: до первого снапшота слой не должен ловить клики.
       this.input.sync([]);
 
       GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
@@ -220,33 +221,26 @@ export class Frame {
 
   /** Добавить попап; можно звать после инициализации кадра. */
   addPop(spec: PopSpec) {
-    if (this.windows.has(spec.id)) {
-      throw new Error(`duplicate window id: ${spec.id}`);
-    }
-
-    const pop = new Pop(
-      spec,
-      () => snapshot(this.style),
-      () => this.activate(spec.id),
-      this.host,
+    this.addWindow(
+      spec.id,
+      () =>
+        new Pop(
+          spec,
+          () => snapshot(this.style),
+          () => this.activate(spec.id),
+          this.host,
+        ),
+      (pop) => this.overlay.add_overlay(pop.widget),
     );
-    pop.subscribe(() => this.motion.poke());
-    this.overlay.add_overlay(pop.widget);
-    this.windows.set(spec.id, pop);
-    this.motion.poke();
   }
 
   /** Добавить Float; можно звать после инициализации кадра. */
   addFloat(spec: FloatSpec) {
-    if (this.windows.has(spec.id)) {
-      throw new Error(`duplicate window id: ${spec.id}`);
-    }
-
-    const float = new Float(spec, () => snapshot(this.style), this.host);
-    float.subscribe(() => this.motion.poke());
-    this.fixed.put(float.revealer, float.x, float.y);
-    this.windows.set(spec.id, float);
-    this.motion.poke();
+    this.addWindow(
+      spec.id,
+      () => new Float(spec, () => snapshot(this.style), this.host),
+      (float) => this.fixed.put(float.revealer, float.x, float.y),
+    );
   }
 
   /** Убрать окно вместе с контентом и подписками. */
@@ -257,6 +251,8 @@ export class Frame {
     }
 
     this.windows.delete(id);
+    this.unsubscribes.get(id)?.();
+    this.unsubscribes.delete(id);
     if (body instanceof Pop) {
       this.overlay.remove_overlay(body.widget);
     } else if (body instanceof Float) {
@@ -266,6 +262,33 @@ export class Frame {
     body.dispose();
     this.motion.poke();
   }
+
+  /** Есть ли окно с таким id в этом кадре. */
+  has(id: string): boolean {
+    return this.windows.has(id);
+  }
+
+  /** Общий путь добавления: уникальный id, подписка на форму, вставка. */
+  private addWindow<T extends Window>(
+    id: string,
+    create: () => T,
+    mount: (body: T) => void,
+  ) {
+    if (this.windows.has(id)) {
+      throw new Error(`duplicate window id: ${id}`);
+    }
+
+    const body = create();
+    this.unsubscribes.set(
+      id,
+      body.subscribe(() => this.motion.poke()),
+    );
+    mount(body);
+    this.windows.set(id, body);
+    this.motion.poke();
+  }
+
+  // ───────────────────────── поле ─────────────────────────
 
   private probe(x: number, y: number) {
     for (const body of this.windows.values()) {
@@ -281,13 +304,6 @@ export class Frame {
       }
     }
   }
-
-  /** Есть ли окно с таким id в этом кадре. */
-  has(id: string): boolean {
-    return this.windows.has(id);
-  }
-
-  // ───────────────────────── поле ─────────────────────────
 
   /** Все тела поля: попапы и флоаты. */
   private bodies(): Window[] {

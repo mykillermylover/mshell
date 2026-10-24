@@ -24,6 +24,7 @@ const PATH = GLib.build_filenamev([
   'config.json',
 ]);
 const SAVE_DELAY_MS = 500;
+// Номера POSIX-сигналов: GLibUnix их не экспортирует.
 const SIGTERM = 15;
 const SIGINT = 2;
 

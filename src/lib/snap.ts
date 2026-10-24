@@ -4,7 +4,7 @@ import {
   contactBetween,
   contactsWithFrame,
   type FrameSpec,
-} from './liquid/geometry';
+} from '@lib/geometry';
 
 /** Допуск закрытия выбранного контакта, px. */
 const RESIDUAL = 0.5;
@@ -24,7 +24,7 @@ export interface SnapResult {
 }
 
 type ContactRef =
-  { kind: 'frame'; index: number } | { kind: 'body'; index: number };
+  { kind: 'frame'; index: number } | { kind: 'body'; body: Body };
 
 interface RefContact {
   ref: ContactRef;
@@ -49,13 +49,12 @@ const contactFor = (
   ref: ContactRef,
   body: Body,
   env: SnapEnv,
-  others: Body[],
 ): Contact | null => {
   if (ref.kind === 'frame') {
     return contactsWithFrame(body, env.frame)[ref.index] ?? null;
   }
 
-  return contactBetween(body, others[ref.index]);
+  return contactBetween(body, ref.body);
 };
 
 const allContacts = (
@@ -69,11 +68,11 @@ const allContacts = (
     out.push({ ref: { kind: 'frame', index }, contact });
   }
 
-  for (const [index, other] of others.entries()) {
+  for (const other of others) {
     const contact = contactBetween(self, other);
 
     if (contact) {
-      out.push({ ref: { kind: 'body', index }, contact });
+      out.push({ ref: { kind: 'body', body: other }, contact });
     }
   }
 
@@ -93,6 +92,15 @@ const keyOf = (contacts: RefContact[]): string =>
 /** Допуск пересечения, px. */
 const OVERLAP = 0.01;
 
+/** Перекрытие по оси: > 0 - пересечение, < 0 - зазор. */
+const overlapX = (first: Body, second: Body): number =>
+  Math.min(first.x + first.w, second.x + second.w) -
+  Math.max(first.x, second.x);
+
+const overlapY = (first: Body, second: Body): number =>
+  Math.min(first.y + first.h, second.y + second.h) -
+  Math.max(first.y, second.y);
+
 /**
  * Глубина пересечения ограничивающих прямоугольников.
  *
@@ -101,12 +109,7 @@ const OVERLAP = 0.01;
  * и он допустим. Поэтому запасной критерий - прямоугольники.
  */
 const boxOverlap = (first: Body, second: Body): number =>
-  Math.min(
-    Math.min(first.x + first.w, second.x + second.w) -
-      Math.max(first.x, second.x),
-    Math.min(first.y + first.h, second.y + second.h) -
-      Math.max(first.y, second.y),
-  );
+  Math.min(overlapX(first, second), overlapY(first, second));
 
 const insideFrame = (body: Body, frame: FrameSpec): boolean =>
   body.x >= frame.border - OVERLAP &&
@@ -170,14 +173,14 @@ const make = (
   const next = moved(self, dx, dy);
 
   for (const item of contacts) {
-    const after = contactFor(item.ref, next, env, others);
+    const after = contactFor(item.ref, next, env);
 
     if (!after) {
       // Сердцевины слиплись в точку: у тела при `windowRadius = 0` это
       // точный стык прямоугольников, у рамки и глубокого леза - нет.
       if (
         item.ref.kind === 'body' &&
-        boxOverlap(next, others[item.ref.index]) <= OVERLAP
+        boxOverlap(next, item.ref.body) <= OVERLAP
       ) {
         continue;
       }
@@ -236,21 +239,19 @@ const eject = (self: Body, env: SnapEnv, others: Body[]): SnapResult | null => {
   const candidates: Candidate[] = [];
 
   for (const other of others) {
-    const overlapX =
-      Math.min(self.x + self.w, other.x + other.w) - Math.max(self.x, other.x);
-    const overlapY =
-      Math.min(self.y + self.h, other.y + other.h) - Math.max(self.y, other.y);
+    const dx = overlapX(self, other);
+    const dy = overlapY(self, other);
 
-    if (overlapX <= 0 || overlapY <= 0) {
+    if (dx <= 0 || dy <= 0) {
       continue;
     }
 
     // Толкаем по осям: у глубокого перекрытия нормали уже нет.
     const pushes: [number, number][] = [
-      [-(overlapX + EJECT_GAP), 0],
-      [overlapX + EJECT_GAP, 0],
-      [0, -(overlapY + EJECT_GAP)],
-      [0, overlapY + EJECT_GAP],
+      [-(dx + EJECT_GAP), 0],
+      [dx + EJECT_GAP, 0],
+      [0, -(dy + EJECT_GAP)],
+      [0, dy + EJECT_GAP],
     ];
 
     for (const [dx, dy] of pushes) {
@@ -331,11 +332,11 @@ const pick = (candidates: Candidate[]): Candidate | null => {
  * из тел, затем вписать тело в рамку.
  * `null` - рядом нет контакта или закрыть его нечем.
  */
-export const snapTo = (
+export function snapTo(
   env: SnapEnv,
   self: Body,
   others: Body[] = [],
-): SnapResult | null => {
+): SnapResult | null {
   const contacts = allContacts(self, env, others);
   const negative = contacts.filter(({ contact }) => contact.gap < 0);
   const deep = others.some((other) => contactBetween(self, other) === null);
@@ -354,4 +355,4 @@ export const snapTo = (
   const best = pick(buildCandidates(self, env, others, positive));
 
   return best ? { x: self.x + best.dx, y: self.y + best.dy } : null;
-};
+}

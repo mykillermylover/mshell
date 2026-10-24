@@ -1,6 +1,10 @@
 import { useWindowApi } from '@lib/windows/api';
 import { Gtk } from 'ags/gtk4';
 
+// Каскад демо-Float: старт от угла и шаг, px.
+const SPAWN_ORIGIN = 80;
+const SPAWN_STEP = 24;
+
 let spawned = 0;
 
 function Spawned() {
@@ -27,7 +31,7 @@ export default function Settings() {
       widthRequest={300}
       heightRequest={360}
     >
-      <label class="title" label="Settings" xalign={0} />
+      <label class="pop-title" label="Settings" xalign={0} />
       <label label="Выезжает из правой стороны" xalign={0} wrap />
       <button class="pin-button" onClicked={() => win.togglePin()}>
         <label label={pinLabel} />
@@ -39,8 +43,8 @@ export default function Settings() {
           win.addFloat({
             id: `spawn-${spawned}`,
             title: 'Spawn',
-            x: 80 + spawned * 24,
-            y: 80 + spawned * 24,
+            x: SPAWN_ORIGIN + spawned * SPAWN_STEP,
+            y: SPAWN_ORIGIN + spawned * SPAWN_STEP,
             content: Spawned,
           });
         }}

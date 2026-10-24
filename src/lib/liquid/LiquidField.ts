@@ -1,11 +1,11 @@
-import { type FieldStyle, type Reactive, snapshot } from '@lib/config';
+import type { FieldStyle } from '@lib/config';
+import { type Body, clampRadius, type Rect } from '@lib/geometry';
 import { Gdk, Gtk } from 'ags/gtk4'; // первым: фиксирует Gtk 4 до загрузки Gsk
 import Graphene from 'gi://Graphene';
 import Gsk from 'gi://Gsk';
 import { register } from 'gnim/gobject';
 
 import { type Bridge, bridges, bridgeShape, bridgeSpecFor } from './bridges';
-import { type Body, clampRadius, type Rect } from './geometry';
 
 // GtkSnapshot.push_blur принимает радиус, а GTK считает внутри σ = radius / 2
 // (gsk/gpu/shaders/gskgpublur.glsl). Значит, чтобы получить заданную σ,
@@ -39,17 +39,22 @@ const MIN_SIGMA = 1;
  */
 @register({ GTypeName: 'FrameLiquidField' })
 export class LiquidField extends Gtk.Widget {
-  cfg!: Reactive<FieldStyle>;
+  private style: (() => FieldStyle) | null = null;
   rects: () => Rect[] = () => [];
+
+  /** Стиль передаётся геттером: снимок берётся в момент отрисовки. */
+  configure(style: () => FieldStyle) {
+    this.style = style;
+  }
 
   vfunc_snapshot(snap: Gtk.Snapshot) {
     const width = this.get_width();
     const height = this.get_height();
-    if (width <= 0 || height <= 0) {
+    if (!this.style || width <= 0 || height <= 0) {
       return;
     }
     const { border, screenRadius, windowRadius, blurRadius, snapReach, sharp } =
-      snapshot(this.cfg);
+      this.style();
     const sigma = Math.max(MIN_SIGMA, blurRadius * SIGMA_PER_MELT);
 
     const cssColor = this.get_color(); // CSS: .frame-shape { color: ... }
@@ -116,9 +121,6 @@ export class LiquidField extends Gtk.Widget {
     const drawBridges = (list: Bridge[]) => {
       for (const bridge of list) {
         const shape = bridgeShape(bridge);
-        if (!shape) {
-          continue;
-        }
         if (shape.kind === 'rect') {
           const rect = new Graphene.Rect().init(
             shape.x,

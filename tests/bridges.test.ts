@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { contactBetween, type FrameSpec } from '@lib/geometry';
 import {
   type Bridge,
   bridges,
@@ -8,7 +9,6 @@ import {
   bridgeSpecFor,
   halfWidth,
 } from '@lib/liquid/bridges';
-import { contactBetween, type FrameSpec } from '@lib/liquid/geometry';
 
 import { makeBody } from './support/body';
 

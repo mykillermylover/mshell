@@ -1,4 +1,4 @@
-import type { Rect } from '@lib/liquid/geometry';
+import type { Rect } from '@lib/geometry';
 import type { Astal } from 'ags/gtk4';
 import type giCairo from 'cairo';
 import Cairo from 'gi://cairo';
@@ -22,6 +22,8 @@ export class FrameInput {
   /** Новая surface должна получить регион заново. */
   reset() {
     this.key = null;
+    // Предупреждение - один раз на поверхность, а не на всю жизнь кадра.
+    this.warned = false;
   }
 
   sync(rects: Rect[]) {

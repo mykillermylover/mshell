@@ -7,7 +7,7 @@ import {
   contactBetween,
   contactsWithFrame,
   type FrameSpec,
-} from './geometry';
+} from '@lib/geometry';
 
 export interface Bridge {
   centerX: number;
@@ -39,10 +39,10 @@ const MIN_HALF_WIDTH = 0.5;
 const AXIS_EPSILON = 1e-9;
 
 /** Числа капсулы из σ размытия и дальности магнита. */
-export const bridgeSpecFor = (
+export function bridgeSpecFor(
   frame: FrameSpec,
   opts: { sigma: number; reach: number },
-): BridgeSpec => {
+): BridgeSpec {
   const overlap =
     Math.ceil(OVERLAP_SIGMAS * Math.max(1, opts.sigma)) + OVERLAP_PX;
   return {
@@ -51,7 +51,7 @@ export const bridgeSpecFor = (
     cornerHalfWidth: overlap,
     intoBody: overlap,
   };
-};
+}
 
 /**
  * Полуширина капли: base·(1 − gap/reach), base = max(seam/2, cornerHalfWidth).
@@ -63,19 +63,13 @@ export const bridgeSpecFor = (
  *    и растёт линейно, а не появляется сразу широкой.
  * Перелёт (gap < 0) считаем контактом: ширина не падает ниже максимума.
  */
-export const halfWidth = (contact: Contact, spec: BridgeSpec) => {
+export function halfWidth(contact: Contact, spec: BridgeSpec): number {
   const gap = Math.max(0, contact.gap);
   if (gap >= spec.reach) {
     return 0;
   }
   const base = Math.max(contact.seam / 2, spec.cornerHalfWidth);
   return base * (1 - gap / spec.reach);
-};
-
-/** Контакт с индексом фичи рамки или соседа — для выбора ближайших. */
-interface IndexedContact {
-  index: number;
-  contact: Contact;
 }
 
 /** Зазоры, отличающиеся меньше этого, считаем равными: симметрию не рвём. */
@@ -85,16 +79,15 @@ const CONTACT_LIMIT = 3;
 
 /**
  * До CONTACT_LIMIT ближайших; равные зазоры на границе лимита не режутся.
- * Сравнение по зазору, затем по индексу — детерминированный tie-break.
+ * Сортировка стабильная, поэтому при равном зазоре сохраняется исходный
+ * порядок - детерминированный tie-break без индексов.
  */
-const pickNearest = (items: IndexedContact[]): IndexedContact[] => {
-  const sorted = items.sort(
-    (a, b) => a.contact.gap - b.contact.gap || a.index - b.index,
-  );
+const pickNearest = <T>(items: T[], gapOf: (item: T) => number): T[] => {
+  const sorted = [...items].sort((a, b) => gapOf(a) - gapOf(b));
   const limit = Math.min(CONTACT_LIMIT, sorted.length);
-  const cutoff = sorted[limit - 1]?.contact.gap ?? Number.POSITIVE_INFINITY;
+  const cutoff = sorted[limit - 1] ? gapOf(sorted[limit - 1]) : Infinity;
 
-  return sorted.filter((item) => item.contact.gap <= cutoff + TIE_EPSILON);
+  return sorted.filter((item) => gapOf(item) <= cutoff + TIE_EPSILON);
 };
 
 /**
@@ -104,11 +97,12 @@ const pickNearest = (items: IndexedContact[]): IndexedContact[] => {
  * Мостик — часть непрерывного поля: он остаётся и при отрицательном зазоре
  * (перелёт easeOutBack и остаток магнита), пока у контакта есть нормаль и
  * длина мостика > 0. Закон ширины клампит gap в 0, поэтому на перелёте
- * ширина не падает и мостик не мигает. У тела до трёх контактов с рамкой и
- * до трёх с соседями — бюджеты раздельные, иначе в углу рамки стены
- * съедают слот соседа. Пара рисуется, только если её выбрали оба тела.
+ * ширина не падает и мостик не мигает. Бюджет связей — CONTACT_LIMIT с
+ * рамкой и отдельно CONTACT_LIMIT с соседями, иначе в углу рамки стены
+ * съедают слот соседа; равные зазоры на границе лимита не режутся
+ * (pickNearest). Пара рисуется, только если её выбрали оба тела.
  */
-export const bridges = (bodies: Body[], spec: BridgeSpec): Bridge[] => {
+export function bridges(bodies: Body[], spec: BridgeSpec): Bridge[] {
   const out: Bridge[] = [];
   // Заход в тело не больше самого тела: у тонкой губы капсула иначе прорастает
   // насквозь, и её blur рисует свечение в комнате мимо тела.
@@ -132,72 +126,76 @@ export const bridges = (bodies: Body[], spec: BridgeSpec): Bridge[] => {
     });
   };
 
-  // 1. Контакты с рамкой: у каждого тела свой бюджет, независимый от соседей.
-  // Flush-контакт (gap = 0) оставляем: мостик прижатого тела своим размытым
-  // торцом заливает нишу в стыке с рамкой. Перелёт в материал рамки на время
-  // твина тоже не прячем — иначе мостик мигает в момент примагничивания.
-  const frameCandidates: IndexedContact[][] = bodies.map((body) =>
-    contactsWithFrame(body, spec.frame).map((contact, index) => ({
-      index,
-      contact,
-    })),
-  );
+  // Связи одного тела: контакты с рамкой, с соседями и выбранные соседи.
+  interface BodyLink {
+    body: Body;
+    frame: Contact[];
+    neighbors: Array<{ body: Body; contact: Contact }>;
+    chosen: Set<Body>;
+  }
 
-  // 2. Пары тел, которые ещё не слиты. Каждая пара считается один раз.
-  // Широкая фаза по AABB: скруглённое тело лежит внутри своего прямоугольника,
-  // поэтому зазор тел не меньше зазора прямоугольников. Если прямоугольники
-  // дальше reach — точную геометрию пары можно не считать (в толпе это
-  // отсекает большинство пар).
+  const links: BodyLink[] = bodies.map((body) => ({
+    body,
+    // Flush-контакт (gap = 0) оставляем: мостик прижатого тела своим размытым
+    // торцом заливает нишу в стыке с рамкой. Перелёт в материал рамки на время
+    // твина тоже не прячем - иначе мостик мигает в момент примагничивания.
+    frame: contactsWithFrame(body, spec.frame),
+    neighbors: [],
+    chosen: new Set(),
+  }));
+
+  // Пары тел, которые ещё не слиты. Широкая фаза по AABB: скруглённое тело
+  // лежит внутри своего прямоугольника, поэтому зазор тел не меньше зазора
+  // прямоугольников. Если прямоугольники дальше reach - точную геометрию пары
+  // можно не считать (в толпе это отсекает большинство пар).
   const outOfReach = (a: Body, b: Body) => {
     const dx = Math.max(0, Math.max(a.x, b.x) - Math.min(a.x + a.w, b.x + b.w));
     const dy = Math.max(0, Math.max(a.y, b.y) - Math.min(a.y + a.h, b.y + b.h));
     return dx * dx + dy * dy > spec.reach * spec.reach;
   };
-  const pairContacts = new Map<string, Contact>();
-  const bodyCandidates: IndexedContact[][] = bodies.map(() => []);
+  const pairs: Array<{ a: BodyLink; b: BodyLink; contact: Contact }> = [];
 
-  for (let i = 0; i < bodies.length; i++) {
-    for (let j = i + 1; j < bodies.length; j++) {
-      if (outOfReach(bodies[i], bodies[j])) {
+  for (let i = 0; i < links.length; i++) {
+    for (let j = i + 1; j < links.length; j++) {
+      const a = links[i];
+      const b = links[j];
+
+      if (outOfReach(a.body, b.body)) {
         continue;
       }
-      const contact = contactBetween(bodies[i], bodies[j]);
+      const contact = contactBetween(a.body, b.body);
 
       if (!contact) {
         continue;
       }
 
-      pairContacts.set(`${i}:${j}`, contact);
-      bodyCandidates[i].push({ index: j, contact });
-      bodyCandidates[j].push({ index: i, contact });
+      pairs.push({ a, b, contact });
+      a.neighbors.push({ body: b.body, contact });
+      b.neighbors.push({ body: a.body, contact });
     }
   }
 
-  // 3. Раздельные бюджеты: рамка и соседи не конкурируют за одни слоты.
-  // Равные зазоры на границе лимита не режутся — иначе симметричные сцены
+  // Раздельные бюджеты: рамка и соседи не конкурируют за одни слоты.
+  // Равные зазоры на границе лимита не режутся - иначе симметричные сцены
   // (45° к углу, 4 равноудалённых соседа) ломаются.
-  const chosen: Set<number>[] = bodies.map(() => new Set());
-
-  for (const [i, body] of bodies.entries()) {
-    for (const item of pickNearest(frameCandidates[i])) {
-      add(item.contact, 0, into(body));
+  for (const link of links) {
+    for (const contact of pickNearest(link.frame, (c) => c.gap)) {
+      add(contact, 0, into(link.body));
     }
-    for (const item of pickNearest(bodyCandidates[i])) {
-      chosen[i].add(item.index);
+    for (const neighbor of pickNearest(link.neighbors, (n) => n.contact.gap)) {
+      link.chosen.add(neighbor.body);
     }
   }
 
-  // 4. Пара остаётся, только если оба тела выбрали друг друга.
-  for (const [key, contact] of pairContacts) {
-    const [i, j] = key.split(':').map(Number);
-
-    if (chosen[i].has(j) && chosen[j].has(i)) {
-      add(contact, into(bodies[j]), into(bodies[i]));
+  // Пара остаётся, только если оба тела выбрали друг друга.
+  for (const { a, b, contact } of pairs) {
+    if (a.chosen.has(b.body) && b.chosen.has(a.body)) {
+      add(contact, into(b.body), into(a.body));
     }
   }
 
   return out;
-};
+}
 
 /**
  * Как рисовать мостик:
@@ -218,7 +216,7 @@ export type BridgeShape =
       width: number;
     };
 
-export const bridgeShape = (bridge: Bridge): BridgeShape | null => {
+export function bridgeShape(bridge: Bridge): BridgeShape {
   const { length, width } = bridge;
   const cos = Math.cos(bridge.angle);
   const sin = Math.sin(bridge.angle);
@@ -267,4 +265,4 @@ export const bridgeShape = (bridge: Bridge): BridgeShape | null => {
     y2: bridge.centerY + dy,
     width: short,
   };
-};
+}

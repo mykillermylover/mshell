@@ -1,7 +1,6 @@
 // Чистая раскладка попапа: прижатие Box к кромке рамки, align вдоль края,
 // порядок детей (spacer у рамки, Revealer, зона на дальней кромке) и толщина.
 // Без GJS - тестируется в node.
-import type { Box } from '@lib/liquid/geometry';
 
 export type HorizontalEdge = 'top' | 'bottom';
 export type VerticalEdge = 'left' | 'right';
@@ -28,6 +27,9 @@ export interface PopLayout {
   spacer: { widthRequest: number; heightRequest: number };
   zone: { widthRequest: number; heightRequest: number };
 }
+
+/** GTK: -1 - размер по содержимому, а не запрошенный. */
+const NATURAL_SIZE = -1;
 
 type Margins = Record<
   'marginStart' | 'marginEnd' | 'marginTop' | 'marginBottom',
@@ -73,14 +75,14 @@ const shiftAlong = (
  * поля spacer не входит (рамку рисует LiquidField), а input закрытой зоны
  * достраивается на него до края экрана.
  */
-export const popLayout = (
+export function popLayout(
   edge: Edge,
   align: EdgeAlign,
   style: LayoutStyle,
   depth: number,
   hover: boolean,
   offset = 0,
-): PopLayout => {
+): PopLayout {
   const corner = style.border + style.screenRadius;
   const horizontal = edge === 'top' || edge === 'bottom';
 
@@ -163,12 +165,12 @@ export const popLayout = (
   }
 
   const spacer = horizontal
-    ? { widthRequest: -1, heightRequest: hover ? style.border : 0 }
-    : { widthRequest: hover ? style.border : 0, heightRequest: -1 };
+    ? { widthRequest: NATURAL_SIZE, heightRequest: hover ? style.border : 0 }
+    : { widthRequest: hover ? style.border : 0, heightRequest: NATURAL_SIZE };
 
   const zone = horizontal
-    ? { widthRequest: -1, heightRequest: depth }
-    : { widthRequest: depth, heightRequest: -1 };
+    ? { widthRequest: NATURAL_SIZE, heightRequest: depth }
+    : { widthRequest: depth, heightRequest: NATURAL_SIZE };
 
   return {
     orientation: horizontal ? 'vertical' : 'horizontal',
@@ -177,25 +179,4 @@ export const popLayout = (
     spacer,
     zone,
   };
-};
-
-/**
- * Input закрытой hover-зоны: тело плюс полоса рамки до края экрана.
- * Никакого вывода из рендера: что видно (губа), то и ловится.
- */
-export const hoverInput = (body: Box, edge: Edge, border: number): Box => {
-  switch (edge) {
-    case 'top': {
-      return { ...body, y: body.y - border, h: body.h + border };
-    }
-    case 'bottom': {
-      return { ...body, h: body.h + border };
-    }
-    case 'left': {
-      return { ...body, x: body.x - border, w: body.w + border };
-    }
-    default: {
-      return { ...body, w: body.w + border };
-    }
-  }
-};
+}

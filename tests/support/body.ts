@@ -1,4 +1,4 @@
-import type { Body } from '@lib/liquid/geometry';
+import type { Body } from '@lib/geometry';
 
 /** Фабрика тестовых тел: ширина по умолчанию задаётся в каждом файле. */
 export const makeBody =

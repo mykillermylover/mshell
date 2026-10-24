@@ -14,7 +14,7 @@ function Card(props: { title: string; body: string; w: number; h: number }) {
       widthRequest={props.w}
       heightRequest={props.h}
     >
-      <label class="title" label={props.title} xalign={0} />
+      <label class="pop-title" label={props.title} xalign={0} />
       <label label={props.body} xalign={0} wrap />
     </box>
   );
@@ -73,7 +73,7 @@ export const INITIAL_POPS: PopSpec[] = [
   {
     id: 'player',
     edge: 'top',
-    hover: { content: PlayerHover, hideOnReveal: false },
+    hover: { content: PlayerHover },
     content: Player,
   },
   {

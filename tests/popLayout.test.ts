@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { hoverInput, popLayout } from '@lib/windows/popLayout';
+import { popLayout } from '@lib/windows/popLayout';
 
 const style = { border: 4, screenRadius: 10 };
 
@@ -214,33 +214,4 @@ test('popLayout: offset у start/end сдвигает внутрь и упира
     popLayout('right', 'end', style, 6, false, -40).anchor.marginBottom,
     54,
   );
-});
-
-test('hoverInput: губа плюс полоса рамки до края экрана', () => {
-  const body = { x: 100, y: 100, w: 50, h: 9 };
-
-  assert.deepEqual(hoverInput(body, 'top', 4), {
-    x: 100,
-    y: 96,
-    w: 50,
-    h: 13,
-  });
-  assert.deepEqual(hoverInput(body, 'bottom', 4), {
-    x: 100,
-    y: 100,
-    w: 50,
-    h: 13,
-  });
-  assert.deepEqual(hoverInput(body, 'left', 4), {
-    x: 96,
-    y: 100,
-    w: 54,
-    h: 9,
-  });
-  assert.deepEqual(hoverInput(body, 'right', 4), {
-    x: 100,
-    y: 100,
-    w: 54,
-    h: 9,
-  });
 });

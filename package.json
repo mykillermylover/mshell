@@ -28,6 +28,7 @@
         "lint-fix": "eslint --ignore-pattern '@girs/**' --fix",
         "test": "TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test \"tests/**/*.test.ts\"",
         "test:types": "tsc -p tsconfig.test.json --noEmit",
+        "typecheck": "bash ./scripts/typecheck.sh",
         "dev": "bash './dev.sh'"
     },
     "type": "module"

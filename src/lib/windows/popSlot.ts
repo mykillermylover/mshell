@@ -1,4 +1,4 @@
-import type { Rect } from '@lib/liquid/geometry';
+import type { Rect } from '@lib/geometry';
 import { Gtk } from 'ags/gtk4';
 
 import { boundsOf } from './api';
@@ -44,11 +44,12 @@ const filler = () => {
 };
 
 /** Основной Revealer попапа; направление задаёт край. */
-export const buildPopRevealer = (edge: Edge) =>
-  new Gtk.Revealer({
+export function buildPopRevealer(edge: Edge): Gtk.Revealer {
+  return new Gtk.Revealer({
     transitionType: SLIDE[edge].pop,
     revealChild: false,
   });
+}
 
 interface HoverSlot {
   content: Gtk.Widget | null;
@@ -63,13 +64,14 @@ interface PopSlotOptions {
   hover: HoverSlot | null;
 }
 
-/** GTK-часть попапа: раскладка, зона, подписки и геометрия виджета. */
+/** GTK-часть попапа: раскладка, зона и геометрия виджета. */
 export interface PopSlot {
   readonly widget: Gtk.Box;
   readonly animating: boolean;
   /** Основной Revealer уже полностью раскрыт. */
   readonly revealed: boolean;
-  subscribe(fn: () => void): () => void;
+  /** Revealer hover-зоны; null, если зоны нет. */
+  readonly zoneRevealer: Gtk.Revealer | null;
   bounds(relativeTo: Gtk.Widget): Rect | null;
   apply(duration: number, layout: PopLayout): void;
   cleanup(): void;
@@ -80,7 +82,7 @@ export interface PopSlot {
  * spacer с полосой рамки. Здесь только GTK-виджеты и подписки; hover-
  * контроллер один на кадр, геометрию считает Pop.
  */
-export const buildPopSlot = (options: PopSlotOptions): PopSlot => {
+export function buildPopSlot(options: PopSlotOptions): PopSlot {
   const { edge, layout, revealer, content, hover } = options;
   const widget = new Gtk.Box();
   let spacer: Gtk.Box | null = null;
@@ -133,26 +135,6 @@ export const buildPopSlot = (options: PopSlotOptions): PopSlot => {
     sync();
   }
 
-  const subscribe = (fn: () => void) => {
-    const connections: Array<[Gtk.Revealer, number]> = [];
-
-    for (const target of [revealer, zoneRevealer]) {
-      if (!target) {
-        continue;
-      }
-      connections.push(
-        [target, target.connect('notify::reveal-child', fn)],
-        [target, target.connect('notify::child-revealed', fn)],
-      );
-    }
-
-    return () => {
-      for (const [target, id] of connections) {
-        target.disconnect(id);
-      }
-    };
-  };
-
   const apply = (duration: number, next: PopLayout) => {
     revealer.transitionDuration = duration;
     if (zoneRevealer) {
@@ -194,7 +176,7 @@ export const buildPopSlot = (options: PopSlotOptions): PopSlot => {
     get revealed() {
       return revealer.child_revealed;
     },
-    subscribe,
+    zoneRevealer,
     bounds: (relativeTo) => boundsOf(widget, relativeTo),
     apply,
     cleanup: () => {
@@ -203,4 +185,4 @@ export const buildPopSlot = (options: PopSlotOptions): PopSlot => {
       }
     },
   };
-};
+}

@@ -1,4 +1,4 @@
-import type { Rect } from '@lib/liquid/geometry';
+import type { Rect } from '@lib/geometry';
 import type { Accessor, Setter } from 'ags';
 import { createState } from 'ags';
 import type { Gtk } from 'ags/gtk4';
@@ -80,12 +80,7 @@ export abstract class Window {
       id: options.id,
       monitor: options.host.monitor,
       pinned: this._pinned,
-      pin: () => this.pin(),
-      unpin: () => this.unpin(),
       togglePin: () => this.togglePin(),
-      open: () => this.open(),
-      close: () => this.close(),
-      toggle: () => this.toggle(),
       addFloat: (spec) => this.host.addFloat(spec),
       remove: (id) => this.host.remove(id),
     };
@@ -175,14 +170,19 @@ export abstract class Window {
     }
   }
 
+  /** Подписка на анимации окна; вызывающий обязан сохранить отписку. */
   subscribe(fn: () => void): () => void {
-    const ids = [
-      this.revealer.connect('notify::reveal-child', fn),
-      this.revealer.connect('notify::child-revealed', fn),
-    ];
+    const targets = this.watchedRevealers();
+    const ids = targets.map((target) => [
+      target.connect('notify::reveal-child', fn),
+      target.connect('notify::child-revealed', fn),
+    ]);
+
     return () => {
-      for (const id of ids) {
-        this.revealer.disconnect(id);
+      for (const [index, target] of targets.entries()) {
+        for (const id of ids[index]) {
+          target.disconnect(id);
+        }
       }
     };
   }
@@ -197,6 +197,11 @@ export abstract class Window {
 
   /** Курсор покинул поверхность; у обычных окон - no-op. */
   hoverOut(): void {}
+
+  /** Revealer'ы, чьи анимации двигают форму; Pop добавляет hover-зону. */
+  protected watchedRevealers(): Gtk.Revealer[] {
+    return [this.revealer];
+  }
 
   abstract measure(relativeTo: Gtk.Widget): WindowMeasure;
   abstract apply(): void;

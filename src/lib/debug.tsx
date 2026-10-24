@@ -1,7 +1,5 @@
-// Debug-команды для живых прогонов. Включаются только при MSHELL_DEBUG=1:
-// в продакшене остаются toggle/open/close/closeall.
-import { Gtk } from 'ags/gtk4';
-
+// Debug-команды для живых прогонов. Вызываются из lib/shell.ts только при
+// MSHELL_DEBUG=1: в продакшене остаются toggle/open/close/closeall.
 import { snapshot } from './config';
 import { config } from './config/app';
 import type { Frame } from './frame/Frame';
@@ -10,6 +8,12 @@ import type { Frame } from './frame/Frame';
 const BENCH_MARGIN = 250;
 const BENCH_TRAVEL = 200;
 const BENCH_MS = 3000;
+// Сетка debug-спавна: 5 в ряд, отступ от угла и шаг, px.
+const SPAWN_COLUMNS = 5;
+const SPAWN_X = 100;
+const SPAWN_Y = 100;
+const SPAWN_STEP_X = 180;
+const SPAWN_STEP_Y = 120;
 
 const numberArg = (value: string | undefined) => {
   const number = Number(value);
@@ -168,19 +172,16 @@ export function handleDebug(frame: Frame, args: string[]): string | undefined {
         frame.addFloat({
           id: `bench-${index}`,
           title: `Bench ${index}`,
-          x: 100 + (index % 5) * 180,
-          y: 100 + Math.floor(index / 5) * 120,
-          content: () =>
-            new Gtk.Label({
-              label: `bench ${index}`,
-            }) as unknown as JSX.Element,
+          x: SPAWN_X + (index % SPAWN_COLUMNS) * SPAWN_STEP_X,
+          y: SPAWN_Y + Math.floor(index / SPAWN_COLUMNS) * SPAWN_STEP_Y,
+          content: () => <label label={`bench ${index}`} />,
         });
       }
 
       return 'ok';
     }
     case 'frames': {
-      return String(frame.frames);
+      return String(frame.tickCount);
     }
     case 'tune': {
       const key = args[1];

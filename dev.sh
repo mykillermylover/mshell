@@ -14,7 +14,7 @@ INSTANCE=ags
 
 # Только исходники: рекурсия по корню зацепила бы node_modules, @girs,
 # build, result и .git — шелл перезапускался бы от любого служебного файла.
-WATCH=(app.tsx style.css src)
+WATCH=(app.tsx style.scss src)
 
 WATCHER=
 
@@ -48,7 +48,7 @@ while true; do
   # С `wait` kill/TERM срабатывают сразу, не дожидаясь следующей правки.
   inotifywait -r \
     -e modify -e move -e create -e delete -e attrib \
-    --include '\.(ts|tsx|css)$' \
+    --include '\.(ts|tsx|scss)$' \
     "${WATCH[@]}" &
   WATCHER=$!
   if ! wait "$WATCHER"; then

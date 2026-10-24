@@ -5,7 +5,7 @@ import {
   contactBetween,
   contactsWithFrame,
   type FrameSpec,
-} from '@lib/liquid/geometry';
+} from '@lib/geometry';
 import { type SnapEnv, snapTo } from '@lib/snap';
 
 import { makeBody } from './support/body';

@@ -1,0 +1,95 @@
+// Слой целиком прозрачный: всё, что видно как «фон», рисует lib/liquid/LiquidField.ts.
+// Класс mshell-frame, а не frame: имя .frame занято правилами тем GTK.
+
+// Единственная палитра сцены. Контраст fg/fill ~7.6:1 (AA).
+$fill: rgb(45 53 59 / 0.96);
+$fg: #d3c6aa;
+$grip: rgb(211 198 170 / 0.8);
+$hover: rgb(211 198 170 / 0.12);
+$active: rgb(211 198 170 / 0.2);
+
+window.mshell-frame {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+}
+
+// Заливка рамки и ВСЕХ окон: LiquidField читает её как цвет (get_color),
+// альфа уходит в прозрачность слоя.
+.frame-shape {
+  color: $fill;
+}
+
+// Отступы содержимого окон (контент оборачивается автоматически). Фона нет.
+.frame-body {
+  padding: 18px 24px;
+  color: $fg;
+}
+
+.pop-title {
+  font-weight: 700;
+}
+
+// Hover-зона попапа: фон рисует LiquidField, контент - обычные виджеты.
+.hover-zone {
+  color: $fg;
+}
+
+.hover-row {
+  padding: 4px 12px;
+}
+
+// Кнопки пина: в покое наши; hover/active фиксируем сами, иначе их рисует тема.
+.pin-button {
+  padding: 4px 10px;
+  background: none;
+  box-shadow: none;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+
+  &:hover {
+    background: $hover;
+  }
+
+  &:active {
+    background: $active;
+  }
+}
+
+// Плавающие окна: заголовок - «ручка», за неё таскаем.
+.float .frame-body {
+  padding-top: 6px;
+}
+
+.float-grip {
+  padding: 14px 24px 0 24px;
+  font-weight: 600;
+  color: $grip;
+
+  &:hover {
+    color: $fg;
+  }
+}
+
+.grip-button {
+  min-height: 0;
+  min-width: 0;
+  padding: 2px 6px;
+  background: none;
+  box-shadow: none;
+  border: none;
+  color: inherit;
+
+  &:hover {
+    background: $hover;
+  }
+
+  &:active {
+    background: $active;
+  }
+}
+
+// Демо-виджеты: отступ контента из CSS, а не из TSX.
+.workspaces-pad {
+  margin-right: 100px;
+}

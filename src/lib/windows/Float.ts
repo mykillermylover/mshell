@@ -19,7 +19,7 @@ export class Float extends Window {
     const revealer = new Gtk.Revealer({
       transitionType: Gtk.RevealerTransitionType.SLIDE_DOWN,
       transitionDuration: style().revealDuration,
-      revealChild: spec.open ?? true,
+      revealChild: true,
     });
     super({ id: spec.id, content: spec.content, revealer, host });
 
@@ -30,6 +30,7 @@ export class Float extends Window {
     );
     const closeBtn = Gtk.Button.new_from_icon_name('window-close-symbolic');
     closeBtn.add_css_class('flat');
+    closeBtn.add_css_class('grip-button');
     closeBtn.connect('clicked', () => this.close());
     grip.append(closeBtn);
 

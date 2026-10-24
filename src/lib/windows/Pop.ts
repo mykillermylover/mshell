@@ -1,5 +1,5 @@
 import type { FieldStyle } from '@lib/config';
-import type { Rect } from '@lib/liquid/geometry';
+import type { Rect } from '@lib/geometry';
 import { noop } from '@lib/utils';
 import type { Gtk } from 'ags/gtk4';
 
@@ -11,7 +11,7 @@ import {
   type PopSpec,
   type WindowHost,
 } from './api';
-import { hoverInput, popLayout } from './popLayout';
+import { popLayout } from './popLayout';
 import { buildPopRevealer, buildPopSlot, type PopSlot } from './popSlot';
 import { Window, type WindowMeasure } from './window';
 
@@ -123,10 +123,6 @@ export class Pop extends Window {
     }
   }
 
-  subscribe(fn: () => void): () => void {
-    return this.slot.subscribe(fn);
-  }
-
   /**
    * Видимое тело: всё, кроме полосы рамки (`spacer`). Рамку рисует
    * LiquidField, поэтому в тело поля она не входит.
@@ -144,14 +140,25 @@ export class Pop extends Window {
     }
 
     const body = this.bodyRect(raw);
-    const input = this.slot.revealed
-      ? body
-      : hoverInput(body, this.spec.edge, this.style().border);
+    // Закрытая зона ловит сырые границы слота: тело плюс полоса рамки до
+    // края экрана. Что видно (губа) - то и ловится.
+    const input = this.slot.revealed ? body : raw;
 
     return {
       body: body.w >= 1 && body.h >= 1 ? body : null,
       input,
     };
+  }
+
+  /** Применить длительности и раскладку по текущему конфигу. */
+  apply() {
+    const style = this.style();
+    this.slot.apply(style.revealDuration, this.layout(style));
+  }
+
+  protected watchedRevealers(): Gtk.Revealer[] {
+    const zone = this.slot.zoneRevealer;
+    return zone ? [this.revealer, zone] : [this.revealer];
   }
 
   /** Тело без полосы рамки; нулевое при `depth = 0` (невидимая зона). */
@@ -178,7 +185,8 @@ export class Pop extends Window {
     if (!this.hover) {
       return 0;
     }
-    return Math.max(1, this.hover.depth ?? style.hoverDepth);
+    // Нижняя граница уже отсечена конфигом (LIMITS.style.hoverDepth >= 1).
+    return style.hoverDepth;
   }
 
   /** Раскладка по текущему конфигу. */
@@ -195,11 +203,5 @@ export class Pop extends Window {
       Boolean(this.hover),
       offset,
     );
-  }
-
-  /** Применить длительности и раскладку по текущему конфигу. */
-  apply() {
-    const style = this.style();
-    this.slot.apply(style.revealDuration, this.layout(style));
   }
 }

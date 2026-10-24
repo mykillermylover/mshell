@@ -1,11 +1,12 @@
-import { Hyprland } from '@lib/hyprland';
 import { useMonitor } from '@widgets/monitor';
 import { createBinding, createComputed, For } from 'ags';
 import { Gtk } from 'ags/gtk4';
-import type AstalHyprland from 'gi://AstalHyprland';
+import AstalHyprland from 'gi://AstalHyprland';
 
 export default function Test() {
-  const workspaces = createBinding(Hyprland, 'workspaces');
+  // Синглтон - внутри контента: модуль исполняется и в клиенте (см. App and CLI).
+  const hyprland = AstalHyprland.get_default();
+  const workspaces = createBinding(hyprland, 'workspaces');
 
   const [monitor, onMap] = useMonitor();
 
@@ -16,13 +17,18 @@ export default function Test() {
   );
 
   return (
-    <box marginEnd={100} onMap={onMap}>
+    <box class="workspaces-pad" onMap={onMap}>
       <For each={currWorkspaces}>
         {(item: AstalHyprland.Workspace) => {
           return (
             <box>
               <Gtk.GestureClick
-                onPressed={() => Hyprland.focus_workspace(item.id)}
+                onPressed={() => {
+                  hyprland.dispatch(
+                    `hl.dsp.focus({ workspace = "${item.id}" })`,
+                    '',
+                  );
+                }}
               />
               <label label={item.id.toString()} />
             </box>
