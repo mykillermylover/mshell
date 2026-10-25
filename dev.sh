@@ -49,7 +49,7 @@ while true; do
   inotifywait -r \
     -e modify -e move -e create -e delete -e attrib \
     --include '\.(ts|tsx|scss)$' \
-    "${WATCH[@]}" &
+    "${WATCH[@]}" 2>/dev/null &
   WATCHER=$!
   if ! wait "$WATCHER"; then
     echo 'dev.sh: inotifywait завершился, перезапуск невозможен' >&2

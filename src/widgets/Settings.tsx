@@ -1,56 +1,127 @@
+import type { ChoiceField, Field } from '@lib/config';
+import { fields } from '@lib/config';
+import { config } from '@lib/config/app';
 import { useWindowApi } from '@lib/windows/api';
+import { ICONS } from '@widgets/icons';
+import Slider from '@widgets/Slider';
+import { createState } from 'ags';
 import { Gtk } from 'ags/gtk4';
 
-// Каскад демо-Float: старт от угла и шаг, px.
-const SPAWN_ORIGIN = 80;
-const SPAWN_STEP = 24;
-
-let spawned = 0;
-
-function Spawned() {
-  const win = useWindowApi();
+function DropDown({ field }: { field: ChoiceField }) {
+  const [open, setOpen] = createState(false);
 
   return (
-    <label
-      label={`Float на ${win.monitor.get_connector() ?? '?'}`}
-      xalign={0}
-    />
+    <box orientation={Gtk.Orientation.VERTICAL}>
+      <button onClicked={() => setOpen(!open.peek())}>
+        <label label={field.value} />
+      </button>
+
+      <revealer
+        revealChild={open}
+        transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN}
+      >
+        <box orientation={Gtk.Orientation.VERTICAL}>
+          {field.options.map((option) => (
+            <button
+              onClicked={() => {
+                field.set(option);
+                setOpen(false);
+              }}
+            >
+              <label xalign={0} label={option} />
+            </button>
+          ))}
+        </box>
+      </revealer>
+    </box>
   );
 }
 
+function FieldControl({ field }: { field: Field }) {
+  const api = useWindowApi();
+
+  switch (field.kind) {
+    case 'text': {
+      return (
+        <entry
+          hexpand
+          text={field.value}
+          onEditingDone={({ text }) => field.set(text)}
+        />
+      );
+    }
+    case 'number': {
+      return (
+        <box orientation={Gtk.Orientation.HORIZONTAL} spacing={10}>
+          <label label={field.value((v) => v.toFixed(2))} widthRequest={100}/>
+          <Slider
+            hexpand
+            min={field.min}
+            max={field.max}
+            step={field.step}
+            value={field.value}
+            onChangeValue={(_self, _scroll, value) => field.set(value)}
+          />
+        </box>
+      );
+    }
+    case 'choice': {
+      return <DropDown field={field} />;
+    }
+    case 'bool': {
+      return (
+        <switch
+          hexpand
+          active={field.value}
+          onNotifyActive={({ active }) => field.set(active)}
+        />
+      );
+    }
+  }
+}
+
 export default function Settings() {
-  const win = useWindowApi();
-  const pinLabel = win.pinned.as((pinned) =>
-    pinned ? 'Открепить' : 'Закрепить',
-  );
+  const fieldsList = fields(config);
+
+  const sectionFields = new Map<string, Field[]>();
+
+  for (const field of fieldsList) {
+    const { section } = field;
+
+    const entry = sectionFields.get(section) ?? [];
+
+    entry.push(field);
+    sectionFields.set(section, entry);
+  }
+
+  const api = useWindowApi();
 
   return (
-    <box
-      orientation={Gtk.Orientation.VERTICAL}
-      spacing={6}
-      widthRequest={300}
-      heightRequest={360}
-    >
-      <label class="pop-title" label="Settings" xalign={0} />
-      <label label="Выезжает из правой стороны" xalign={0} wrap />
-      <button class="pin-button" onClicked={() => win.togglePin()}>
-        <label label={pinLabel} />
-      </button>
-      <button
-        class="pin-button"
-        onClicked={() => {
-          spawned += 1;
-          win.addFloat({
-            id: `spawn-${spawned}`,
-            title: 'Spawn',
-            x: SPAWN_ORIGIN + spawned * SPAWN_STEP,
-            y: SPAWN_ORIGIN + spawned * SPAWN_STEP,
-            content: Spawned,
-          });
-        }}
-      >
-        <label label="Создать Float" />
-      </button>
+    <box orientation={Gtk.Orientation.VERTICAL} spacing={6}>
+      <box orientation={Gtk.Orientation.HORIZONTAL}>
+        <label class="pop-title" label="Settings" xalign={0} />
+        <box halign={Gtk.Align.END} hexpand>
+          <Gtk.GestureClick onPressed={() => api.togglePin()} />
+          <image
+            iconName={api.pinned((pinned) =>
+              pinned ? ICONS.windowUnpin : ICONS.windowPin,
+            )}
+          />
+        </box>
+      </box>
+      {[...sectionFields.entries()].map(([section, fields]) => {
+        return (
+          <box orientation={Gtk.Orientation.VERTICAL}>
+            <label label={section} />
+            {fields.map((field) => (
+              <box orientation={Gtk.Orientation.HORIZONTAL} spacing={40}>
+                <label label={field.label || field.key} />
+                <FieldControl field={field} />
+              </box>
+            ))}
+          </box>
+        );
+      })}
     </box>
   );
 }

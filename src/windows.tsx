@@ -1,7 +1,7 @@
 import type { FloatSpec, PopSpec } from '@lib/windows/api';
 import { useWindowApi } from '@lib/windows/api';
 import Settings from '@widgets/Settings';
-import Test from '@widgets/Test';
+import Workspaces from '@widgets/Workspaces';
 import { Gtk } from 'ags/gtk4';
 
 // Контент окон. Фон и отступы не задавать: фон рисует поле жидкости,
@@ -86,9 +86,11 @@ export const INITIAL_POPS: PopSpec[] = [
   {
     id: 'workspaces',
     edge: 'top',
-    hover: true,
+    openByDefault: true,
     align: 'end',
-    content: Test,
+    exclusive: false,
+    offsetX: -100,
+    content: Workspaces,
   },
 ];
 

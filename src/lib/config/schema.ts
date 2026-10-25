@@ -118,7 +118,7 @@ export const SCHEMA = {
       default: 0,
       min: -1,
       max: 1,
-      step: 0.1,
+      step: 0.5,
       label: 'Контраст',
     }),
   },
