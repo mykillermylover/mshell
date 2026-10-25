@@ -111,7 +111,7 @@ export const SCHEMA = {
     }),
     // Пусто или относительный путь - палитра не генерируется.
     wallpaper: text({
-      default: '/home/mihail/Shared/Wallpapers/wallpaper.jpg',
+      default: '',
       label: 'Обои',
     }),
     contrast: num({

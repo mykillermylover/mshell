@@ -85,7 +85,8 @@ async function run() {
     ].join('\n');
 
     if (!GLib.file_set_contents(config, text)) {
-      throw new Error(`cannot write ${config}`);
+      console.warn(`theme: cannot write ${config}`);
+      return;
     }
 
     await execAsync([

@@ -1,7 +1,6 @@
 import { focusWorkspace } from '@lib/hyprland';
 import { useWindowApi } from '@lib/windows/api';
 import { createBinding, createComputed, For } from 'ags';
-import { Gtk } from 'ags/gtk4';
 import AstalHyprland from 'gi://AstalHyprland';
 
 export default function Workspaces() {

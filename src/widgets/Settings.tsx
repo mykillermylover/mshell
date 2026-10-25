@@ -38,8 +38,6 @@ function DropDown({ field }: { field: ChoiceField }) {
 }
 
 function FieldControl({ field }: { field: Field }) {
-  const api = useWindowApi();
-
   switch (field.kind) {
     case 'text': {
       return (
@@ -53,7 +51,7 @@ function FieldControl({ field }: { field: Field }) {
     case 'number': {
       return (
         <box orientation={Gtk.Orientation.HORIZONTAL} spacing={10}>
-          <label label={field.value((v) => v.toFixed(2))} widthRequest={100}/>
+          <label label={field.value((v) => v.toFixed(2))} widthRequest={100} />
           <Slider
             hexpand
             min={field.min}

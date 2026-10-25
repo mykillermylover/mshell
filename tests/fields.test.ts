@@ -1,15 +1,6 @@
+import { type Config, type ConfigMethods, DEFAULTS, fields, LIMITS, reactive, SCHEMA, } from '@lib/config';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-
-import {
-  type Config,
-  type ConfigMethods,
-  DEFAULTS,
-  fields,
-  LIMITS,
-  reactive,
-  SCHEMA,
-} from '@lib/config';
 
 const noop = () => {};
 
@@ -21,13 +12,12 @@ function makeConfig(): Config {
     flush: noop,
   };
 
-  const config = Object.assign(
+  return Object.assign(
     {},
-    reactive(structuredClone(DEFAULTS), () => {}, LIMITS),
+    reactive(structuredClone(DEFAULTS), () => {
+    }, LIMITS),
     methods,
   ) as Config;
-
-  return config;
 }
 
 test('fields: покрывает каждый лист схемы', () => {
