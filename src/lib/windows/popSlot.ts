@@ -44,10 +44,13 @@ const filler = () => {
 };
 
 /** Основной Revealer попапа; направление задаёт край. */
-export function buildPopRevealer(edge: Edge): Gtk.Revealer {
+export function buildPopRevealer(
+  edge: Edge,
+  revealChild = false,
+): Gtk.Revealer {
   return new Gtk.Revealer({
     transitionType: SLIDE[edge].pop,
-    revealChild: false,
+    revealChild,
   });
 }
 

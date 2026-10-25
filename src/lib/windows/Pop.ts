@@ -33,12 +33,12 @@ export class Pop extends Window {
     host: WindowHost,
   ) {
     const hoverSpec = spec.hover === true ? {} : (spec.hover ?? null);
-    const revealer = buildPopRevealer(spec.edge);
+    const revealer = buildPopRevealer(spec.edge, spec.openByDefault);
     super({
       id: spec.id,
       content: spec.content,
       revealer,
-      exclusive: true,
+      exclusive: spec.exclusive ?? true,
       host,
       activate: onActivate,
       keyboard: spec.keyboard,

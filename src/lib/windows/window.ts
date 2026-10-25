@@ -89,6 +89,8 @@ export abstract class Window {
       monitor: options.host.monitor,
       pinned: this._pinned,
       togglePin: () => this.togglePin(),
+      pin: () => this.pin(),
+      unpin: () => this.unpin(),
       addFloat: (spec) => this.host.addFloat(spec),
       remove: (id) => this.host.remove(id),
       grabKeyboard: () => {

@@ -27,6 +27,8 @@ export interface WindowSpec {
 interface PopBase extends WindowSpec {
   align?: EdgeAlign; // положение вдоль края
   hover?: true | HoverSpec; // true - дефолтные значения; нет - без hover
+  openByDefault?: boolean;
+  exclusive?: boolean;
 }
 
 type VerticalPopSpec = PopBase & { edge: VerticalEdge; offsetY?: number };
@@ -62,6 +64,8 @@ export interface WindowApi {
   /** Закреплено ли окно - реактивно, для UI. */
   readonly pinned: Accessor<boolean>;
   togglePin(): void;
+  pin(): void;
+  unpin(): void;
   /** Создать Float в том же кадре/на том же мониторе. */
   addFloat(spec: FloatSpec): void;
   /** Убрать окно (по id) из этого кадра. */
