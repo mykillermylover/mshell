@@ -16,10 +16,16 @@ export interface HoverSpec {
   hideOnReveal?: boolean; // скрыть зону, пока попап раскрыт
 }
 
-interface PopBase {
+/** Общее у всех окон: контент и клавиатура. */
+export interface WindowSpec {
   id: string;
-  align?: EdgeAlign; // положение вдоль края
   content: Content; // вызывается по разу на монитор; фон НЕ задавать
+  /** Окно принимает ввод с клавиатуры: наведение даёт on-demand. */
+  keyboard?: boolean;
+}
+
+interface PopBase extends WindowSpec {
+  align?: EdgeAlign; // положение вдоль края
   hover?: true | HoverSpec; // true - дефолтные значения; нет - без hover
 }
 
@@ -38,12 +44,10 @@ export function isVerticalEdge(spec: PopSpec): spec is VerticalPopSpec {
 export type PopSpec = HorizontalPopSpec | VerticalPopSpec;
 
 /** Плавающее окно: таскается за заголовок, у рамки примагничивается и сливается с ней. */
-export interface FloatSpec {
-  id: string;
+export interface FloatSpec extends WindowSpec {
   title?: string;
   x: number;
   y: number;
-  content: Content;
 }
 
 /**
@@ -62,6 +66,16 @@ export interface WindowApi {
   addFloat(spec: FloatSpec): void;
   /** Убрать окно (по id) из этого кадра. */
   remove(id: string): void;
+  /**
+   * Принудительно забрать клавиатуру на весь кадр (EXCLUSIVE):
+   * держится, пока не вызван `releaseKeyboard` или окно не закрыто.
+   * Автоматический on-demand по наведению даёт проп `keyboard`.
+   */
+  grabKeyboard(): void;
+  /** Вернуть клавиатуру композитору. */
+  releaseKeyboard(): void;
+  /** Забирает ли это окно клавиатуру принудительно. */
+  readonly keyboardGrabbed: Accessor<boolean>;
 }
 
 /** Узкий хост, который Frame отдаёт окну: без ссылки на сам Frame. */
@@ -69,6 +83,14 @@ export interface WindowHost {
   readonly monitor: Gdk.Monitor;
   addFloat(spec: FloatSpec): void;
   remove(id: string): void;
+  /** Наведение на окно: on-demand при входе, NONE при выходе. */
+  hoverKeyboard(owner: string, entering: boolean): void;
+  /** Модальный захват клавиатуры: EXCLUSIVE, пока не снят. */
+  exclusiveKeyboard(owner: string, active: boolean): void;
+  /** Снять и on-demand, и эксклюзив этого окна (закрытие окна). */
+  unfocusKeyboard(owner: string): void;
+  /** Изоляция Tab: фокусируемым остаётся только это окно. */
+  isolateFocus(owner: string | null): void;
 }
 
 /** Контекст окна: Window предоставляет его контенту, хук читает. */

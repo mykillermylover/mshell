@@ -5,17 +5,18 @@ import type { Gtk } from 'ags/gtk4';
 import GLib from 'gi://GLib';
 
 import {
-  type Content,
   createWindowContent,
   padded,
   type WindowApi,
   type WindowHost,
+  type WindowSpec,
 } from './api';
 import { HoverGate } from './HoverGate';
 
-interface WindowOptions {
-  id: string;
-  content: Content;
+interface WindowOptions extends Pick<
+  WindowSpec,
+  'id' | 'content' | 'keyboard'
+> {
   revealer: Gtk.Revealer;
   /** Участвует ли окно в эксклюзивности попапов. */
   exclusive?: boolean;
@@ -37,11 +38,16 @@ export abstract class Window {
   readonly api: WindowApi;
   /** Участвует ли окно в эксклюзивности попапов. */
   readonly exclusive: boolean;
+  /** Окно принимает ввод: наведение даёт on-demand. */
+  readonly keyboard: boolean;
   /** Контент в своём scope; обёрнут отступами, но ещё не вставлен в окно. */
   protected readonly contentWidget: Gtk.Box;
 
   private _pinned: Accessor<boolean>;
   private _setPinned: Setter<boolean>;
+  private _keyboardGrabbed: Accessor<boolean>;
+  private _setKeyboardGrabbed: Setter<boolean>;
+  private hovering = false;
   private readonly gate: HoverGate | null;
   private readonly host: WindowHost;
   private readonly activate: (() => void) | undefined;
@@ -52,11 +58,13 @@ export abstract class Window {
     this.id = options.id;
     this.revealer = options.revealer;
     this.exclusive = options.exclusive ?? false;
+    this.keyboard = options.keyboard ?? false;
     this.host = options.host;
     this.activate = options.activate;
     this.delays = options.delays;
 
     [this._pinned, this._setPinned] = createState(false);
+    [this._keyboardGrabbed, this._setKeyboardGrabbed] = createState(false);
 
     const delays = options.delays;
     this.gate = delays
@@ -83,6 +91,15 @@ export abstract class Window {
       togglePin: () => this.togglePin(),
       addFloat: (spec) => this.host.addFloat(spec),
       remove: (id) => this.host.remove(id),
+      grabKeyboard: () => {
+        this._setKeyboardGrabbed(true);
+        this.host.exclusiveKeyboard(this.id, true);
+      },
+      releaseKeyboard: () => {
+        this._setKeyboardGrabbed(false);
+        this.host.unfocusKeyboard(this.id);
+      },
+      keyboardGrabbed: this._keyboardGrabbed,
     };
 
     const { content, dispose } = createWindowContent(this.api, () =>
@@ -118,6 +135,8 @@ export abstract class Window {
     this.gate?.cancel();
     this.pinned = false;
     this.revealer.reveal_child = false;
+    // Закрытое окно не держит клавиатуру.
+    this.api.releaseKeyboard();
   }
 
   /** Закрыться, если не закреплено: так хост применяет эксклюзивность. */
@@ -128,6 +147,9 @@ export abstract class Window {
   }
 
   enter() {
+    if (this.keyboard) {
+      this.host.hoverKeyboard(this.id, true);
+    }
     if (this.pinned) {
       return;
     }
@@ -137,6 +159,9 @@ export abstract class Window {
   }
 
   leave() {
+    if (this.keyboard) {
+      this.host.hoverKeyboard(this.id, false);
+    }
     if (this.pinned) {
       return;
     }
@@ -187,16 +212,59 @@ export abstract class Window {
     };
   }
 
+  /**
+   * Изоляция Tab: can_focus каскаден, поэтому хватает корня контента -
+   * фокус-чейн не уходит в соседние окна.
+   */
+  setFocusable(value: boolean) {
+    this.contentWidget.set_can_focus(value);
+  }
+
   dispose() {
     this.gate?.cancel();
     this.disposeContent();
   }
 
-  /** Проверить hover-зону в точке; у обычных окон - no-op. */
-  probe(_x: number, _y: number, _relativeTo: Gtk.Widget): void {}
+  /**
+   * Наведение считается по measure().input, а не по enter/leave детей:
+   * пустые дети событий не дают. Окнам без ввода и без hover не нужно.
+   */
+  probe(x: number, y: number, relativeTo: Gtk.Widget): void {
+    if (!this.acceptsHover) {
+      return;
+    }
+    const rect = this.measure(relativeTo).input;
+    const now =
+      rect !== null &&
+      x >= rect.x &&
+      x < rect.x + rect.w &&
+      y >= rect.y &&
+      y < rect.y + rect.h;
 
-  /** Курсор покинул поверхность; у обычных окон - no-op. */
-  hoverOut(): void {}
+    if (now === this.hovering) {
+      return;
+    }
+
+    this.hovering = now;
+    if (now) {
+      this.enter();
+    } else {
+      this.leave();
+    }
+  }
+
+  /** Курсор покинул поверхность. */
+  hoverOut(): void {
+    if (this.hovering) {
+      this.hovering = false;
+      this.leave();
+    }
+  }
+
+  /** Нужно ли отслеживать наведение: hover-зона или ввод с клавиатуры. */
+  protected get acceptsHover(): boolean {
+    return this.keyboard;
+  }
 
   /** Revealer'ы, чьи анимации двигают форму; Pop добавляет hover-зону. */
   protected watchedRevealers(): Gtk.Revealer[] {

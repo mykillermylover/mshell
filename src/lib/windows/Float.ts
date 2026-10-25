@@ -21,7 +21,13 @@ export class Float extends Window {
       transitionDuration: style().revealDuration,
       revealChild: true,
     });
-    super({ id: spec.id, content: spec.content, revealer, host });
+    super({
+      id: spec.id,
+      content: spec.content,
+      revealer,
+      host,
+      keyboard: spec.keyboard,
+    });
 
     const grip = new Gtk.Box({ spacing: 8 });
     grip.add_css_class('float-grip');

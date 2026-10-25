@@ -35,6 +35,10 @@ export class Frame {
   private readonly overlay: Gtk.Overlay;
   private readonly input: FrameInput;
   private readonly motion: FrameMotion;
+  /** Кто-то держит клавиатуру эксклюзивно: hover не перебивает. */
+  private exclusiveKeyboardOwner: string | null = null;
+  /** Окно с on-demand клавиатурой под курсором. */
+  private hoverKeyboardOwner: string | null = null;
 
   /** Узкий доступ для debug-команд; см. lib/debug.tsx. */
   readonly debug = {
@@ -83,6 +87,11 @@ export class Frame {
       monitor,
       addFloat: (spec) => this.addFloat(spec),
       remove: (id) => this.remove(id),
+      hoverKeyboard: (owner, entering) => this.hoverKeyboard(owner, entering),
+      exclusiveKeyboard: (owner, active) =>
+        this.exclusiveKeyboard(owner, active),
+      unfocusKeyboard: (owner) => this.unfocusKeyboard(owner),
+      isolateFocus: (owner) => this.isolateFocus(owner),
     };
     const { TOP, BOTTOM, LEFT, RIGHT } = Astal.WindowAnchor;
 
@@ -93,7 +102,9 @@ export class Frame {
       anchor: TOP | BOTTOM | LEFT | RIGHT,
       exclusivity: Astal.Exclusivity.IGNORE, // место под рамку резервирует композитор (gaps_out)
       layer: Astal.Layer.TOP,
-      keymode: Astal.Keymode.ON_DEMAND, // чтобы в окнах работал ввод с клавиатуры
+      // NONE: Hyprland при map иначе забирает и клавиатуру, и указатель.
+      // Включим ON_DEMAND точечно, когда появятся окна с полями ввода.
+      keymode: Astal.Keymode.NONE,
       cssClasses: ['mshell-frame'],
     });
 
@@ -155,10 +166,8 @@ export class Frame {
     });
     this.surface.add_controller(motion);
 
-    // Пустой регион сразу: до первого снапшота слой не должен ловить клики.
     this.surface.connect('map', () => {
       this.input.reset();
-      this.input.sync([]);
 
       GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
         for (const body of this.windows.values()) {
@@ -289,6 +298,68 @@ export class Frame {
   }
 
   // ───────────────────────── поле ─────────────────────────
+
+  /** Наведение на окно с вводом: on-demand, если эксклюзива нет. */
+  private hoverKeyboard(owner: string, entering: boolean) {
+    if (entering) {
+      if (this.exclusiveKeyboardOwner !== null) {
+        return;
+      }
+      if (this.hoverKeyboardOwner === owner) {
+        return;
+      }
+      this.hoverKeyboardOwner = owner;
+      this.surface.keymode = Astal.Keymode.ON_DEMAND;
+      this.isolateFocus(owner);
+      return;
+    }
+
+    // Вышел не текущий владелец - его уже перехватило другое окно.
+    if (this.hoverKeyboardOwner !== owner) {
+      return;
+    }
+    this.hoverKeyboardOwner = null;
+    if (this.exclusiveKeyboardOwner !== null) {
+      return;
+    }
+    this.surface.keymode = Astal.Keymode.NONE;
+    this.isolateFocus(null);
+  }
+
+  private exclusiveKeyboard(owner: string, active: boolean) {
+    if (active) {
+      this.exclusiveKeyboardOwner = owner;
+      this.surface.keymode = Astal.Keymode.EXCLUSIVE;
+      this.isolateFocus(owner);
+      return;
+    }
+
+    if (this.exclusiveKeyboardOwner !== owner) {
+      return;
+    }
+    this.exclusiveKeyboardOwner = null;
+    // Под модалом могло остаться наведённое окно - возвращаем ему on-demand.
+    if (this.hoverKeyboardOwner !== null) {
+      this.surface.keymode = Astal.Keymode.ON_DEMAND;
+      this.isolateFocus(this.hoverKeyboardOwner);
+      return;
+    }
+    this.surface.keymode = Astal.Keymode.NONE;
+    this.isolateFocus(null);
+  }
+
+  /** Закрытие окна: снимаем оба вида захвата, не трогая чужие. */
+  private unfocusKeyboard(owner: string) {
+    this.exclusiveKeyboard(owner, false);
+    this.hoverKeyboard(owner, false);
+  }
+
+  /** Фокусируемым остаётся только указанное окно. */
+  private isolateFocus(owner: string | null) {
+    for (const [id, body] of this.windows) {
+      body.setFocusable(id === owner);
+    }
+  }
 
   private probe(x: number, y: number) {
     for (const body of this.windows.values()) {

@@ -25,7 +25,6 @@ export class Pop extends Window {
   private readonly slot: PopSlot;
   private readonly hover: HoverSpec | null;
   private readonly disposeHover: () => void;
-  private hovering = false;
 
   constructor(
     readonly spec: PopSpec,
@@ -42,6 +41,7 @@ export class Pop extends Window {
       exclusive: true,
       host,
       activate: onActivate,
+      keyboard: spec.keyboard,
       delays: hoverSpec
         ? () => ({ open: style().hoverDelay, hide: style().hideDelay })
         : undefined,
@@ -88,39 +88,9 @@ export class Pop extends Window {
     super.dispose();
   }
 
-  /**
-   * Input = тело + полоса рамки, поэтому hover считаем по measure, а не по
-   * enter/leave детей: пустые дети событий не дают.
-   */
-  probe(x: number, y: number, relativeTo: Gtk.Widget) {
-    if (!this.hover) {
-      return;
-    }
-    const rect = this.measure(relativeTo).input;
-    const now =
-      rect !== null &&
-      x >= rect.x &&
-      x < rect.x + rect.w &&
-      y >= rect.y &&
-      y < rect.y + rect.h;
-
-    if (now === this.hovering) {
-      return;
-    }
-
-    this.hovering = now;
-    if (now) {
-      this.enter();
-    } else {
-      this.leave();
-    }
-  }
-
-  hoverOut() {
-    if (this.hovering) {
-      this.hovering = false;
-      this.leave();
-    }
+  /** Наведение нужно и для hover-зоны, и для окна с вводом. */
+  protected override get acceptsHover(): boolean {
+    return this.hover !== null || this.keyboard;
   }
 
   /**
