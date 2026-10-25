@@ -2,17 +2,19 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  type DeepPartial,
+  bool,
+  type ConfigValues,
   DEFAULTS,
   LIMITS,
   merge,
+  num,
   reactive,
+  SCHEMA,
   snapshot,
 } from '@lib/config';
 
 /** Как в приложении: содержимое файла → статика конфига. */
-const fromJson = (text: string) =>
-  merge(DEFAULTS, JSON.parse(text) as DeepPartial<typeof DEFAULTS>);
+const fromJson = (text: string) => merge(SCHEMA, JSON.parse(text));
 
 test('reactive: вложенность превращается в дерево состояний', () => {
   let changes = 0;
@@ -80,10 +82,11 @@ test('merge: чужие типы и ключи не проходят', () => {
 });
 
 test('merge: вложенность любой глубины', () => {
-  const tree = merge(
-    { a: { b: 1, c: { d: 2 } }, e: true },
-    { a: { c: { d: 3 } } },
-  );
+  const schema = {
+    a: { b: num({ default: 1 }), c: { d: num({ default: 2 }) } },
+    e: bool({ default: true }),
+  };
+  const tree = merge(schema, { a: { c: { d: 3 } } });
   assert.deepEqual(tree, { a: { b: 1, c: { d: 3 } }, e: true });
 });
 
@@ -130,4 +133,49 @@ test('LIMITS: покрывает все ключи style', () => {
     Object.keys(LIMITS.style).sort(),
     Object.keys(DEFAULTS.style).sort(),
   );
+});
+
+test('merge: enum-член проходит, чужое значение → дефолт', () => {
+  const ok = fromJson('{"theme":{"mode":"dark"}}');
+  assert.equal(ok.theme.mode, 'dark');
+
+  const bad = fromJson('{"theme":{"mode":"banana"}}');
+  assert.equal(bad.theme.mode, 'system');
+});
+
+test('merge: число вне min/max зажимается', () => {
+  assert.equal(fromJson('{"style":{"border":999}}').style.border, 32);
+  assert.equal(fromJson('{"style":{"border":-5}}').style.border, 0);
+});
+
+test('merge: NaN и Infinity из JSON не проходят', () => {
+  // JSON.parse не умеет NaN, но merge вызывают и с объектом, не только с текстом.
+  const tree = merge(SCHEMA, { style: { border: Number.NaN } });
+  assert.equal(tree.style.border, 4);
+  assert.equal(merge(SCHEMA, { style: { sharp: 1e9 } }).style.sharp, 20);
+});
+
+test('merge: булево и строка проверяются по типу', () => {
+  const tree = merge(SCHEMA, {
+    theme: { wallpaper: 42 },
+    style: { sharp: '1' },
+  });
+  assert.equal(tree.theme.wallpaper, DEFAULTS.theme.wallpaper);
+  assert.equal(tree.style.sharp, DEFAULTS.style.sharp);
+});
+
+test('merge: мусор вместо секции не роняет', () => {
+  const tree = merge(SCHEMA, { theme: 'nope', style: null });
+  assert.deepEqual(tree, DEFAULTS);
+});
+
+test('merge: тип результата — ConfigValues', () => {
+  const tree: ConfigValues = fromJson('{}');
+  assert.deepEqual(tree, DEFAULTS);
+});
+
+test('merge: bool-лист принимает только boolean', () => {
+  const schema = { flag: bool({ default: true }) };
+  assert.equal(merge(schema, { flag: false }).flag, false);
+  assert.equal(merge(schema, { flag: 'yes' }).flag, true);
 });

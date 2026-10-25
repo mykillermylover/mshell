@@ -1,13 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import {
-  type DeepPartial,
-  DEFAULTS,
-  LIMITS,
-  merge,
-  reactive,
-} from '@lib/config';
+import { DEFAULTS, LIMITS, merge, reactive, SCHEMA } from '@lib/config';
 import {
   isPaletteCss,
   normalizeThemePreference,
@@ -17,8 +11,7 @@ import {
 import { isAbsolutePath } from '@lib/utils';
 
 /** Как в приложении: содержимое файла → статика конфига. */
-const fromJson = (text: string) =>
-  merge(DEFAULTS, JSON.parse(text) as DeepPartial<typeof DEFAULTS>);
+const fromJson = (text: string) => merge(SCHEMA, JSON.parse(text));
 
 test('theme: неизвестный режим сводится к system', () => {
   assert.equal(normalizeThemePreference('light'), 'light');
@@ -74,9 +67,14 @@ test('theme: схема нормализуется и знает коротки�
   assert.equal(normalizeThemeScheme(''), ThemeScheme.TONAL_SPOT);
 });
 
+test('theme: значения enum без префикса', () => {
+  assert.equal(ThemeScheme.TONAL_SPOT, 'tonal-spot');
+  assert.equal(ThemeScheme.FRUIT_SALAD, 'fruit-salad');
+});
+
 test('config: theme-параметры по умолчанию', () => {
   assert.equal(DEFAULTS.theme.mode, 'system');
-  assert.equal(DEFAULTS.theme.scheme, 'scheme-tonal-spot');
+  assert.equal(DEFAULTS.theme.scheme, 'tonal-spot');
   assert.ok(
     DEFAULTS.theme.wallpaper === '' || isAbsolutePath(DEFAULTS.theme.wallpaper),
   );

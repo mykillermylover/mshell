@@ -14,6 +14,7 @@ import {
   merge,
   patchInto,
   reactive,
+  SCHEMA,
   snapshot,
 } from './index';
 
@@ -79,7 +80,7 @@ function init(): Config {
       const text = new TextDecoder().decode(bytes);
       lastWritten = text;
       loaded = JSON.parse(text) as DeepPartial<ConfigValues>;
-      tree = merge(DEFAULTS, loaded);
+      tree = merge(SCHEMA, loaded);
       valid = true;
     } catch (error) {
       const why = error instanceof Error ? error.message : String(error);
@@ -182,7 +183,7 @@ function init(): Config {
       }
 
       const raw = JSON.parse(text) as DeepPartial<ConfigValues>;
-      const next = merge(DEFAULTS, raw);
+      const next = merge(SCHEMA, raw);
       lastWritten = text;
 
       applyingExternal = true;

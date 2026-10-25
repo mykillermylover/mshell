@@ -4,12 +4,14 @@ import type {
   DeepPartial,
   Leaf,
   Limits,
+  Node,
   Reactive,
   ReactiveNode,
   ReactiveSection,
   Section,
   State,
 } from './schema';
+import { isLeaf, normalize, type Values } from './schema';
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -133,36 +135,26 @@ export function snapshot<T extends object>(tree: Reactive<T>): T {
 }
 
 /**
- * Дефолты + значения из файла. Берётся только то, что есть в дефолтах и
- * совпадает по типу; остальное молча остаётся дефолтным - JSON не типизирован.
+ * Схема + значения из файла. У листа решает спека: тип, enum, границы.
+ * Чужие ключи и мусор молча заменяются дефолтами - JSON не типизирован.
  */
-export function merge<T extends Section>(defaults: T, raw: DeepPartial<T>): T {
-  const source: Record<string, unknown> = raw;
-  const out: Section = {};
+export function merge<N extends object>(schema: N, raw: unknown): Values<N> {
+  return mergeNode(schema as Node, raw) as Values<N>;
+}
 
-  for (const [key, fallback] of Object.entries(defaults)) {
-    const incoming = source[key];
-
-    if (isSection(fallback)) {
-      let section: Section = {};
-
-      if (isSection(incoming)) {
-        section = incoming;
-      }
-
-      out[key] = merge(fallback, section);
-      continue;
-    }
-
-    if (isSamePrimitive(incoming, fallback)) {
-      out[key] = incoming;
-      continue;
-    }
-
-    out[key] = fallback;
+function mergeNode(node: Node, raw: unknown): Leaf | Section {
+  if (isLeaf(node)) {
+    return normalize(node, raw);
   }
 
-  return out as T;
+  const source: Record<string, unknown> = isObject(raw) ? raw : {};
+  const out: Section = {};
+
+  for (const [key, child] of Object.entries(node)) {
+    out[key] = mergeNode(child, source[key]);
+  }
+
+  return out;
 }
 
 /** Применить патч к реактивной ветке: чужие ключи игнорируются. */

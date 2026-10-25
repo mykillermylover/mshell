@@ -16,27 +16,32 @@ export function normalizeThemePreference(value: string): ThemePreference {
 }
 
 export enum ThemeScheme {
-  CONTENT = 'scheme-content',
-  EXPRESSIVE = 'scheme-expressive',
-  FIDELITY = 'scheme-fidelity',
-  FRUIT_SALAD = 'scheme-fruit-salad',
-  MONOCHROME = 'scheme-monochrome',
-  NEUTRAL = 'scheme-neutral',
-  RAINBOW = 'scheme-rainbow',
-  SMART = 'scheme-smart',
-  TONAL_SPOT = 'scheme-tonal-spot',
-  VIBRANT = 'scheme-vibrant',
+  CONTENT = 'content',
+  EXPRESSIVE = 'expressive',
+  FIDELITY = 'fidelity',
+  FRUIT_SALAD = 'fruit-salad',
+  MONOCHROME = 'monochrome',
+  NEUTRAL = 'neutral',
+  RAINBOW = 'rainbow',
+  SMART = 'smart',
+  TONAL_SPOT = 'tonal-spot',
+  VIBRANT = 'vibrant',
 }
 
 function isThemeScheme(value: string): value is ThemeScheme {
   return (Object.values(ThemeScheme) as string[]).includes(value);
 }
 
-/** Короткое имя (`neutral`) тоже принимаем. */
+/**
+ * Префикс `scheme-` - синтаксис флага matugen, а не значение конфига:
+ * старые файлы с ним ещё живут, поэтому срезаем.
+ */
 export function normalizeThemeScheme(value: string): ThemeScheme {
-  const full = value.startsWith('scheme-') ? value : `scheme-${value}`;
+  const short = value.startsWith('scheme-')
+    ? value.slice('scheme-'.length)
+    : value;
 
-  return isThemeScheme(full) ? full : ThemeScheme.TONAL_SPOT;
+  return isThemeScheme(short) ? short : ThemeScheme.TONAL_SPOT;
 }
 
 /**

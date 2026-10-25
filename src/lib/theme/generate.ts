@@ -95,7 +95,7 @@ async function run() {
       '--prefer',
       'saturation',
       '-t',
-      request.scheme,
+      `scheme-${request.scheme}`,
       '--contrast',
       String(request.contrast),
       '-c',
