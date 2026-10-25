@@ -5,7 +5,7 @@ import { popLayout } from '@lib/windows/popLayout';
 
 const style = { border: 4, screenRadius: 10 };
 
-test('popLayout: верхний край по центру, без hover', () => {
+test('popLayout: top edge centered, without hover', () => {
   assert.deepEqual(popLayout('top', 'center', style, 6, false), {
     orientation: 'vertical',
     anchor: {
@@ -22,7 +22,7 @@ test('popLayout: верхний край по центру, без hover', () =>
   });
 });
 
-test('popLayout: нижний край по центру, без hover', () => {
+test('popLayout: bottom edge centered, without hover', () => {
   assert.deepEqual(popLayout('bottom', 'center', style, 6, false), {
     orientation: 'vertical',
     anchor: {
@@ -39,7 +39,7 @@ test('popLayout: нижний край по центру, без hover', () => {
   });
 });
 
-test('popLayout: левый и правый край по центру, без hover', () => {
+test('popLayout: left and right edge centered, without hover', () => {
   assert.deepEqual(popLayout('left', 'center', style, 6, false), {
     orientation: 'horizontal',
     anchor: {
@@ -71,7 +71,7 @@ test('popLayout: левый и правый край по центру, без h
   });
 });
 
-test('popLayout: start/end дают отступ от угла, без hover', () => {
+test('popLayout: start/end add an offset from the corner, without hover', () => {
   assert.equal(
     popLayout('top', 'start', style, 6, false).anchor.marginStart,
     14,
@@ -103,7 +103,7 @@ test('popLayout: start/end дают отступ от угла, без hover', (
   );
 });
 
-test('popLayout: hover убирает frame-side margin и добавляет spacer', () => {
+test('popLayout: hover removes the frame-side margin and adds a spacer', () => {
   assert.deepEqual(popLayout('top', 'center', style, 6, true), {
     orientation: 'vertical',
     anchor: {
@@ -165,13 +165,13 @@ test('popLayout: hover убирает frame-side margin и добавляет sp
   });
 });
 
-test('popLayout: hover, align start/end не трогает frame-side margin', () => {
+test('popLayout: hover, align start/end does not touch the frame-side margin', () => {
   const top = popLayout('top', 'start', style, 6, true);
   assert.equal(top.anchor.marginStart, 14);
   assert.equal(top.anchor.marginTop, 0);
 });
 
-test('popLayout: offset сдвигает вдоль края, знак — вправо/вниз', () => {
+test('popLayout: offset shifts along the edge, sign - right/down', () => {
   const topRight = popLayout('top', 'center', style, 6, false, 40);
   assert.equal(topRight.anchor.marginStart, 80);
   assert.equal(topRight.anchor.marginEnd, 0);
@@ -189,7 +189,7 @@ test('popLayout: offset сдвигает вдоль края, знак — вп�
   assert.equal(leftUp.anchor.marginBottom, 60);
 });
 
-test('popLayout: offset у start/end сдвигает внутрь и упирается в кромку', () => {
+test('popLayout: offset at start/end shifts inward and hits the edge', () => {
   assert.equal(
     popLayout('top', 'start', style, 6, false, 40).anchor.marginStart,
     54,

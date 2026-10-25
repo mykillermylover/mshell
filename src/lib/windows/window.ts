@@ -18,29 +18,29 @@ interface WindowOptions extends Pick<
   'id' | 'content' | 'keyboard'
 > {
   revealer: Gtk.Revealer;
-  /** Участвует ли окно в эксклюзивности попапов. */
+  /** Whether the window participates in popover exclusivity. */
   exclusive?: boolean;
-  /** Кадр, в котором живёт окно. */
+  /** Frame the window lives in. */
   host: WindowHost;
-  /** Окно открылось: хост может применить эксклюзивность. */
+  /** The window opened: the host may apply exclusivity. */
   activate?(): void;
-  /** Задержки hover из конфига; без них enter/leave ничего не делают. */
+  /** Hover delays from the config; without them enter/leave do nothing. */
   delays?(): { open: number; hide: number };
 }
 
 /**
- * Одно окно: открытость, pin, hover-таймеры и api для контента.
- * Pop и Float добавляют только раскладку и геометрию.
+ * One window: open state, pin, hover timers and api for content.
+ * Pop and Float add only layout and geometry.
  */
 export abstract class Window {
   readonly id: string;
   readonly revealer: Gtk.Revealer;
   readonly api: WindowApi;
-  /** Участвует ли окно в эксклюзивности попапов. */
+  /** Whether the window participates in popover exclusivity. */
   readonly exclusive: boolean;
-  /** Окно принимает ввод: наведение даёт on-demand. */
+  /** The window accepts input: hovering gives on-demand. */
   readonly keyboard: boolean;
-  /** Контент в своём scope; обёрнут отступами, но ещё не вставлен в окно. */
+  /** Content in its own scope; wrapped with padding, but not yet inserted into the window. */
   protected readonly contentWidget: Gtk.Box;
 
   private _pinned: Accessor<boolean>;
@@ -137,11 +137,11 @@ export abstract class Window {
     this.gate?.cancel();
     this.pinned = false;
     this.revealer.reveal_child = false;
-    // Закрытое окно не держит клавиатуру.
+    // A closed window does not hold the keyboard.
     this.api.releaseKeyboard();
   }
 
-  /** Закрыться, если не закреплено: так хост применяет эксклюзивность. */
+  /** Close if not pinned: this is how the host applies exclusivity. */
   dismiss() {
     if (!this.pinned) {
       this.close();
@@ -197,7 +197,7 @@ export abstract class Window {
     }
   }
 
-  /** Подписка на анимации окна; вызывающий обязан сохранить отписку. */
+  /** Subscribe to window animations; the caller must keep the unsubscribe. */
   subscribe(fn: () => void): () => void {
     const targets = this.watchedRevealers();
     const ids = targets.map((target) => [
@@ -215,8 +215,8 @@ export abstract class Window {
   }
 
   /**
-   * Изоляция Tab: can_focus каскаден, поэтому хватает корня контента -
-   * фокус-чейн не уходит в соседние окна.
+   * Tab isolation: can_focus is cascading, so the content root is enough -
+   * the focus chain does not go into neighboring windows.
    */
   setFocusable(value: boolean) {
     this.contentWidget.set_can_focus(value);
@@ -228,8 +228,8 @@ export abstract class Window {
   }
 
   /**
-   * Наведение считается по measure().input, а не по enter/leave детей:
-   * пустые дети событий не дают. Окнам без ввода и без hover не нужно.
+   * Hover is computed from measure().input, not from child enter/leave:
+   * empty children produce no events. Windows without input and without hover do not need it.
    */
   probe(x: number, y: number, relativeTo: Gtk.Widget): void {
     if (!this.acceptsHover) {
@@ -255,7 +255,7 @@ export abstract class Window {
     }
   }
 
-  /** Курсор покинул поверхность. */
+  /** The cursor left the surface. */
   hoverOut(): void {
     if (this.hovering) {
       this.hovering = false;
@@ -263,12 +263,12 @@ export abstract class Window {
     }
   }
 
-  /** Нужно ли отслеживать наведение: hover-зона или ввод с клавиатуры. */
+  /** Whether hover tracking is needed: hover zone or keyboard input. */
   protected get acceptsHover(): boolean {
     return this.keyboard;
   }
 
-  /** Revealer'ы, чьи анимации двигают форму; Pop добавляет hover-зону. */
+  /** Revealers whose animations move the shape; Pop adds the hover zone. */
   protected watchedRevealers(): Gtk.Revealer[] {
     return [this.revealer];
   }
@@ -277,7 +277,7 @@ export abstract class Window {
   abstract apply(): void;
 }
 
-/** Видимое тело и input-область окна; считаются за один проход. */
+/** Visible body and input area of the window; computed in one pass. */
 export interface WindowMeasure {
   body: Rect | null;
   input: Rect | null;

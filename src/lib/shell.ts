@@ -11,8 +11,8 @@ import type { FloatSpec, PopSpec } from './windows/api';
 const debugEnabled = GLib.getenv('MSHELL_DEBUG') === '1';
 
 /**
- * Хост окон на все мониторы: держит Frame по каждому экрану, создаёт и
- * уничтожает их при изменении списка мониторов, обслуживает request-команды.
+ * Window host for all monitors: keeps a Frame per screen, creates and
+ * destroys them when the monitor list changes, and handles request commands.
  */
 export class Shell {
   private frames = new Map<Gdk.Monitor, Frame>();
@@ -44,18 +44,18 @@ export class Shell {
   }
 
   /**
-   * Создавать/уничтожать окна прямо в обработчике модели мониторов нельзя:
-   * GTK в этот момент ещё держит свою раскладку. Откладываем на idle и
-   * склеиваем пачку изменений (подключили два монитора сразу - один reconcile).
+   * Creating/destroying windows right in the monitor model handler is not allowed:
+   * at that moment GTK still holds its own layout. We defer to idle and
+   * coalesce a batch of changes (two monitors plugged in at once - one reconcile).
    */
   scheduleReconcile() {
     this.queueOnce('reconcile', () => this.reconcile());
   }
 
   /**
-   * Любая правка конфига (в том числе через `tune`) перерисовывает форму.
-   * Склеиваем пачку правок в один refresh: слайдер не должен давать
-   * по полному снапшоту на каждый пиксель.
+   * Any config edit (including through `tune`) redraws the shape.
+   * We coalesce a batch of edits into one refresh: the slider must not produce
+   * a full snap on every pixel.
    */
   refresh() {
     this.queueOnce('refresh', () => {
@@ -72,8 +72,8 @@ export class Shell {
     const args = named ? argv.slice(1) : argv;
     const [cmd, id] = args;
 
-    // Без коннектора closeall относится ко всем мониторам, а не только
-    // к focused: имя команды обещает именно это.
+    // Without a connector closeall applies to all monitors, not only
+    // the focused one: that's exactly what the command name promises.
     if (cmd === 'closeall') {
       const targets = named ? [named] : this.frames.values();
       for (const frame of targets) {
@@ -114,7 +114,7 @@ export class Shell {
     return respond(`unknown command: ${cmd}`);
   }
 
-  /** Idle-склейка: несколько вызовов подряд дают один проход. */
+  /** Idle coalescing: several calls in a row give one pass. */
   private queueOnce(key: string, run: () => void) {
     if (this.queued.has(key)) {
       return;

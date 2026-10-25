@@ -1,14 +1,14 @@
-// Debug-команды для живых прогонов. Вызываются из lib/shell.ts только при
-// MSHELL_DEBUG=1: в продакшене остаются toggle/open/close/closeall.
+// Debug commands for live runs. Called from lib/shell.ts only when
+// MSHELL_DEBUG=1: in production toggle/open/close/closeall remain.
 import { snapshot } from './config';
 import { config } from './config/app';
 import type { Frame } from './frame/Frame';
 
-// Параметры debug-замера нагрузки: проход 200 px за 3 с.
+// Debug load benchmark parameters: a 200 px pass over 3 s.
 const BENCH_MARGIN = 250;
 const BENCH_TRAVEL = 200;
 const BENCH_MS = 3000;
-// Сетка debug-спавна: 5 в ряд, отступ от угла и шаг, px.
+// Debug spawn grid: 5 per row, corner offset and step, px.
 const SPAWN_COLUMNS = 5;
 const SPAWN_X = 100;
 const SPAWN_Y = 100;

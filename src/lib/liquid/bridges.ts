@@ -1,6 +1,6 @@
-// Мостик — единственный примитив соединения: материал, натянутый между
-// ближайшими точками двух кромок. Здесь только геометрия; как его рисовать
-// (осевая плашка или штрих с круглыми торцами) решает LiquidField по BridgeShape.
+// Bridge — the only connection primitive: material stretched between
+// the nearest points of two edges. Only geometry here; how to draw it
+// (an axis-aligned rounded plate or a stroke with round end caps) is decided by LiquidField via BridgeShape.
 import {
   type Body,
   type Contact,
@@ -12,33 +12,33 @@ import {
 export interface Bridge {
   centerX: number;
   centerY: number;
-  /** Длина вдоль нормали a→b. */
+  /** Length along the normal a→b. */
   length: number;
-  /** Ширина поперёк нормали, вдоль стыка. */
+  /** Width across the normal, along the seam. */
   width: number;
-  /** Поворот в радианах — направление a→b (как Math.atan2); мостик симметричен. */
+  /** Rotation in radians — direction a→b (like Math.atan2); the bridge is symmetric. */
   angle: number;
 }
 
 export interface BridgeSpec {
   frame: FrameSpec;
-  /** Зазор, на котором капля умирает. */
+  /** Gap at which the blob dies. */
   reach: number;
-  /** Полуширина капли при стыке точка-в-точку (нет общего участка рёбер). */
+  /** Half-width of the blob on point-to-point contact (no shared edge segment). */
   cornerHalfWidth: number;
-  /** Насколько материал заходит внутрь тела, чтобы blur сварил стык. */
+  /** How far the material goes into the body so the blur welds the seam. */
   intoBody: number;
 }
 
-/** Нахлёст мостика внутрь тела: 2σ; +2 px прячет торец под телом. */
+/** Bridge overlap into the body: 2σ; +2 px hides the end cap under the body. */
 const OVERLAP_SIGMAS = 2;
 const OVERLAP_PX = 2;
-/** Тоньше половины пикселя порог всё равно съест. */
+/** The threshold eats anything thinner than half a pixel anyway. */
 const MIN_HALF_WIDTH = 0.5;
-/** Поперечная составляющая нормали меньше этого — мостик осевой. */
+/** The transverse component of the normal below this — the bridge is axis-aligned. */
 const AXIS_EPSILON = 1e-9;
 
-/** Числа капсулы из σ размытия и дальности магнита. */
+/** Capsule numbers from the blur σ and magnet reach. */
 export function bridgeSpecFor(
   frame: FrameSpec,
   opts: { sigma: number; reach: number },
@@ -54,14 +54,14 @@ export function bridgeSpecFor(
 }
 
 /**
- * Полуширина капли: base·(1 − gap/reach), base = max(seam/2, cornerHalfWidth).
+ * Blob half-width: base·(1 − gap/reach), base = max(seam/2, cornerHalfWidth).
  *
- *  - грань к грани: seam — длина общего участка прямых сторон, при контакте
- *    капля занимает его целиком;
- *  - угол к углу, к дуге и в момент перехода «диагональ → ребро» seam = 0,
- *    поэтому base держится не ниже cornerHalfWidth: капля рождается тонкой
- *    и растёт линейно, а не появляется сразу широкой.
- * Перелёт (gap < 0) считаем контактом: ширина не падает ниже максимума.
+ *  - edge to edge: seam — the length of the shared straight-side segment; on contact
+ *    the blob occupies all of it;
+ *  - corner to corner, to an arc, and at the moment of the "diagonal → edge" transition seam = 0,
+ *    so base stays at least cornerHalfWidth: the blob is born thin
+ *    and grows linearly instead of appearing wide at once.
+ * Overshoot (gap < 0) counts as contact: the width does not drop below the maximum.
  */
 export function halfWidth(contact: Contact, spec: BridgeSpec): number {
   const gap = Math.max(0, contact.gap);
@@ -72,15 +72,15 @@ export function halfWidth(contact: Contact, spec: BridgeSpec): number {
   return base * (1 - gap / spec.reach);
 }
 
-/** Зазоры, отличающиеся меньше этого, считаем равными: симметрию не рвём. */
+/** Gaps differing by less than this are considered equal: symmetry is not broken. */
 const TIE_EPSILON = 1e-6;
-/** Максимум связей на тело в каждом отношении: рамка и соседи отдельно. */
+/** Maximum links per body in each relation: frame and neighbors separately. */
 const CONTACT_LIMIT = 3;
 
 /**
- * До CONTACT_LIMIT ближайших; равные зазоры на границе лимита не режутся.
- * Сортировка стабильная, поэтому при равном зазоре сохраняется исходный
- * порядок - детерминированный tie-break без индексов.
+ * Up to CONTACT_LIMIT nearest; equal gaps at the limit boundary are not cut.
+ * The sort is stable, so with equal gaps the original order is preserved -
+ * a deterministic tie-break without indices.
  */
 const pickNearest = <T>(items: T[], gapOf: (item: T) => number): T[] => {
   const sorted = [...items].sort((a, b) => gapOf(a) - gapOf(b));
@@ -91,21 +91,21 @@ const pickNearest = <T>(items: T[], gapOf: (item: T) => number): T[] => {
 };
 
 /**
- * Все мостики сцены. Для рамки материал заканчивается на внутренней кромке
- * (за кольцо не лезем), для тел — заходит внутрь на intoBody.
+ * All bridges of the scene. For the frame the material ends at the inner edge
+ * (we do not go past the ring), for bodies — it goes inside by intoBody.
  *
- * Мостик — часть непрерывного поля: он остаётся и при отрицательном зазоре
- * (перелёт easeOutBack и остаток магнита), пока у контакта есть нормаль и
- * длина мостика > 0. Закон ширины клампит gap в 0, поэтому на перелёте
- * ширина не падает и мостик не мигает. Бюджет связей — CONTACT_LIMIT с
- * рамкой и отдельно CONTACT_LIMIT с соседями, иначе в углу рамки стены
- * съедают слот соседа; равные зазоры на границе лимита не режутся
- * (pickNearest). Пара рисуется, только если её выбрали оба тела.
+ * A bridge is part of a continuous field: it remains even at a negative gap
+ * (easeOutBack overshoot and the magnet remainder) as long as the contact has a normal and
+ * the bridge length > 0. The width law clamps gap to 0, so on overshoot
+ * the width does not drop and the bridge does not flicker. The link budget is CONTACT_LIMIT with
+ * the frame and separately CONTACT_LIMIT with neighbors, otherwise in the frame corner the walls
+ * eat the neighbor's slot; equal gaps at the limit boundary are not cut
+ * (pickNearest). A pair is drawn only if both bodies chose it.
  */
 export function bridges(bodies: Body[], spec: BridgeSpec): Bridge[] {
   const out: Bridge[] = [];
-  // Заход в тело не больше самого тела: у тонкой губы капсула иначе прорастает
-  // насквозь, и её blur рисует свечение в комнате мимо тела.
+  // Inset into the body is no larger than the body itself: on a thin lip the capsule would otherwise grow
+  // through, and its blur would draw a glow in the interior past the body.
   const into = (body: Body) => Math.min(spec.intoBody, body.w, body.h);
   const add = (contact: Contact, intoB: number, intoA = spec.intoBody) => {
     const half = halfWidth(contact, spec);
@@ -114,7 +114,7 @@ export function bridges(bodies: Body[], spec: BridgeSpec): Bridge[] {
     }
     const length = contact.gap + intoA + intoB;
     if (length <= 0) {
-      return; // перелёт глубже нахлёста: тела уже слиты
+      return; // overshoot deeper than the overlap: the bodies are already merged
     }
     const shift = (contact.gap + intoB - intoA) / 2;
     out.push({
@@ -126,7 +126,7 @@ export function bridges(bodies: Body[], spec: BridgeSpec): Bridge[] {
     });
   };
 
-  // Связи одного тела: контакты с рамкой, с соседями и выбранные соседи.
+  // Links of one body: contacts with the frame, with neighbors, and the chosen neighbors.
   interface BodyLink {
     body: Body;
     frame: Contact[];
@@ -136,18 +136,18 @@ export function bridges(bodies: Body[], spec: BridgeSpec): Bridge[] {
 
   const links: BodyLink[] = bodies.map((body) => ({
     body,
-    // Flush-контакт (gap = 0) оставляем: мостик прижатого тела своим размытым
-    // торцом заливает нишу в стыке с рамкой. Перелёт в материал рамки на время
-    // твина тоже не прячем - иначе мостик мигает в момент примагничивания.
+    // Flush contact (gap = 0) is kept: the bridge of a flush body floods the niche at the seam
+    // with the frame with its blurred end cap. The overshoot into the frame material during the
+    // tween is also not hidden - otherwise the bridge flickers at the moment of snapping.
     frame: contactsWithFrame(body, spec.frame),
     neighbors: [],
     chosen: new Set(),
   }));
 
-  // Пары тел, которые ещё не слиты. Широкая фаза по AABB: скруглённое тело
-  // лежит внутри своего прямоугольника, поэтому зазор тел не меньше зазора
-  // прямоугольников. Если прямоугольники дальше reach - точную геометрию пары
-  // можно не считать (в толпе это отсекает большинство пар).
+  // Pairs of bodies that are not merged yet. Broad phase by AABB: a rounded body
+  // lies inside its rectangle, so the body gap is not less than the rectangle gap.
+  // If the rectangles are farther than reach - the exact geometry of the pair
+  // need not be computed (in a crowd this cuts off most pairs).
   const outOfReach = (a: Body, b: Body) => {
     const dx = Math.max(0, Math.max(a.x, b.x) - Math.min(a.x + a.w, b.x + b.w));
     const dy = Math.max(0, Math.max(a.y, b.y) - Math.min(a.y + a.h, b.y + b.h));
@@ -175,9 +175,9 @@ export function bridges(bodies: Body[], spec: BridgeSpec): Bridge[] {
     }
   }
 
-  // Раздельные бюджеты: рамка и соседи не конкурируют за одни слоты.
-  // Равные зазоры на границе лимита не режутся - иначе симметричные сцены
-  // (45° к углу, 4 равноудалённых соседа) ломаются.
+  // Separate budgets: the frame and neighbors do not compete for the same slots.
+  // Equal gaps at the limit boundary are not cut - otherwise symmetric scenes
+  // (45° to a corner, 4 equidistant neighbors) break.
   for (const link of links) {
     for (const contact of pickNearest(link.frame, (c) => c.gap)) {
       add(contact, 0, into(link.body));
@@ -187,7 +187,7 @@ export function bridges(bodies: Body[], spec: BridgeSpec): Bridge[] {
     }
   }
 
-  // Пара остаётся, только если оба тела выбрали друг друга.
+  // A pair remains only if both bodies chose each other.
   for (const { a, b, contact } of pairs) {
     if (a.chosen.has(b.body) && b.chosen.has(a.body)) {
       add(contact, into(b.body), into(a.body));
@@ -198,12 +198,12 @@ export function bridges(bodies: Body[], spec: BridgeSpec): Bridge[] {
 }
 
 /**
- * Как рисовать мостик:
- *  - осевой (нормаль вдоль x или y) — скруглённый прямоугольник без поворота:
- *    это быстрый rounded-color op в Gsk;
- *  - диагональный — штрих с круглыми торцами: та же капсула. Плашку здесь не
- *    повернуть, поэтому идём штрихом (один узел); на осевых он заметно дороже,
- *    поэтому только для диагоналей.
+ * How to draw the bridge:
+ *  - axis-aligned (normal along x or y) — a rounded rectangle without rotation:
+ *    this is a fast rounded-color op in Gsk;
+ *  - diagonal — a stroke with round end caps: the same capsule. A plate cannot be
+ *    rotated here, so we use a stroke (one node); on axis-aligned ones it is noticeably more expensive,
+ *    so only for diagonals.
  */
 export type BridgeShape =
   | { kind: 'rect'; x: number; y: number; w: number; h: number; radius: number }
@@ -236,10 +236,10 @@ export function bridgeShape(bridge: Bridge): BridgeShape {
     };
   }
 
-  // Штрих с круглыми торцами — та же капсула (стадион), что и скруглённая
-  // плашка: ось вдоль более длинной стороны, толщина — меньшая. В касании
-  // L = W, то есть круг: рисуем его плашкой (дешёвый rounded-color op),
-  // чтобы ширина не прыгала при переходе капсула → blur.
+  // A stroke with round end caps — the same capsule (stadium) as a rounded
+  // plate: the axis is along the longer side, the thickness is the smaller. On contact
+  // L = W, that is a circle: we draw it as a plate (a cheap rounded-color op),
+  // so the width does not jump at the capsule → blur transition.
   const long = Math.max(length, width);
   const short = Math.min(length, width);
   const segment = long - short;

@@ -7,26 +7,26 @@ import { Gtk } from 'ags/gtk4';
 
 import type { EdgeAlign, HorizontalEdge, VerticalEdge } from './popLayout';
 
-/** Контент окна - то, что возвращает JSX-компонент. */
+/** Window content - what the JSX component returns. */
 export type Content = () => JSX.Element;
 
-/** Настройки hover-зоны попапа. */
+/** Popover hover zone settings. */
 export interface HoverSpec {
-  content?: Content; // компонент внутри зоны
-  hideOnReveal?: boolean; // скрыть зону, пока попап раскрыт
+  content?: Content; // component inside the zone
+  hideOnReveal?: boolean; // hide the zone while the popover is revealed
 }
 
-/** Общее у всех окон: контент и клавиатура. */
+/** Common to all windows: content and keyboard. */
 export interface WindowSpec {
   id: string;
-  content: Content; // вызывается по разу на монитор; фон НЕ задавать
-  /** Окно принимает ввод с клавиатуры: наведение даёт on-demand. */
+  content: Content; // called once per monitor; do NOT set a background
+  /** The window accepts keyboard input: hovering gives on-demand. */
   keyboard?: boolean;
 }
 
 interface PopBase extends WindowSpec {
-  align?: EdgeAlign; // положение вдоль края
-  hover?: true | HoverSpec; // true - дефолтные значения; нет - без hover
+  align?: EdgeAlign; // position along the edge
+  hover?: true | HoverSpec; // true - default values; absent - no hover
   openByDefault?: boolean;
   exclusive?: boolean;
 }
@@ -39,13 +39,13 @@ export function isVerticalEdge(spec: PopSpec): spec is VerticalPopSpec {
 }
 
 /**
- * Окно, выезжающее из края рамки (открывается/закрывается).
- * Сдвиг вдоль края типизирован по стороне: у верх/низ - offsetX,
- * у лево/право - offsetY. Положительное значение - вправо/вниз.
+ * Window that slides out of the frame edge (opens/closes).
+ * Shift along the edge is typed by side: for top/bottom - offsetX,
+ * for left/right - offsetY. Positive value - right/down.
  */
 export type PopSpec = HorizontalPopSpec | VerticalPopSpec;
 
-/** Плавающее окно: таскается за заголовок, у рамки примагничивается и сливается с ней. */
+/** Floating window: dragged by its title, snaps to the frame and merges with it. */
 export interface FloatSpec extends WindowSpec {
   title?: string;
   x: number;
@@ -53,68 +53,68 @@ export interface FloatSpec extends WindowSpec {
 }
 
 /**
- * Возможности конкретного окна, доступные его контенту. Это handle окна и
- * его кадра, а не Shell: чужие мониторы и внутренности Frame недоступны.
+ * Capabilities of a specific window available to its content. This is the handle
+ * of the window and its frame, not the Shell: other monitors and Frame internals are inaccessible.
  */
 export interface WindowApi {
-  /** Идентификатор окна из его спеки. */
+  /** Window identifier from its spec. */
   readonly id: string;
-  /** Монитор, на котором живёт окно. */
+  /** Monitor the window lives on. */
   readonly monitor: Gdk.Monitor;
-  /** Закреплено ли окно - реактивно, для UI. */
+  /** Whether the window is pinned - reactive, for UI. */
   readonly pinned: Accessor<boolean>;
   togglePin(): void;
   pin(): void;
   unpin(): void;
-  /** Создать Float в том же кадре/на том же мониторе. */
+  /** Create a Float in the same frame/on the same monitor. */
   addFloat(spec: FloatSpec): void;
-  /** Убрать окно (по id) из этого кадра. */
+  /** Remove a window (by id) from this frame. */
   remove(id: string): void;
   /**
-   * Принудительно забрать клавиатуру на весь кадр (EXCLUSIVE):
-   * держится, пока не вызван `releaseKeyboard` или окно не закрыто.
-   * Автоматический on-demand по наведению даёт проп `keyboard`.
+   * Forcefully take the keyboard for the whole frame (EXCLUSIVE):
+   * held until `releaseKeyboard` is called or the window is closed.
+   * Automatic on-demand on hover is provided by the `keyboard` prop.
    */
   grabKeyboard(): void;
-  /** Вернуть клавиатуру композитору. */
+  /** Return the keyboard to the compositor. */
   releaseKeyboard(): void;
-  /** Забирает ли это окно клавиатуру принудительно. */
+  /** Whether this window takes the keyboard forcefully. */
   readonly keyboardGrabbed: Accessor<boolean>;
 }
 
-/** Узкий хост, который Frame отдаёт окну: без ссылки на сам Frame. */
+/** Narrow host that Frame gives to the window: without a reference to Frame itself. */
 export interface WindowHost {
   readonly monitor: Gdk.Monitor;
   addFloat(spec: FloatSpec): void;
   remove(id: string): void;
-  /** Наведение на окно: on-demand при входе, NONE при выходе. */
+  /** Hovering over the window: on-demand on enter, NONE on leave. */
   hoverKeyboard(owner: string, entering: boolean): void;
-  /** Модальный захват клавиатуры: EXCLUSIVE, пока не снят. */
+  /** Modal keyboard grab: EXCLUSIVE until released. */
   exclusiveKeyboard(owner: string, active: boolean): void;
-  /** Снять и on-demand, и эксклюзив этого окна (закрытие окна). */
+  /** Clear both on-demand and exclusive for this window (window close). */
   unfocusKeyboard(owner: string): void;
-  /** Изоляция Tab: фокусируемым остаётся только это окно. */
+  /** Tab isolation: only this window remains focusable. */
   isolateFocus(owner: string | null): void;
 }
 
-/** Контекст окна: Window предоставляет его контенту, хук читает. */
+/** Window context: Window provides it to its content, the hook reads it. */
 const WindowContext = createContext<WindowApi | null>(null);
 
 /**
- * API окна, в контенте которого вызван хук. Вызывать в начале компонента
- * (как useContext); в обработчиках используйте уже полученный объект.
+ * API of the window whose content called the hook. Call at the start of the component
+ * (like useContext); in handlers use the object already obtained.
  */
 export function useWindowApi(): WindowApi {
   const api = WindowContext.use();
   if (!api) {
-    throw new Error('useWindowApi(): контент создан вне окна');
+    throw new Error('useWindowApi(): content created outside a window');
   }
   return api;
 }
 
 /**
- * Построить контент окна в отдельном scope с его api. Используется и для
- * основного контента, и для hover-зоны: оба должны жить и умирать с окном.
+ * Build window content in a separate scope with its api. Used for both
+ * the main content and the hover zone: both must live and die with the window.
  */
 export function createWindowContent<T>(
   api: WindowApi,
@@ -128,12 +128,12 @@ export function createWindowContent<T>(
   return { content, dispose };
 }
 
-/** gnim типизирует результат JSX как GObject.Object; на деле это Gtk.Widget. */
+/** gnim types the JSX result as GObject.Object; in fact it is Gtk.Widget. */
 export function asWidget(child: JSX.Element): Gtk.Widget {
   return child as Gtk.Widget;
 }
 
-/** Обёртка контента окна: отступы и прозрачный фон (фон рисует LiquidField). */
+/** Window content wrapper: padding and transparent background (background is drawn by LiquidField). */
 export function padded(child: JSX.Element): Gtk.Box {
   const body = new Gtk.Box();
   body.add_css_class('frame-body');
@@ -141,7 +141,7 @@ export function padded(child: JSX.Element): Gtk.Box {
   return body;
 }
 
-/** Границы тела окна; null, если оно ещё не разложено. */
+/** Window body bounds; null if it is not laid out yet. */
 export function boundsOf(
   widget: Gtk.Widget,
   relativeTo: Gtk.Widget,

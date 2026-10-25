@@ -24,7 +24,7 @@ export default tseslint.config(
       'simple-import-sort': simpleImportSort,
     },
     rules: {
-      // Читаемость: всегда блочные if; вложенные тернарники — зло.
+      // Readability: always block ifs; nested ternaries are evil.
       curly: ['error', 'all'],
       'unicorn/no-nested-ternary': 'error',
       'simple-import-sort/imports': 'error',

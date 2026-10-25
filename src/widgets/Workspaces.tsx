@@ -4,7 +4,7 @@ import { createBinding, createComputed, For } from 'ags';
 import AstalHyprland from 'gi://AstalHyprland';
 
 export default function Workspaces() {
-  // Синглтон - внутри контента: модуль исполняется и в клиенте (см. App and CLI).
+  // The singleton is inside the content: the module also runs in the client (see App and CLI).
   const hyprland = AstalHyprland.get_default();
   const workspaces = createBinding(hyprland, 'workspaces');
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# tsc по проекту. ags и gnim поставляются исходниками .ts, поэтому проверяются
-# вместе с нашим кодом; их диагностика лежит в nix-store и не наша. Пропускаем
-# ошибки с путём за пределами репозитория, остальные - валим.
+# tsc over the project. ags and gnim ship as .ts sources, so they are typechecked
+# together with our code; their diagnostics live in the nix-store and are not ours. We skip
+# errors with a path outside the repository, and fail on the rest.
 set -u
 
 out=$(./node_modules/.bin/tsc -p tsconfig.json --noEmit --pretty false 2>&1 || true)
@@ -12,7 +12,7 @@ if [ -z "$errors" ]; then
     echo "typecheck: ok"
     exit 0
   fi
-  # Ошибка без файла (tsconfig, отсутствие входов) - не библиотечная.
+  # An error with no file (tsconfig, missing inputs) is not a library one.
   printf '%s\n' "$out"
   exit 1
 fi
@@ -24,4 +24,4 @@ if [ -n "$mine" ]; then
   exit 1
 fi
 
-echo "typecheck: ok (ошибки ags/gnim пропущены)"
+echo "typecheck: ok (ags/gnim errors skipped)"

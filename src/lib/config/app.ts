@@ -18,8 +18,8 @@ import {
   snapshot,
 } from './index';
 
-// Отдельно от config/index.ts: там только чистые данные и типы (их грузит node),
-// а gi://GLib есть только в GJS.
+// Separate from config/index.ts: it holds only pure data and types (node loads them),
+// while gi://GLib exists only in GJS.
 const PATH = GLib.build_filenamev([
   GLib.get_user_config_dir(),
   'mshell',
@@ -27,18 +27,18 @@ const PATH = GLib.build_filenamev([
 ]);
 const SAVE_DELAY_MS = 500;
 const RELOAD_DELAY_MS = 200;
-// Номера POSIX-сигналов: GLibUnix их не экспортирует.
+// POSIX signal numbers: GLibUnix does not export them.
 const SIGTERM = 15;
 const SIGINT = 2;
 
-// Точки, куда процесс реально завершается. AGS 3 в quit() сразу вызывает
-// exit(): Gtk.Application::shutdown не эмитится, а DBus-обработчик `ags quit`
-// держит собственную привязку app.quit из конструктора App - подменить её
-// нельзя. Общий путь любого quit(), включая DBus-копию, - прототип
-// Gtk.Application. Плюс сигналы сеанса: лог-аут Hyprland, kill, Ctrl+C.
+// Points where the process actually exits. AGS 3 in quit() immediately calls
+// exit(): Gtk.Application::shutdown is not emitted, and the DBus handler `ags quit`
+// holds its own app.quit binding from the App constructor - it cannot be
+// replaced. The common path of any quit(), including the DBus copy, is the
+// Gtk.Application prototype. Plus session signals: Hyprland logout, kill, Ctrl+C.
 let exitHooked = false;
 
-// FileMonitor должен жить, пока живёт приложение.
+// FileMonitor must live as long as the application lives.
 const configMonitors: Gio.FileMonitor[] = [];
 
 export function hookExit(flush: () => void): void {
@@ -58,7 +58,7 @@ export function hookExit(flush: () => void): void {
   app.connect('shutdown', flush);
 
   const stop = () => {
-    app.quit(); // хук выше запишет конфиг
+    app.quit(); // the hook above writes the config
     return GLib.SOURCE_REMOVE;
   };
   GLibUnix.signal_add(GLib.PRIORITY_DEFAULT, SIGTERM, stop);
@@ -84,7 +84,7 @@ function init(): Config {
       valid = true;
     } catch (error) {
       const why = error instanceof Error ? error.message : String(error);
-      console.warn(`config: ${PATH}: ${why} - работаем на дефолтах`);
+      console.warn(`config: ${PATH}: ${why} - running on defaults`);
     }
   }
 
@@ -116,7 +116,7 @@ function init(): Config {
   }
 
   function scheduleSave(): void {
-    // Дебаунс: серия правок подряд (ползунок) даёт одну запись в конце.
+    // Debounce: a series of edits in a row (a slider) gives one write at the end.
     if (pending !== null) {
       GLib.source_remove(pending);
     }
@@ -128,8 +128,8 @@ function init(): Config {
 
   function changed(): void {
     if (!applyingExternal) {
-      // Планируем до уведомления: исключение в подписчике не должно отменять
-      // сохранение уже принятого значения.
+      // Schedule before notifying: an exception in a subscriber must not cancel
+      // saving of an already accepted value.
       scheduleSave();
     }
 
@@ -153,7 +153,7 @@ function init(): Config {
     },
     flush: () => {
       if (pending === null) {
-        return; // дебаунс уже записал - второй раз не пишем
+        return; // the debounce already wrote - do not write a second time
       }
 
       GLib.source_remove(pending);
@@ -161,10 +161,10 @@ function init(): Config {
     },
   };
 
-  // Методы живут рядом с деревом, а не внутри: дерево - то, что пишется в файл.
+  // Methods live next to the tree, not inside it: the tree is what is written to the file.
   const instance: Config = Object.assign({}, values, methods);
 
-  /** Внешняя правка файла: перечитываем и патчим только листья. */
+  /** External file edit: re-read and patch only leaves. */
   function reload(): void {
     try {
       const [ok, bytes] = GLib.file_get_contents(PATH);
@@ -195,16 +195,14 @@ function init(): Config {
         applyingExternal = false;
       }
 
-      // Валидация что-то поправила (дефолты, лимиты, чужие ключи) -
-      // фиксируем нормализованный вариант. Иначе файл не трогаем.
+      // Validation fixed something (defaults, limits, unknown keys) -
+      // persist the normalized version. Otherwise leave the file alone.
       if (JSON.stringify(snapshot(values)) !== JSON.stringify(raw)) {
         scheduleSave();
       }
     } catch (error) {
       const why = error instanceof Error ? error.message : String(error);
-      console.warn(
-        `config: reload ${PATH}: ${why} - оставляем текущие значения`,
-      );
+      console.warn(`config: reload ${PATH}: ${why} - keeping current values`);
     }
   }
 
@@ -243,8 +241,8 @@ function init(): Config {
     configMonitors.push(monitor);
   }
 
-  // Дописываем недостающие дефолты (например, новую секцию theme), но
-  // битый файл не перезаписываем.
+  // Append missing defaults (for example, a new theme section), but do not
+  // rewrite a corrupted file.
   if (
     valid &&
     (loaded === null ||
@@ -259,11 +257,11 @@ function init(): Config {
 }
 
 /**
- * Конфиг поверх ~/.config/mshell/config.json: чтение с фоллбеком к дефолтам
- * по каждому ключу, запись с дебаунсом. Битый файл не роняет оболочку и не
- * перезаписывается - предупреждение в лог, дальше дефолты.
+ * Config on top of ~/.config/mshell/config.json: reading with a fallback to defaults
+ * per key, writing with debounce. A corrupted file does not crash the shell and is not
+ * overwritten - a warning in the log, then defaults.
  *
- * Один на процесс: создаётся при импорте модуля, фабрику наружу не отдаём -
- * два конфига означали бы два независимых дерева значений.
+ * One per process: created on module import, the factory is not exposed -
+ * two configs would mean two independent value trees.
  */
 export const config: Config = init();

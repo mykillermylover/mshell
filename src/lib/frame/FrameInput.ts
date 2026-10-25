@@ -4,9 +4,9 @@ import type giCairo from 'cairo';
 import Cairo from 'gi://cairo';
 
 /**
- * Кликабельны тела окон и закрытые hover-зоны; остальная рамка и «жидкость»
- * прозрачны для ввода. Вызывается из снапшота после layout: rects уже
- * соответствуют текущему кадру.
+ * Window bodies and closed hover zones are clickable; the rest of the frame and the "liquid"
+ * are transparent to input. Called from the snapshot after layout: rects already
+ * match the current frame.
  */
 export class FrameInput {
   private key: string | null = null;
@@ -14,15 +14,15 @@ export class FrameInput {
 
   constructor(private readonly window: Astal.Window) {}
 
-  /** Последний применённый регион (debug). */
+  /** Last applied region (debug). */
   get boxes(): string | null {
     return this.key;
   }
 
-  /** Новая surface должна получить регион заново. */
+  /** A new surface must get the region again. */
   reset() {
     this.key = null;
-    // Предупреждение - один раз на поверхность, а не на всю жизнь кадра.
+    // Warning - once per surface, not for the whole life of the frame.
     this.warned = false;
   }
 

@@ -14,14 +14,14 @@ import { FrameInput } from './FrameInput';
 import { FrameMotion } from './FrameMotion';
 
 /**
- * Хост поля на один монитор:
+ * Field host for one monitor:
  *   Overlay
- *    ├─ LiquidField - рисует рамку и ВСЕ окна как единое поле (форма = то, что лежит в раскладке)
- *    ├─ Fixed - плавающие окна (Float)
- *    └─ Pop×N - компоненты попапов (Box из Revealer'а и hover-зоны)
- * Окна прозрачны и рисуют только содержимое; фон за них рисует LiquidField.
- * Каждый кадр форма берётся из Frame.measure() (Window.measure), поэтому
- * анимация и форма не расходятся.
+ *    ├─ LiquidField - draws the frame and ALL windows as a single field (shape = what is in the layout)
+ *    ├─ Fixed - floating windows (Float)
+ *    └─ Pop×N - popover components (Box from the Revealer and hover zones)
+ * Windows are transparent and draw only their content; LiquidField draws the background behind them.
+ * Every frame the shape comes from Frame.measure() (Window.measure), so
+ * animation and shape do not drift apart.
  */
 export class Frame {
   private readonly surface: Astal.Window;
@@ -29,18 +29,18 @@ export class Frame {
   private field = new LiquidField();
   private fixed = new Gtk.Fixed();
   private windows = new Map<string, Window>();
-  /** Отписки окна от его Revealer'ов; снимаются в remove(). */
+  /** Window unsubscribes from its Revealers; removed in remove(). */
   private readonly unsubscribes = new Map<string, () => void>();
   private readonly host: WindowHost;
   private readonly overlay: Gtk.Overlay;
   private readonly input: FrameInput;
   private readonly motion: FrameMotion;
-  /** Кто-то держит клавиатуру эксклюзивно: hover не перебивает. */
+  /** Someone holds the keyboard exclusively: hover does not override it. */
   private exclusiveKeyboardOwner: string | null = null;
-  /** Окно с on-demand клавиатурой под курсором. */
+  /** Window with on-demand keyboard under the cursor. */
   private hoverKeyboardOwner: string | null = null;
 
-  /** Узкий доступ для debug-команд; см. lib/debug.tsx. */
+  /** Narrow access for debug commands; see lib/debug.tsx. */
   readonly debug = {
     float: (id: string) => {
       const body = this.windows.get(id);
@@ -71,7 +71,7 @@ export class Frame {
     snap: (float: Float) => this.motion.snap(float),
   };
 
-  /** Обработано тиков - для debug-команды frames. */
+  /** Processed ticks - for the debug frames command. */
   get tickCount(): number {
     return this.motion.tickCount;
   }
@@ -97,13 +97,13 @@ export class Frame {
 
     this.surface = new Astal.Window({
       application: app,
-      namespace: 'frame', // для layerrule в Hyprland
+      namespace: 'frame', // for layerrule in Hyprland
       gdkmonitor: monitor,
       anchor: TOP | BOTTOM | LEFT | RIGHT,
-      exclusivity: Astal.Exclusivity.IGNORE, // место под рамку резервирует композитор (gaps_out)
+      exclusivity: Astal.Exclusivity.IGNORE, // the compositor reserves space for the frame (gaps_out)
       layer: Astal.Layer.TOP,
-      // NONE: Hyprland при map иначе забирает и клавиатуру, и указатель.
-      // Включим ON_DEMAND точечно, когда появятся окна с полями ввода.
+      // NONE: otherwise Hyprland takes both the keyboard and the pointer on map.
+      // We will enable ON_DEMAND selectively when windows with input fields appear.
       keymode: Astal.Keymode.NONE,
       cssClasses: ['mshell-frame'],
     });
@@ -111,8 +111,8 @@ export class Frame {
     this.input = new FrameInput(this.surface);
     this.field.configure(() => snapshot(this.style));
     this.field.rects = () => {
-      // Один проход: сцена рисует видимые тела, input может быть шире
-      // (у закрытой hover-зоны он включает губу и полосу рамки до края).
+      // Single pass: the scene draws visible bodies, input may be wider
+      // (for a closed hover zone it includes the lip and the frame strip up to the edge).
       const { rects, inputs } = this.measure();
       this.input.sync(inputs);
       return rects;
@@ -126,9 +126,9 @@ export class Frame {
     overlay.set_child(this.field);
     this.fixed.hexpand = true;
     this.fixed.vexpand = true;
-    overlay.add_overlay(this.fixed); // под выезжающими окнами
+    overlay.add_overlay(this.fixed); // under the sliding windows
 
-    // Motion создаётся до окон: их subscribe зовёт motion.poke().
+    // Motion is created before the windows: their subscribe calls motion.poke().
     this.motion = new FrameMotion({
       field: this.field,
       fixed: this.fixed,
@@ -143,8 +143,8 @@ export class Frame {
       this.addPop(spec);
     }
 
-    // Overlay размещает детей при любом изменении размера любого окна внутри -
-    // это бесплатный хук «контент поменял размер, форму надо обновить».
+    // Overlay places children on any size change of any window inside -
+    // it is a free hook "content changed size, the shape must be updated".
     overlay.connect('get-child-position', () => {
       this.motion.poke();
       return false;
@@ -152,8 +152,8 @@ export class Frame {
 
     this.surface.set_child(overlay);
 
-    // Один контроллер на всё окно: каждое hover-окно проверяет только свои
-    // input-границы и дёргает только свои enter/leave.
+    // One controller for the whole window: each hover window checks only its own
+    // input bounds and fires only its own enter/leave.
     const motion = new Gtk.EventControllerMotion();
     const check = (_motion: Gtk.EventControllerMotion, x: number, y: number) =>
       this.probe(x, y);
@@ -183,7 +183,7 @@ export class Frame {
     this.surface.present();
   }
 
-  // ───────────────────────── управление ─────────────────────────
+  // ───────────────────────── control ─────────────────────────
 
   open(id: string) {
     this.windows.get(id)?.open();
@@ -211,7 +211,7 @@ export class Frame {
     this.motion.tick();
   }
 
-  /** Применить текущий конфиг: длительности и отступы, форму обновит poke(). */
+  /** Apply the current config: durations and paddings, poke() will update the shape. */
   refresh() {
     for (const body of this.windows.values()) {
       body.apply();
@@ -226,9 +226,9 @@ export class Frame {
     this.surface.destroy();
   }
 
-  // ───────────────────────── окна ─────────────────────────
+  // ───────────────────────── windows ─────────────────────────
 
-  /** Добавить попап; можно звать после инициализации кадра. */
+  /** Add a popover; can be called after the frame is initialized. */
   addPop(spec: PopSpec) {
     this.addWindow(
       spec.id,
@@ -243,7 +243,7 @@ export class Frame {
     );
   }
 
-  /** Добавить Float; можно звать после инициализации кадра. */
+  /** Add a Float; can be called after the frame is initialized. */
   addFloat(spec: FloatSpec) {
     this.addWindow(
       spec.id,
@@ -252,7 +252,7 @@ export class Frame {
     );
   }
 
-  /** Убрать окно вместе с контентом и подписками. */
+  /** Remove a window together with its content and subscriptions. */
   remove(id: string) {
     const body = this.windows.get(id);
     if (!body) {
@@ -272,12 +272,12 @@ export class Frame {
     this.motion.poke();
   }
 
-  /** Есть ли окно с таким id в этом кадре. */
+  /** Whether this frame has a window with this id. */
   has(id: string): boolean {
     return this.windows.has(id);
   }
 
-  /** Общий путь добавления: уникальный id, подписка на форму, вставка. */
+  /** Common add path: unique id, shape subscription, insertion. */
   private addWindow<T extends Window>(
     id: string,
     create: () => T,
@@ -297,9 +297,9 @@ export class Frame {
     this.motion.poke();
   }
 
-  // ───────────────────────── поле ─────────────────────────
+  // ───────────────────────── field ─────────────────────────
 
-  /** Наведение на окно с вводом: on-demand, если эксклюзива нет. */
+  /** Hover over a window with input: on-demand, if there is no exclusive owner. */
   private hoverKeyboard(owner: string, entering: boolean) {
     if (entering) {
       if (this.exclusiveKeyboardOwner !== null) {
@@ -314,7 +314,7 @@ export class Frame {
       return;
     }
 
-    // Вышел не текущий владелец - его уже перехватило другое окно.
+    // The one leaving is not the current owner - another window has already taken it over.
     if (this.hoverKeyboardOwner !== owner) {
       return;
     }
@@ -338,7 +338,7 @@ export class Frame {
       return;
     }
     this.exclusiveKeyboardOwner = null;
-    // Под модалом могло остаться наведённое окно - возвращаем ему on-demand.
+    // A hovered window may have remained under the modal - give it back on-demand.
     if (this.hoverKeyboardOwner !== null) {
       this.surface.keymode = Astal.Keymode.ON_DEMAND;
       this.isolateFocus(this.hoverKeyboardOwner);
@@ -348,13 +348,13 @@ export class Frame {
     this.isolateFocus(null);
   }
 
-  /** Закрытие окна: снимаем оба вида захвата, не трогая чужие. */
+  /** Window close: release both kinds of grab, without touching others. */
   private unfocusKeyboard(owner: string) {
     this.exclusiveKeyboard(owner, false);
     this.hoverKeyboard(owner, false);
   }
 
-  /** Фокусируемым остаётся только указанное окно. */
+  /** Only the specified window remains focusable. */
   private isolateFocus(owner: string | null) {
     for (const [id, body] of this.windows) {
       body.setFocusable(id === owner);
@@ -367,7 +367,7 @@ export class Frame {
     }
   }
 
-  /** Открылся попап: остальные эксклюзивные окна закрываются, если не закреплены. */
+  /** A popover opened: other exclusive windows close unless pinned. */
   private activate(activeId: string) {
     for (const body of this.windows.values()) {
       if (body.id !== activeId && body.exclusive) {
@@ -376,14 +376,14 @@ export class Frame {
     }
   }
 
-  /** Все тела поля: попапы и флоаты. */
+  /** All field bodies: pops and floats. */
   private bodies(): Window[] {
     return [...this.windows.values()];
   }
 
   /**
-   * Тела и input-области в координатах поля за один проход по окнам.
-   * Больше никаких ключей: жидкость - функция раскладки.
+   * Bodies and input areas in field coordinates in a single pass over the windows.
+   * No other keys: liquid is a function of the layout.
    */
   private measure(): { rects: Rect[]; inputs: Rect[] } {
     const rects: Rect[] = [];

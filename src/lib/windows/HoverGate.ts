@@ -1,18 +1,18 @@
-// Hover-задержки: чистая логика без GJS. Планировщик внедряется, поэтому
-// поведение проверяется в node без GTK. Pin - забота Window, не gate.
+// Hover delays: pure logic without GJS. The scheduler is injected, so
+// behavior is tested in node without GTK. Pin is Window's concern, not the gate's.
 type Cancel = () => void;
 
 interface HoverGateDeps {
   open(): void;
   close(): void;
   isOpen(): boolean;
-  /** Запустить `run` через `ms`; вернуть отмену. `0` обрабатывает сам gate. */
+  /** Run `run` after `ms`; return a cancel. `0` is handled by the gate itself. */
   schedule(ms: number, run: () => void): Cancel;
 }
 
 /**
- * Наведение открывает попап через `openDelay`, уход закрывает через
- * `hideDelay`. Повторное событие отменяет противоположный таймер.
+ * Hover opens the popover after `openDelay`, leaving closes it after
+ * `hideDelay`. A repeated event cancels the opposite timer.
  */
 export class HoverGate {
   private pending: Cancel | null = null;
@@ -38,7 +38,7 @@ export class HoverGate {
     this.after(hideDelay, () => this.deps.close());
   }
 
-  /** Снять запланированный переход (destroy, явный open/close по IPC). */
+  /** Cancel the scheduled transition (destroy, explicit open/close via IPC). */
   cancel() {
     this.pending?.();
     this.pending = null;

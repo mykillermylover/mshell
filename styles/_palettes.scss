@@ -1,8 +1,8 @@
 @use 'sass:color';
 
-// Fallback: Everforest. Полный набор ролей Material 3, чтобы переменные
-// существовали и без matugen; сгенерированная палитра перекрывает их
-// в рантайме.
+// Fallback: Everforest. The full set of Material 3 roles, so the variables
+// exist even without matugen; the generated palette overrides them
+// at runtime.
 @function material(
   $surface,
   $on-surface,

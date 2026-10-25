@@ -1,5 +1,5 @@
-// Слой целиком прозрачный: всё, что видно как «фон», рисует lib/liquid/LiquidField.ts.
-// Класс mshell-frame, а не frame: имя .frame занято правилами тем GTK.
+// The layer is fully transparent: anything visible as a "background" is drawn by lib/liquid/LiquidField.ts.
+// The class is mshell-frame, not frame: the name .frame is taken by GTK theme rules.
 
 window.mshell-frame {
   background: transparent;
@@ -7,13 +7,13 @@ window.mshell-frame {
   border: none;
 }
 
-// Заливка рамки и ВСЕХ окон: LiquidField читает её как цвет (get_color),
-// альфа уходит в прозрачность слоя.
+// Fill of the frame and ALL windows: LiquidField reads it as a color (get_color),
+// the alpha goes to the layer transparency.
 .frame-shape {
   color: var(--fill);
 }
 
-// Отступы содержимого окон (контент оборачивается автоматически). Фона нет.
+// Window content padding (the content is wrapped automatically). No background.
 .frame-body {
   padding: 18px 24px;
   color: var(--fg);

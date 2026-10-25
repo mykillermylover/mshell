@@ -4,7 +4,7 @@ import { Gtk } from 'ags/gtk4';
 import { boundsOf, type FloatSpec, type WindowHost } from './api';
 import { Window, type WindowMeasure } from './window';
 
-/** Плавающее окно: шапка-«ручка» с крестиком и тело с контентом. */
+/** Floating window: a "handle" header with a close button and a body with content. */
 export class Float extends Window {
   readonly grip: Gtk.Box;
   readonly closeBtn: Gtk.Widget;
@@ -57,19 +57,19 @@ export class Float extends Window {
     if (!rect) {
       return { body: null, input: null };
     }
-    // x/y - логическая позиция в Fixed: move() применяет её сразу, а
-    // compute_bounds отдаёт аллокацию прошлого кадра. Магнит на drag-end
-    // должен видеть позицию, которую только что поставили.
+    // x/y - logical position in Fixed: move() applies it immediately, while
+    // compute_bounds returns the previous frame's allocation. The magnet at drag-end
+    // must see the position just set.
     const body = { ...rect, x: this.x, y: this.y };
     return { body, input: body };
   }
 
-  /** Обновить длительность по текущему конфигу. */
+  /** Update the duration from the current config. */
   apply() {
     this.revealer.transitionDuration = this.style().revealDuration;
   }
 
-  /** Размер, который окно хочет само (не зависит от текущей раскладки). */
+  /** The size the window wants itself (independent of the current layout). */
   natural(): [number, number] {
     const child = this.revealer.get_child();
     if (!child) {

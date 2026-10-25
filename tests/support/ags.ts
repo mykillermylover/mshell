@@ -1,6 +1,6 @@
-// Минимальный стенд-ин Accessor для node-тестов: настоящий `ags` тянет
-// GJS (gi://GObject). Контракт повторяет gnim Accessor, который использует
-// приложение; тесты проверяют логику конфига, а не internals gnim.
+// Minimal Accessor stand-in for node tests: the real `ags` pulls in
+// GJS (gi://GObject). The contract mirrors the gnim Accessor that the
+// application uses; the tests check config logic, not gnim internals.
 type Callback = () => void;
 
 export interface Accessor<T = unknown> {

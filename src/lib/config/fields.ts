@@ -54,7 +54,7 @@ export type ChoiceField = {
   set(value: string): void;
 };
 
-/** Поле формы: value и set уже сужены по kind - форма ветвится по нему. */
+/** Form field: value and set are already narrowed by kind - the form branches on it. */
 export type Field = NumberField | TextField | BoolField | ChoiceField;
 
 function makeField(
@@ -63,8 +63,8 @@ function makeField(
   spec: LeafSpec,
   node: ReactiveNode,
 ): Field {
-  // Пересечение спеки с реактивным листом - единственное место, где типы
-  // расходятся: дерево хранит Leaf, форма хочет конкретный лист.
+  // The intersection of the spec with the reactive leaf - the only place where the types
+  // diverge: the tree stores Leaf, the form wants a concrete leaf.
   const state = node as State<Leaf>;
 
   switch (spec.kind) {
@@ -137,8 +137,8 @@ function walk(
 }
 
 /**
- * Плоский список полей конфига в порядке схемы. Рекурсия живёт здесь:
- * форма не знает, как спека соотносится с реактивным деревом.
+ * Flat list of config fields in schema order. The recursion lives here:
+ * the form does not know how the spec relates to the reactive tree.
  */
 export function fields(config: Config): Field[] {
   const out: Field[] = [];

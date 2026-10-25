@@ -19,8 +19,8 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
 const isSection = (value: unknown): value is Section => isObject(value);
 
 /**
- * Значение того же примитивного типа, что и образец. Числа - только конечные:
- * NaN/Infinity из JSON не должны попадать в настройки.
+ * A value of the same primitive type as the sample. Numbers - only finite ones:
+ * NaN/Infinity from JSON must not reach the settings.
  */
 const isSamePrimitive = (
   value: unknown,
@@ -58,14 +58,14 @@ function state<T>(
 
   return Object.assign(read, {
     set(next: T) {
-      // NaN/Infinity из вычислений не должны попадать в настройки.
+      // NaN/Infinity from computations must not reach the settings.
       if (typeof next === 'number' && !Number.isFinite(next)) {
         return;
       }
 
       const nextValue = clampNumber(next, range);
 
-      // Листья - примитивы: сравнения по значению достаточно.
+      // Leaves are primitives: comparison by value is enough.
       if (Object.is(nextValue, value)) {
         return;
       }
@@ -79,7 +79,7 @@ function state<T>(
   });
 }
 
-/** Статика → дерево реактивных значений. Объект - секция, остальное - лист. */
+/** Static config → reactive value tree. An object is a section, the rest is a leaf. */
 export function reactive<T extends object>(
   init: T,
   changed: () => void,
@@ -106,13 +106,13 @@ export function reactive<T extends object>(
     );
   }
 
-  // Дерево собрано по форме T - это знает только этот цикл.
+  // The tree is built to the shape of T - only this loop knows that.
   return tree as Reactive<T>;
 }
 
 /**
- * Обход реактивного дерева: узел-функция - состояние, вызываем; секцию
- * обходим дальше. Возвращает статику того же вида.
+ * Walk the reactive tree: a function node is a state, so call it; a section
+ * is walked further. Returns a static config of the same shape.
  */
 function read(node: ReactiveNode): Leaf | Section {
   if (typeof node === 'function') {
@@ -128,15 +128,15 @@ function read(node: ReactiveNode): Leaf | Section {
   return out;
 }
 
-/** Обратно: реактивное дерево → статика (для файла). */
+/** Back: reactive tree → static config (for the file). */
 export function snapshot<T extends object>(tree: Reactive<T>): T {
-  // Форма та же, что у T, только ключи точные.
+  // The shape is the same as T, only the keys are exact.
   return read(tree) as T;
 }
 
 /**
- * Схема + значения из файла. У листа решает спека: тип, enum, границы.
- * Чужие ключи и мусор молча заменяются дефолтами - JSON не типизирован.
+ * Schema + values from the file. For a leaf the spec decides: type, enum, limits.
+ * Unknown keys and junk are silently replaced with defaults - JSON is not typed.
  */
 export function merge<N extends object>(schema: N, raw: unknown): Values<N> {
   return mergeNode(schema as Node, raw) as Values<N>;
@@ -157,13 +157,13 @@ function mergeNode(node: Node, raw: unknown): Leaf | Section {
   return out;
 }
 
-/** Применить патч к реактивной ветке: чужие ключи игнорируются. */
+/** Apply a patch to a reactive branch: unknown keys are ignored. */
 export function patchInto(
   tree: ReactiveNode,
   values: DeepPartial<Section>,
 ): void {
   if (typeof tree === 'function') {
-    return; // лист не секция - патчить нечего
+    return; // a leaf is not a section - nothing to patch
   }
 
   for (const [key, value] of Object.entries(values)) {

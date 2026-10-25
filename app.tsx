@@ -7,18 +7,18 @@ import app from 'ags/gtk4/app';
 import { INITIAL_FLOATS, INITIAL_POPS } from './src/windows';
 import style from './style.scss';
 
-// Shell - просто спеки окон: GJS-ресурсы создаются в main() и Frame.
+// Shell is just window specs: GJS resources are created in main() and Frame.
 const shell = new Shell(INITIAL_POPS, INITIAL_FLOATS);
 
 app.start({
   main() {
     initTheme(style);
 
-    // Хук выхода ставит GObject-патч и ловит сигналы сеанса: только в main.
+    // The exit hook installs the GObject patch and catches session signals: only in main.
     hookExit(config.flush);
     shell.reconcile();
-    // app.monitors — обычное свойство GObject: createBinding сам подписывается
-    // на notify::monitors, поэтому руками сигналы модели ловить не нужно
+    // app.monitors is a regular GObject property: createBinding subscribes
+    // to notify::monitors itself, so there is no need to catch model signals by hand
     createBinding(app, 'monitors').subscribe(() => shell.scheduleReconcile());
     config.subscribe(() => {
       applyTheme();
@@ -26,7 +26,7 @@ app.start({
     });
   },
   // ags request [<connector>] toggle|open|close|closeall <id>
-  // Debug-команды — только при MSHELL_DEBUG=1, гейт в lib/shell.ts.
+  // Debug commands — only with MSHELL_DEBUG=1, gated in lib/shell.ts.
   requestHandler(argv: string[], respond: (r: string) => void) {
     shell.request(argv, respond);
   },

@@ -11,7 +11,7 @@
 :root {
   @include vars(map.get(palettes.$palettes, everforest, light));
 
-  // Семантический слой: компоненты зависят только от этих имён.
+  // Semantic layer: components depend only on these names.
   --fg: var(--on_surface);
   --fill: color-mix(in srgb, var(--surface) 96%, transparent);
   --grip: color-mix(in srgb, var(--on_surface) 80%, transparent);

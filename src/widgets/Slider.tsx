@@ -1,10 +1,10 @@
-/** Всё, что принимает обычный <slider>. */
+/** Everything a regular <slider> accepts. */
 export type SliderProps = JSX.IntrinsicElements['slider'];
 
 /**
- * Значение к сетке `min + k * step`. GTK шаг сам не держит: `step_increment`
- * работает только на стрелках, drag и колесо идут через `change-value` с
- * сырым значением - квантовать приходится здесь.
+ * Snap the value to the `min + k * step` grid. GTK does not hold a step on its own: `step_increment`
+ * works only for the arrows, drag and wheel go through `change-value` with
+ * a raw value - quantization has to happen here.
  */
 export function snapStep(value: number, min: number, step: number): number {
   if (!(step > 0) || !Number.isFinite(value)) {
@@ -12,17 +12,17 @@ export function snapStep(value: number, min: number, step: number): number {
   }
 
   const snapped = min + Math.round((value - min) / step) * step;
-  // 0.1 * 3 = 0.30000000000000004: хвост float гасим, шаг не трогаем.
+  // 0.1 * 3 = 0.30000000000000004: damp the float tail, leave the step alone.
   return Number(snapped.toFixed(10));
 }
 
-/** Проп приходит числом или Accessor'ом (тогда gnim подписывается сам). */
+/** The prop comes as a number or an Accessor (then gnim subscribes itself). */
 const number = (value: SliderProps['step'], fallback: number): number =>
   typeof value === 'number' ? value : (value?.peek() ?? fallback);
 
 /**
- * Slider, значение которого всегда лежит на сетке `min + k * step` -
- * и при перетаскивании, и при колесе, и при стрелках.
+ * Slider whose value always lies on the `min + k * step` grid -
+ * with dragging, wheel and arrows alike.
  */
 export default function Slider({
   step,
@@ -31,7 +31,7 @@ export default function Slider({
   onChangeValue,
   ...props
 }: SliderProps) {
-  // Дефолт Astal
+  // Astal default
   const stepValue = number(step, 0.05);
   const minValue = number(min, 0);
 
@@ -40,9 +40,9 @@ export default function Slider({
       {...props}
       step={step}
       min={min}
-      // Колесо в GTK берёт page_increment (по умолчанию 0.01), а не step:
-      // при page < step тик колеса округляется к текущему значению и
-      // слайдер залипает. Пусть колесо идёт ровно на шаг.
+      // The wheel in GTK uses page_increment (0.01 by default), not step:
+      // when page < step the wheel tick is rounded to the current value and
+      // the slider sticks. Let the wheel move exactly one step.
       page={page ?? stepValue}
       onChangeValue={(self, scroll, value) => {
         const next = snapStep(value, minValue, stepValue);
@@ -50,7 +50,7 @@ export default function Slider({
         self.set_value(next);
         onChangeValue?.(self, scroll, next);
 
-        // true отменяет default GTK: иначе сырое значение перетрёт наше.
+        // true cancels the GTK default: otherwise the raw value would overwrite ours.
         return true;
       }}
     />

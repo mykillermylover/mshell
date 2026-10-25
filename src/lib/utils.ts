@@ -1,6 +1,6 @@
 export function noop(): void {}
 
-/** `~` и `$HOME` не раскрываем: конфиг принимает только абсолютные пути. */
+/** We don't expand `~` and `$HOME`: the config only accepts absolute paths. */
 export function isAbsolutePath(value: string): boolean {
   return value.startsWith('/');
 }

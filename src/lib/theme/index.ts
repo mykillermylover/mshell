@@ -15,13 +15,13 @@ import {
 
 const RELOAD_DELAY_MS = 150;
 
-// FileMonitor должен жить, пока живёт приложение.
+// The FileMonitor must live as long as the application.
 const monitors: Gio.FileMonitor[] = [];
 
-// wallpaper|scheme|contrast последней запущенной генерации.
+// wallpaper|scheme|contrast of the last started generation.
 let lastPaletteSignature = '';
 
-/** Системная схема или принудительная — для всего процесса AGS. */
+/** System scheme or forced one — for the whole AGS process. */
 function applyThemeMode(value: string) {
   const mode = normalizeThemePreference(value);
   const sm = Adw.StyleManager.get_default();
@@ -36,11 +36,11 @@ function applyThemeMode(value: string) {
 }
 
 /**
- * CSS применяется своим провайдером, а не через app.start: только так
- * можно выставить prefers-color-scheme, без которого @media в GTK
- * всегда выбирает светлую ветку.
+ * CSS is applied by its own provider, not through app.start: only this way
+ * can prefers-color-scheme be set, without which @media in GTK
+ * always picks the light branch.
  */
-/** Запустить matugen, если изменились wallpaper, scheme или contrast. */
+/** Run matugen if wallpaper, scheme or contrast changed. */
 function syncPalette(force = false) {
   const wallpaper = config.theme.wallpaper();
   if (!wallpaper) {
@@ -59,7 +59,7 @@ function syncPalette(force = false) {
   requestPalette({ wallpaper, scheme, contrast });
 }
 
-/** Единая точка: режим и палитра всегда применяются вместе. */
+/** Single entry point: mode and palette are always applied together. */
 export function applyTheme(force = false) {
   applyThemeMode(config.theme.mode());
   syncPalette(force);
@@ -68,8 +68,8 @@ export function applyTheme(force = false) {
 export function initTheme(css: string) {
   applyTheme(true);
 
-  // Display один на Wayland-сессию; мониторы - это Gdk.Monitor внутри него.
-  // Провайдер на display действует на все окна всех мониторов.
+  // There is one Display per Wayland session; monitors are Gdk.Monitor inside it.
+  // A provider on the display affects all windows of all monitors.
   const display = Gdk.Display.get_default();
   if (!display) {
     throw new Error('no display');
@@ -94,8 +94,8 @@ export function initTheme(css: string) {
   };
 
   /**
-   * Пропавший файл означает fallback, а битый - повод оставить
-   * последнюю рабочую палитру.
+   * A missing file means fallback, while a corrupted one is a reason to keep
+   * the last working palette.
    */
   const read = () => {
     if (!GLib.file_test(PALETTE_FILE, GLib.FileTest.EXISTS)) {

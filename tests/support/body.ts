@@ -1,6 +1,6 @@
 import type { Body } from '@lib/geometry';
 
-/** Фабрика тестовых тел: ширина по умолчанию задаётся в каждом файле. */
+/** Test body factory: the default width is set in each file. */
 export const makeBody =
   (defaultWidth: number) =>
   (

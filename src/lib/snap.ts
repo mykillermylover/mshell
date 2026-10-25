@@ -6,11 +6,11 @@ import {
   type FrameSpec,
 } from '@lib/geometry';
 
-/** Допуск закрытия выбранного контакта, px. */
+/** Tolerance for closing the chosen contact, px. */
 const RESIDUAL = 0.5;
-/** Минимальный детерминант пары: вырожденные (коллинеарные) нормали. */
+/** Minimum pair determinant: degenerate (collinear) normals. */
 const MIN_PAIR_DET = 1e-6;
-/** Запас при осевом выпихивании: тела не должны остаться в контакте. */
+/** Margin for axial pushing: the bodies must not stay in contact. */
 const EJECT_GAP = 0.5;
 
 export interface SnapEnv {
@@ -89,10 +89,10 @@ const keyOf = (contacts: RefContact[]): string =>
     .sort()
     .join('|');
 
-/** Допуск пересечения, px. */
+/** Intersection tolerance, px. */
 const OVERLAP = 0.01;
 
-/** Перекрытие по оси: > 0 - пересечение, < 0 - зазор. */
+/** Overlap along an axis: > 0 is an intersection, < 0 is a gap. */
 const overlapX = (first: Body, second: Body): number =>
   Math.min(first.x + first.w, second.x + second.w) -
   Math.max(first.x, second.x);
@@ -102,11 +102,11 @@ const overlapY = (first: Body, second: Body): number =>
   Math.max(first.y, second.y);
 
 /**
- * Глубина пересечения ограничивающих прямоугольников.
+ * Intersection depth of the bounding rectangles.
  *
- * Сердцевины могут слипнуться в точку (`contactBetween` → null) раньше, чем
- * прямоугольники: при `windowRadius = 0` точный стык и есть такое касание,
- * и он допустим. Поэтому запасной критерий - прямоугольники.
+ * The cores may merge into a point (`contactBetween` → null) before the
+ * rectangles do: with `windowRadius = 0` an exact joint is such a touch,
+ * and it is allowed. So the fallback criterion is the rectangles.
  */
 const boxOverlap = (first: Body, second: Body): number =>
   Math.min(overlapX(first, second), overlapY(first, second));
@@ -147,7 +147,7 @@ const make = (
     return null;
   }
 
-  // Пары - только из двух контактов: тройки переопределены.
+  // Pairs are only from two contacts: triples are overdetermined.
   if (contacts.length > 2) {
     return null;
   }
@@ -176,8 +176,8 @@ const make = (
     const after = contactFor(item.ref, next, env);
 
     if (!after) {
-      // Сердцевины слиплись в точку: у тела при `windowRadius = 0` это
-      // точный стык прямоугольников, у рамки и глубокого леза - нет.
+      // The cores merged into a point: for a body with `windowRadius = 0` this is
+      // an exact joint of the rectangles, but not for the frame or a body stuck deep into it.
       if (
         item.ref.kind === 'body' &&
         boxOverlap(next, item.ref.body) <= OVERLAP
@@ -246,7 +246,7 @@ const eject = (self: Body, env: SnapEnv, others: Body[]): SnapResult | null => {
       continue;
     }
 
-    // Толкаем по осям: у глубокого перекрытия нормали уже нет.
+    // Push along the axes: in a deep overlap there is no normal anymore.
     const pushes: [number, number][] = [
       [-(dx + EJECT_GAP), 0],
       [dx + EJECT_GAP, 0],
@@ -269,9 +269,9 @@ const eject = (self: Body, env: SnapEnv, others: Body[]): SnapResult | null => {
     }
   }
 
-  // Запасной вариант: контакты по нормалям не закрылись (тело просело в
-  // материал рамки глубже радиуса), но топология ещё позволяет - вписать
-  // тело внутрь рамки.
+  // Fallback: contact normals did not close (the body sank into the
+  // frame material deeper than the radius), but the topology still allows it - fit
+  // the body inside the frame.
   const clampX =
     Math.min(
       Math.max(self.x, env.frame.border),
@@ -322,15 +322,15 @@ const pick = (candidates: Candidate[]): Candidate | null => {
 };
 
 /**
- * Магнит: куда поставить окно `self`, чтобы закрыть ближайший контакт.
+ * Magnet: where to place window `self` to close the nearest contact.
  *
- * Триггер: положительный зазор не больше `reach` - притяжение; отрицательный
- * зазор или слипшиеся сердцевины - выпихивание. Кандидаты - каждый контакт
- * (стены и дуги рамки, тела) в одиночку и парами: решение системы «нормаль ×
- * зазор». Выбор: больше контактов, затем короче ход, затем ключ контактов.
- * Если контакты выпихнуть не дают, запасной вариант - осевые выталкивания
- * из тел, затем вписать тело в рамку.
- * `null` - рядом нет контакта или закрыть его нечем.
+ * Trigger: a positive gap no greater than `reach` means attraction; a negative
+ * gap or merged cores means pushing out. Candidates are every contact
+ * (frame walls and arcs, bodies) alone and in pairs: solving the "normal ×
+ * gap" system. Choice: more contacts, then shorter travel, then the contacts key.
+ * If contacts can't push it out, the fallback is axial pushes
+ * out of bodies, then fitting the body into the frame.
+ * `null` means there is no contact nearby or nothing can close it.
  */
 export function snapTo(
   env: SnapEnv,

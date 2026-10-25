@@ -66,7 +66,7 @@
             bluez-tools
             glib-networking
             libadwaita
-            # Генератор палитры для scripts/palette.sh.
+            # Palette generator for src/lib/theme/generate.ts.
             matugen
           ]);
       in
@@ -86,7 +86,7 @@
           installPhase = ''
             runHook preInstall
 
-            # В share - только шаблон палитры для matugen.
+            # In share - only the palette template for matugen.
             mkdir -p $out/bin
             install -Dm644 matugen/templates/mshell.css.tera \
               $out/share/matugen/templates/mshell.css.tera
@@ -115,7 +115,7 @@
             inotify-tools
             nodejs
             claude-code
-            # Для scripts/palette.sh в дев-шелле; в билд попадает через extraPackages.
+            # For src/lib/theme/generate.ts in the dev shell; it reaches the build via extraPackages.
             matugen
           ];
 

@@ -1,5 +1,5 @@
-// Схема (данные и типы) и движок (реактивное дерево) живут раздельно:
-// правка параметров и правка обхода не связаны.
+// The schema (data and types) and the engine (reactive tree) live separately:
+// editing parameters and editing the walk are unrelated.
 export * from './fields';
 export * from './schema';
 export * from './tree';

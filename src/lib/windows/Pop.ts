@@ -16,9 +16,9 @@ import { buildPopRevealer, buildPopSlot, type PopSlot } from './popSlot';
 import { Window, type WindowMeasure } from './window';
 
 /**
- * Слот рамки: геометрия тела и правила hover. GTK-виджеты и подписки -
- * в popSlot.ts; контроллер движения - один на Frame; открытость, pin
- * и api - в Window.
+ * Frame slot: body geometry and hover rules. GTK widgets and subscriptions -
+ * in popSlot.ts; the motion controller is one per Frame; open state, pin
+ * and api - in Window.
  */
 export class Pop extends Window {
   readonly widget: Gtk.Box;
@@ -76,9 +76,9 @@ export class Pop extends Window {
     return this.slot.animating;
   }
 
-  /** Прогреть preferred size после map: первый hover не платит за раскладку. */
+  /** Prewarm the preferred size after map: the first hover does not pay for layout. */
   prewarm() {
-    // measure виджета рекурсивно измеряет детей (Revealer, контент).
+    // The widget measure recursively measures children (Revealer, content).
     this.widget.get_preferred_size();
   }
 
@@ -88,17 +88,17 @@ export class Pop extends Window {
     super.dispose();
   }
 
-  /** Наведение нужно и для hover-зоны, и для окна с вводом. */
+  /** Hover is needed both for the hover zone and for a window with input. */
   protected override get acceptsHover(): boolean {
     return this.hover !== null || this.keyboard;
   }
 
   /**
-   * Видимое тело: всё, кроме полосы рамки (`spacer`). Рамку рисует
-   * LiquidField, поэтому в тело поля она не входит.
+   * Visible body: everything except the frame strip (`spacer`). The frame is drawn
+   * by LiquidField, so it is not part of the field body.
    *
-   * Input закрытой зоны = губа + полоса рамки до края экрана. Открытой -
-   * только тело. Оба считаются из одного `compute_bounds`.
+   * Input of the closed zone = lip + frame strip up to the screen edge. Of the open zone -
+   * body only. Both are computed from one `compute_bounds`.
    */
   measure(relativeTo: Gtk.Widget): WindowMeasure {
     const raw = this.slot.bounds(relativeTo);
@@ -110,8 +110,8 @@ export class Pop extends Window {
     }
 
     const body = this.bodyRect(raw);
-    // Закрытая зона ловит сырые границы слота: тело плюс полоса рамки до
-    // края экрана. Что видно (губа) - то и ловится.
+    // The closed zone catches the raw slot bounds: body plus the frame strip up
+    // to the screen edge. What is visible (the lip) is what gets caught.
     const input = this.slot.revealed ? body : raw;
 
     return {
@@ -120,7 +120,7 @@ export class Pop extends Window {
     };
   }
 
-  /** Применить длительности и раскладку по текущему конфигу. */
+  /** Apply durations and layout from the current config. */
   apply() {
     const style = this.style();
     this.slot.apply(style.revealDuration, this.layout(style));
@@ -131,7 +131,7 @@ export class Pop extends Window {
     return zone ? [this.revealer, zone] : [this.revealer];
   }
 
-  /** Тело без полосы рамки; нулевое при `depth = 0` (невидимая зона). */
+  /** Body without the frame strip; zero at `depth = 0` (invisible zone). */
   private bodyRect(rect: Rect): Rect {
     const { border } = this.style();
     switch (this.spec.edge) {
@@ -150,16 +150,16 @@ export class Pop extends Window {
     }
   }
 
-  /** Толщина губы по текущему конфигу. */
+  /** Lip thickness from the current config. */
   private depth(style = this.style()) {
     if (!this.hover) {
       return 0;
     }
-    // Нижняя граница уже отсечена конфигом (LIMITS.style.hoverDepth >= 1).
+    // The lower bound is already clamped by the config (LIMITS.style.hoverDepth >= 1).
     return style.hoverDepth;
   }
 
-  /** Раскладка по текущему конфигу. */
+  /** Layout from the current config. */
   private layout(style = this.style()) {
     const offset = isVerticalEdge(this.spec)
       ? (this.spec.offsetY ?? 0)

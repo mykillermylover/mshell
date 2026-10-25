@@ -18,9 +18,9 @@ interface Tween {
   duration: number;
 }
 
-/** Сколько кадров держать тик после изменения раскладки. */
+/** How many frames to keep ticking after a layout change. */
 const POKE_FRAMES = 2;
-/** GdkFrameClock отдаёт микросекунды; твины и задержки - в миллисекундах. */
+/** GdkFrameClock returns microseconds; tweens and delays are in milliseconds. */
 const US_PER_MS = 1000;
 
 export interface MotionDeps {
@@ -30,27 +30,27 @@ export interface MotionDeps {
   bodies: () => Window[];
 }
 
-/** Движение окон: drag, примагничивание, твины и тик-цикл. */
+/** Window movement: drag, snapping, tweens and the tick loop. */
 export class FrameMotion {
   private drag: { float: Float; startX: number; startY: number } | null = null;
   private tweens = new Map<Float, Tween>();
   private ticking = false;
   private pokes = 0;
-  /** Обработано тиков - для debug-команды frames. */
+  /** Processed ticks - for the debug frames command. */
   tickCount = 0;
 
   constructor(private readonly deps: MotionDeps) {
     this.installDrag();
   }
 
-  /** Для debug: поставить окно и перерисовать. */
+  /** For debug: place the window and redraw. */
   move(float: Float, x: number, y: number) {
     this.tweens.delete(float);
     this.moveTo(float, x, y);
     this.poke();
   }
 
-  /** Для debug: запустить твин. */
+  /** For debug: start a tween. */
   tween(
     float: Float,
     fromX: number,
@@ -70,12 +70,12 @@ export class FrameMotion {
     this.tick();
   }
 
-  /** Для drag-end и debug: примагнитить окно. */
+  /** For drag-end and debug: snap the window. */
   snap(float: Float) {
     this.snapFloat(float);
   }
 
-  /** Окно убирают: забыть его твин и drag, чтобы не двигать удалённый виджет. */
+  /** The window is being removed: forget its tween and drag so we do not move a deleted widget. */
   forget(float: Float) {
     this.tweens.delete(float);
     if (this.drag?.float === float) {
@@ -83,15 +83,15 @@ export class FrameMotion {
     }
   }
 
-  /** Перерисовать пару кадров: хватает, чтобы подхватить итоговую раскладку после изменения. */
+  /** Redraw for a couple of frames: enough to pick up the final layout after a change. */
   poke() {
     this.pokes = POKE_FRAMES;
     this.tick();
   }
 
   /**
-   * Тик-цикл живёт, только пока что-то движется (перетаскивание, примагничивание, анимация
-   * Revealer) или пока не отработали poke(). В покое тиков нет - композитор не будят.
+   * The tick loop lives only while something is moving (dragging, snapping, Revealer
+   * animation) or until poke() has run out. At rest there are no ticks - the compositor is not woken.
    */
   tick() {
     if (this.ticking) {
@@ -113,8 +113,8 @@ export class FrameMotion {
           const eased = easeOutBack(progress);
           const x = tween.fromX + (tween.toX - tween.fromX) * eased;
           const y = tween.fromY + (tween.toY - tween.fromY) * eased;
-          // Перелёт easeOutBack должен заходить за рамку и за соседа, поэтому
-          // комнату на время твина не держим - только поверхность слоя.
+          // The easeOutBack overshoot must go past the frame and past the neighbor, therefore
+          // we do not reserve space during the tween - only the layer surface.
           this.place(
             float,
             Math.max(0, Math.min(x, fieldWidth - float.revealer.get_width())),
@@ -144,8 +144,8 @@ export class FrameMotion {
   }
 
   /**
-   * Жест висит на неподвижном Fixed, а не на самом окне: координаты стабильны,
-   * нет дрожания из-за того, что окно двигается под курсором.
+   * The gesture lives on the stationary Fixed, not on the window itself: coordinates are stable,
+   * no jitter from the window moving under the cursor.
    */
   private installDrag() {
     const gesture = new Gtk.GestureDrag();
@@ -204,7 +204,7 @@ export class FrameMotion {
     this.deps.fixed.put(float.revealer, float.x, float.y);
   }
 
-  /** Поставить окно как есть: без ограничения комнатой. */
+  /** Place the window as is: without clamping to the interior. */
   private place(float: Float, x: number, y: number) {
     float.x = x;
     float.y = y;
@@ -215,8 +215,8 @@ export class FrameMotion {
     const fieldWidth = this.deps.field.get_width();
     const fieldHeight = this.deps.field.get_height();
     const border = this.deps.style().border;
-    // Окно живёт в комнате, а не на рамке: иначе зазор к рамке становится
-    // отрицательным и тело геометрически перекрывает обводку.
+    // The window lives in the interior, not on the frame: otherwise the gap to the frame becomes
+    // negative and the body geometrically covers the outline.
     const maxX = Math.max(
       border,
       fieldWidth - border - float.revealer.get_width(),
@@ -232,7 +232,7 @@ export class FrameMotion {
     );
   }
 
-  /** Примагнитить окно: посчитать цель и запустить твин. */
+  /** Snap the window: compute the target and start a tween. */
   private snapFloat(float: Float) {
     const target = this.snapTarget(float);
     if (target) {
@@ -249,7 +249,7 @@ export class FrameMotion {
   }
 
   /**
-   * Отпустили окно ближе snapReach к краю или соседу → оно втягивается вплотную.
+   * Window released closer than snapReach to the edge or a neighbor → it is pulled flush.
    */
   private snapTarget(float: Float): { x: number; y: number } | null {
     const { border, screenRadius, snapReach, windowRadius } = this.deps.style();
@@ -258,10 +258,10 @@ export class FrameMotion {
       return null;
     }
 
-    // Соседи - все тела поля, не только Float: выехавший Pop тоже должен
-    // притягивать окно. Закрытые hover-губы участвуют намеренно: это видимый
-    // материал попапа, и Float не должен примагнититься «сквозь» него или лечь
-    // поверх. Анимирующиеся - тоже: их текущее тело и есть цель.
+    // Neighbors are all field bodies, not just Floats: a moved-out Pop must also
+    // attract the window. Closed hover lips participate deliberately: they are visible
+    // popover material, and a Float must not snap "through" them or land
+    // on top. Windows being animated too: their current body is the target.
     const others = this.deps
       .bodies()
       .filter((body) => body !== float)

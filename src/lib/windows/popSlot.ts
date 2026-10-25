@@ -4,7 +4,7 @@ import { Gtk } from 'ags/gtk4';
 import { boundsOf } from './api';
 import type { Edge, PopLayout } from './popLayout';
 
-// Попап уезжает от своего края, зона - к краю. Одно знание на оба Revealer.
+// The popover slides away from its edge, the zone - toward the edge. One source for both Revealers.
 const SLIDE = {
   top: {
     pop: Gtk.RevealerTransitionType.SLIDE_DOWN,
@@ -35,7 +35,7 @@ const ORIENTATION = {
   horizontal: Gtk.Orientation.HORIZONTAL,
 };
 
-/** Контент-заполнитель: пустая зона/спейсер ведут себя как обычный контент. */
+/** Filler content: an empty zone/spacer behaves like regular content. */
 const filler = () => {
   const box = new Gtk.Box();
   box.hexpand = true;
@@ -43,7 +43,7 @@ const filler = () => {
   return box;
 };
 
-/** Основной Revealer попапа; направление задаёт край. */
+/** Main popover Revealer; the edge sets the direction. */
 export function buildPopRevealer(
   edge: Edge,
   revealChild = false,
@@ -67,13 +67,13 @@ interface PopSlotOptions {
   hover: HoverSlot | null;
 }
 
-/** GTK-часть попапа: раскладка, зона и геометрия виджета. */
+/** GTK part of the popover: layout, zone and widget geometry. */
 export interface PopSlot {
   readonly widget: Gtk.Box;
   readonly animating: boolean;
-  /** Основной Revealer уже полностью раскрыт. */
+  /** The main Revealer is fully revealed. */
   readonly revealed: boolean;
-  /** Revealer hover-зоны; null, если зоны нет. */
+  /** Revealer of the hover zone; null if there is no zone. */
   readonly zoneRevealer: Gtk.Revealer | null;
   bounds(relativeTo: Gtk.Widget): Rect | null;
   apply(duration: number, layout: PopLayout): void;
@@ -81,9 +81,9 @@ export interface PopSlot {
 }
 
 /**
- * Собрать слот: Revealer у внутренней кромки, hover-зона на дальней и
- * spacer с полосой рамки. Здесь только GTK-виджеты и подписки; hover-
- * контроллер один на кадр, геометрию считает Pop.
+ * Build the slot: Revealer at the inner edge, hover zone at the far edge and
+ * a spacer with the frame strip. Here only GTK widgets and subscriptions; the hover
+ * controller is one per frame, geometry is computed by Pop.
  */
 export function buildPopSlot(options: PopSlotOptions): PopSlot {
   const { edge, layout, revealer, content, hover } = options;
@@ -97,7 +97,7 @@ export function buildPopSlot(options: PopSlotOptions): PopSlot {
   revealer.set_child(content);
 
   if (hover) {
-    // Полоса рамки как часть тела: spacer, а не margin.
+    // The frame strip as part of the body: a spacer, not a margin.
     spacer = new Gtk.Box();
     spacerFiller = filler();
     spacer.append(spacerFiller);
@@ -128,8 +128,8 @@ export function buildPopSlot(options: PopSlotOptions): PopSlot {
 
   let syncId = 0;
   if (hover && zoneRevealer) {
-    // hideOnReveal: зона уезжает сразу с началом открытия (SLIDE, без
-    // fade) и возвращается с началом закрытия.
+    // hideOnReveal: the zone slides out as soon as opening starts (SLIDE, without
+    // fade) and returns as closing starts.
     const zoneRev = zoneRevealer;
     const sync = () => {
       zoneRev.reveal_child = hover.hideOnReveal ? !revealer.reveal_child : true;

@@ -19,7 +19,7 @@ let debounceId: number | null = null;
 let running = false;
 
 function templateFile(): string {
-  // В собранном бандле SRC указывает на share; в dev - корень репозитория.
+  // In the built bundle SRC points to share; in dev it's the repository root.
   const root = typeof SRC === 'string' ? SRC : GLib.get_current_dir();
 
   return GLib.build_filenamev([
@@ -37,7 +37,7 @@ function remove(path: string) {
       file.delete(null);
     }
   } catch {
-    // временный файл не критичен
+    // the temp file is not critical
   }
 }
 
@@ -116,9 +116,12 @@ async function run() {
   }
 }
 
-/** Debounce и сериализация: matugen не должен запускаться пачкой. */
+/** Debounce and serialization: matugen must not run in bursts. */
 export function requestPalette(request: PaletteRequest) {
-  pending = request;
+  pending = {
+    ...pending,
+    ...request,
+  };
 
   if (debounceId !== null) {
     GLib.source_remove(debounceId);

@@ -4,8 +4,8 @@ import Settings from '@widgets/Settings';
 import Workspaces from '@widgets/Workspaces';
 import { Gtk } from 'ags/gtk4';
 
-// Контент окон. Фон и отступы не задавать: фон рисует поле жидкости,
-// отступы - .frame-body в style.css.
+// Window content. Do not set a background or padding: the background is drawn by the liquid field,
+// padding is set by .frame-body in style.css.
 function Card(props: { title: string; body: string; w: number; h: number }) {
   return (
     <box
@@ -22,7 +22,7 @@ function Card(props: { title: string; body: string; w: number; h: number }) {
 
 function Player() {
   return (
-    <Card title="Player" body="Выезжает из верхней стороны" w={420} h={120} />
+    <Card title="Player" body="Slides out from the top side" w={420} h={120} />
   );
 }
 
@@ -42,15 +42,20 @@ function PlayerHover() {
 
 function Launcher() {
   return (
-    <Card title="Launcher" body="Выезжает из нижней стороны" w={520} h={220} />
+    <Card
+      title="Launcher"
+      body="Slides out from the bottom side"
+      w={520}
+      h={220}
+    />
   );
 }
 
 function Notes() {
   return (
     <Card
-      title="Тащи к краю"
-      body="Рядом с рамкой - слипнется"
+      title="Drag to the edge"
+      body="Near the frame - it will stick"
       w={240}
       h={110}
     />
@@ -60,15 +65,15 @@ function Notes() {
 function Mixer() {
   return (
     <Card
-      title="Или к другому окну"
-      body="Окна тоже слипаются"
+      title="Or to another window"
+      body="Windows stick together too"
       w={260}
       h={100}
     />
   );
 }
 
-/** Стартовые попапы: создаются синхронно при инициализации каждого кадра. */
+/** Initial popovers: created synchronously on init of each frame. */
 export const INITIAL_POPS: PopSpec[] = [
   {
     id: 'player',
@@ -94,7 +99,7 @@ export const INITIAL_POPS: PopSpec[] = [
   },
 ];
 
-/** Стартовые Float: создаются синхронно; динамические - через Frame.addFloat. */
+/** Initial Floats: created synchronously; dynamic ones - via Frame.addFloat. */
 export const INITIAL_FLOATS: FloatSpec[] = [
   { id: 'notes', title: 'Notes', x: 200, y: 260, content: Notes },
   { id: 'mixer', title: 'Mixer', x: 560, y: 340, content: Mixer },

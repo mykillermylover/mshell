@@ -1,48 +1,48 @@
 import type { FieldStyle } from '@lib/config';
 import { type Body, clampRadius, type Rect } from '@lib/geometry';
-import { Gdk, Gtk } from 'ags/gtk4'; // первым: фиксирует Gtk 4 до загрузки Gsk
+import { Gdk, Gtk } from 'ags/gtk4'; // first: pins Gtk 4 before Gsk is loaded
 import Graphene from 'gi://Graphene';
 import Gsk from 'gi://Gsk';
 import { register } from 'gnim/gobject';
 
 import { type Bridge, bridges, bridgeShape, bridgeSpecFor } from './bridges';
 
-// GtkSnapshot.push_blur принимает радиус, а GTK считает внутри σ = radius / 2
-// (gsk/gpu/shaders/gskgpublur.glsl). Значит, чтобы получить заданную σ,
-// радиус должен быть 2σ. Это калибровка GTK, не пользовательская настройка.
+// GtkSnapshot.push_blur takes a radius, and GTK computes σ = radius / 2 inside
+// (gsk/gpu/shaders/gskgpublur.glsl). So to get a given σ,
+// the radius must be 2σ. This is GTK calibration, not a user setting.
 const GTK_BLUR_RADIUS_PER_SIGMA = 2;
-// Точка порога: 0.5 - ровно середина альфы, кромка тела остаётся на месте.
+// Threshold point: 0.5 - exactly the alpha midpoint, the body edge stays in place.
 const ALPHA_MIDPOINT = 0.5;
-// Рамка уходит за экран на 5σ + 16 px, чтобы blur не съел её видимый край.
+// The frame goes off-screen by 5σ + 16 px so the blur does not eat its visible edge.
 const BLUR_MARGIN_SIGMAS = 5;
 const FRAME_MARGIN_PX = 16;
-// σ из blurRadius: размытие - «колокол», 1.35 - прежняя калибровка слияния кромок.
+// σ from blurRadius: the blur is a "bell", 1.35 is the previous edge-weld calibration.
 const SIGMA_PER_MELT = 1 / 1.35;
 const MIN_SIGMA = 1;
 
 /**
- * Поле «жидкости» (alpha clipping): рамка и окна рисуются как есть, поверх -
- * те же тела, пропущенные через размытие и порог по альфе.
- * Итог = чёткие тела ∪ размытое поле.
+ * "Liquid" field (alpha clipping): the frame and windows are drawn as is, and on top -
+ * the same bodies passed through blur and an alpha threshold.
+ * Result = sharp bodies ∪ blurred field.
  *
- * Порог и размытие - два узла Gsk на GPU (цвет-матрица поверх blur).
+ * Threshold and blur are two Gsk nodes on the GPU (color matrix over blur).
  *
- * Почему радиусы углов остаются точными:
- *  - Углы окон. Размытие скругляет выпуклые углы ВНУТРЬ тела, поэтому жидкость
- *    лежит под чётким телом и не видна.
- *  - Углы экрана. В слое жидкости рамка рисуется тем же кольцом, что и чёткая
- *    (drawFrame), поэтому blur идёт по всей кромке, включая дугу. У вогнутой
- *    дуги blur немного заходит в комнату (~1.5 px при blurRadius = 10; тем
- *    больше, чем больше blurRadius), поэтому screenRadius должен совпадать
- *    с rounding из Hyprland: тогда сдвиг совпадает со скруглением композитора
- *    и незаметен.
+ * Why corner radii stay exact:
+ *  - Window corners. The blur rounds convex corners INTO the body, so the liquid
+ *    lies under the sharp body and is not visible.
+ *  - Screen corners. In the liquid layer the frame is drawn with the same ring as the sharp
+ *    one (drawFrame), so the blur goes along the whole edge, including the arc. On a concave
+ *    arc the blur goes slightly into the interior (~1.5 px at blurRadius = 10; the more
+ *    the larger blurRadius), so screenRadius must match
+ *    the rounding from Hyprland: then the shift matches the compositor rounding
+ *    and is unnoticeable.
  */
 @register({ GTypeName: 'FrameLiquidField' })
 export class LiquidField extends Gtk.Widget {
   private style: (() => FieldStyle) | null = null;
   rects: () => Rect[] = () => [];
 
-  /** Стиль передаётся геттером: снимок берётся в момент отрисовки. */
+  /** The style is passed as a getter: the snapshot is taken at draw time. */
   configure(style: () => FieldStyle) {
     this.style = style;
   }
@@ -71,8 +71,8 @@ export class LiquidField extends Gtk.Widget {
 
     const margin = Math.ceil(sigma * BLUR_MARGIN_SIGMAS) + FRAME_MARGIN_PX;
 
-    // Мостики — та же дальность, что у магнита: жидкость появляется там,
-    // где окно притянется, и тянется тонкой шейкой, а не широкой сваркой blur.
+    // Bridges — the same reach as the magnet: the liquid appears where
+    // the window would be attracted, and stretches as a thin neck rather than a wide blur weld.
     const liquidBridges = bridges(
       bodies,
       bridgeSpecFor(
@@ -81,7 +81,7 @@ export class LiquidField extends Gtk.Widget {
       ),
     );
 
-    // Видимая рамка: кольцо точного радиуса (её и рисуем поверх жидкости).
+    // Visible frame: a ring of exact radius (we draw it over the liquid).
     const drawFrame = () => {
       const thickness = border + margin;
       const outline = new Gsk.RoundedRect().init_from_rect(
@@ -114,9 +114,9 @@ export class LiquidField extends Gtk.Widget {
     };
 
     /**
-     * Осевой мостик — скруглённая плашка без поворота (быстрый rounded-color op);
-     * диагональный — штрих с круглыми торцами, один узел без transform/clip.
-     * Никаких повёрнутых rounded clip: в Gsk они могут стоить лишний offscreen.
+     * Axis-aligned bridge — a rounded plate without rotation (fast rounded-color op);
+     * diagonal — a stroke with round end caps, one node without transform/clip.
+     * No rotated rounded clips: in Gsk they may cost an extra offscreen.
      */
     const drawBridges = (list: Bridge[]) => {
       for (const bridge of list) {
@@ -145,10 +145,10 @@ export class LiquidField extends Gtk.Widget {
     };
 
     /**
-     * Один слой жидкости: тела размываются на sigmaLocal и проходят порог по
-     * альфе α' = sharp·σ·(α − 0.5) + 0.5. Порог стоит ПОСЛЕ размытия, поэтому
-     * у прямой кромки уровень α=0.5 остаётся ровно на кромке тела при любом σ:
-     * окна не раздуваются, размытие только смягчает края.
+     * One liquid layer: bodies are blurred at sigmaLocal and pass the
+     * alpha threshold α' = sharp·σ·(α − 0.5) + 0.5. The threshold is AFTER the blur, so
+     * on a straight edge the α=0.5 level stays exactly on the body edge for any σ:
+     * windows do not inflate, the blur only softens the edges.
      */
     const drawLiquid = (sigmaLocal: number) => {
       const alphaGain = sharp * sigmaLocal;
@@ -178,7 +178,7 @@ export class LiquidField extends Gtk.Widget {
       );
       snap.push_color_matrix(matrix, offset);
       snap.push_blur(sigmaLocal * GTK_BLUR_RADIUS_PER_SIGMA);
-      // Рамка - тем же кольцом, что и в чётком слое: жидкость идёт по дугам.
+      // Frame - with the same ring as in the sharp layer: the liquid follows the arcs.
       drawFrame();
       drawWindows();
       drawBridges(liquidBridges);
@@ -188,10 +188,10 @@ export class LiquidField extends Gtk.Widget {
 
     snap.push_opacity(cssColor.alpha);
 
-    // 1. жидкость: размытие + порог
+    // 1. liquid: blur + threshold
     drawLiquid(sigma);
 
-    // 2. чёткие тела (точные радиусы) - всегда поверх жидкости
+    // 2. sharp bodies (exact radii) - always over the liquid
     drawFrame();
     drawWindows();
 

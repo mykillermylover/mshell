@@ -1,6 +1,6 @@
-// Чистая раскладка попапа: прижатие Box к кромке рамки, align вдоль края,
-// порядок детей (spacer у рамки, Revealer, зона на дальней кромке) и толщина.
-// Без GJS - тестируется в node.
+// Pure popover layout: pinning the Box to the frame edge, align along the edge,
+// child order (spacer at the frame, Revealer, zone at the far edge) and thickness.
+// Without GJS - tested in node.
 
 export type HorizontalEdge = 'top' | 'bottom';
 export type VerticalEdge = 'left' | 'right';
@@ -22,13 +22,13 @@ export interface PopLayout {
     marginTop: number;
     marginBottom: number;
   };
-  /** Порядок детей Box от его начала; spacer - только у hover-попапа. */
+  /** Box child order from its start; spacer - only in a hover popover. */
   children: Array<'spacer' | 'revealer' | 'zone'>;
   spacer: { widthRequest: number; heightRequest: number };
   zone: { widthRequest: number; heightRequest: number };
 }
 
-/** GTK: -1 - размер по содержимому, а не запрошенный. */
+/** GTK: -1 - size by content, not the requested one. */
 const NATURAL_SIZE = -1;
 
 type Margins = Record<
@@ -37,9 +37,9 @@ type Margins = Record<
 >;
 
 /**
- * Сдвиг вдоль края: `distance` > 0 — вправо (верх/низ) или вниз (лево/право).
- * Марджины GTK неотрицательны, поэтому движение «наружу» от угла упирается
- * в кромку: итоговое отклонение насыщается, а не отбрасывается.
+ * Shift along the edge: `distance` > 0 - right (top/bottom) or down (left/right).
+ * GTK margins are non-negative, so movement "outward" from the corner hits
+ * the edge: the resulting offset saturates instead of being discarded.
  */
 const shiftAlong = (
   margins: Margins,
@@ -49,7 +49,7 @@ const shiftAlong = (
   distance: number,
 ): void => {
   if (align === 'center') {
-    // Центр сдвигается на (marginStart - marginEnd) / 2.
+    // The center shifts by (marginStart - marginEnd) / 2.
     if (distance > 0) {
       margins[start] += 2 * distance;
     } else {
@@ -66,14 +66,14 @@ const shiftAlong = (
 };
 
 /**
- * Вдоль края - align; для start/end добавляется отступ от угла
- * border + screenRadius. Поперёк - прижатие к кромке рамки.
+ * Along the edge - align; for start/end an offset from the corner is added:
+ * border + screenRadius. Across it - pinning to the frame edge.
  *
- * Без hover frame-side отступ - это margin Box'а: overlay не читает его для
- * позиции, а content box сжимается на величину margin. С hover отступ
- * становится реальным spacer'ом внутри Box: зона не теряет толщину. В тело
- * поля spacer не входит (рамку рисует LiquidField), а input закрытой зоны
- * достраивается на него до края экрана.
+ * Without hover, the frame-side offset is the Box margin: the overlay does not read it for
+ * the position, and the content box shrinks by the margin. With hover, the offset
+ * becomes a real spacer inside the Box: the zone does not lose thickness. The spacer
+ * is not part of the field body (the frame is drawn by LiquidField), and the closed zone input
+ * is extended over it up to the screen edge.
  */
 export function popLayout(
   edge: Edge,

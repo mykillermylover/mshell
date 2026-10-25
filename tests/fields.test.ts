@@ -4,7 +4,7 @@ import test from 'node:test';
 
 const noop = () => {};
 
-/** Конфиг как в приложении, без GJS: реактивное дерево + заглушка методов. */
+/** Config as in the app, without GJS: reactive tree + method stubs. */
 function makeConfig(): Config {
   const methods: ConfigMethods = {
     update: noop,
@@ -20,7 +20,7 @@ function makeConfig(): Config {
   ) as Config;
 }
 
-test('fields: покрывает каждый лист схемы', () => {
+test('fields: covers every leaf of the schema', () => {
   const config = makeConfig();
   const list = fields(config);
 
@@ -37,13 +37,13 @@ test('fields: покрывает каждый лист схемы', () => {
   );
 });
 
-test('fields: kind совпадает со спекой, метаданные на месте', () => {
+test('fields: kind matches the spec, metadata is in place', () => {
   const list = fields(makeConfig());
   const border = list.find((f) => f.key === 'border');
 
   assert.ok(border);
   assert.equal(border.kind, 'number');
-  assert.equal(border.label, 'Рамка');
+  assert.equal(border.label, 'Border');
   if (border.kind === 'number') {
     assert.equal(border.unit, 'px');
     assert.equal(border.min, 0);
@@ -58,7 +58,7 @@ test('fields: kind совпадает со спекой, метаданные н
   }
 });
 
-test('fields: set меняет дерево, value читает его', () => {
+test('fields: set changes the tree, value reads it', () => {
   const config = makeConfig();
   const border = fields(config).find((f) => f.key === 'border');
 
@@ -69,12 +69,12 @@ test('fields: set меняет дерево, value читает его', () => {
   assert.equal(config.style.border(), 9);
   assert.equal(border.value(), 9);
 
-  // зажим лимитами работает и через поле
+  // clamping by limits works through the field too
   border.set(999);
   assert.equal(config.style.border(), 32);
 });
 
-test('fields: choice.set пишет enum-значение', () => {
+test('fields: choice.set writes an enum value', () => {
   const config = makeConfig();
   const mode = fields(config).find((f) => f.key === 'mode');
 

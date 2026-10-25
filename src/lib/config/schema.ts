@@ -5,31 +5,31 @@ import {
 } from '@lib/theme/policy';
 import type { Accessor } from 'ags';
 
-/** Лист конфига: значение, которое кладётся в JSON и сравнивается по данным. */
+/** Config leaf: a value stored in JSON and compared by data. */
 export type Leaf = string | number | boolean;
 
-/** Статика: лист или вложенная секция. */
+/** Static config: leaf or nested section. */
 export type Section = { [key: string]: Leaf | Section };
 
-/** Лист конфига: Accessor плюс запись. */
+/** Config leaf: Accessor plus setter. */
 export type State<T> = Accessor<T> & { set(value: T): void };
 
-/** Узел реактивного дерева: состояние листа или вложенная секция. */
+/** Reactive tree node: leaf state or nested section. */
 export type ReactiveNode = State<Leaf> | ReactiveSection;
 
-/** Секция реактивного дерева: узлы по имени. */
+/** Reactive tree section: nodes by name. */
 export type ReactiveSection = { [key: string]: ReactiveNode };
 
 /**
- * Дерево, где каждый лист заменён на State; форма повторяет статику.
- * Плюс доступ по имени - по нему ходят обходы и патчи.
+ * Tree where every leaf is replaced by State; the shape repeats the static one.
+ * Plus access by name - walks and patches go through it.
  */
 export type Reactive<T> = {
   [K in keyof T]: T[K] extends Leaf ? State<T[K]> : Reactive<T[K]>;
 };
 
-// --- Описание листа -------------------------------------------------------
-// Одно объявление на ключ: значение, границы и всё, что нужно форме.
+// --- Leaf description -----------------------------------------------------
+// One declaration per key: value, limits and everything the form needs.
 
 export type NumberSpec = {
   kind: 'number';
@@ -59,13 +59,13 @@ export type ChoiceSpec<T extends string = string> = {
   default: T;
   options: readonly T[];
   label?: string;
-  /** Канонизация входа; неизвестное значение после неё → default. */
+  /** Input canonicalization; an unknown value after it → default. */
   normalize?: (raw: string) => T;
 };
 
 export type LeafSpec = NumberSpec | TextSpec | BoolSpec | ChoiceSpec;
 
-/** Секция схемы: лист или вложенная секция. */
+/** Schema section: leaf or nested section. */
 export type Node = LeafSpec | { readonly [key: string]: Node };
 
 export const isLeaf = (node: Node): node is LeafSpec => 'kind' in node;
@@ -89,109 +89,109 @@ export const choice = <T extends string>(
   spec: Omit<ChoiceSpec<T>, 'kind'>,
 ): ChoiceSpec<T> => ({ kind: 'choice', ...spec });
 
-/** Object.values без потери типа enum'а (иначе получается string[]). */
+/** Object.values without losing the enum type (otherwise you get string[]). */
 const optionsOf = <T extends string>(values: Record<string, T>): readonly T[] =>
   Object.values(values);
 
-// --- Сам конфиг -----------------------------------------------------------
-// Новый параметр = одна строка здесь. Порядок ключей = порядок полей в форме.
+// --- The config itself ----------------------------------------------------
+// A new parameter = one line here. Key order = field order in the form.
 
 export const SCHEMA = {
   theme: {
     mode: choice<ThemePreference>({
       default: ThemePreference.SYSTEM,
       options: optionsOf(ThemePreference),
-      label: 'Режим',
+      label: 'Mode',
     }),
     scheme: choice<ThemeScheme>({
       default: ThemeScheme.TONAL_SPOT,
       options: optionsOf(ThemeScheme),
       normalize: normalizeThemeScheme,
-      label: 'Схема',
+      label: 'Scheme',
     }),
-    // Пусто или относительный путь - палитра не генерируется.
+    // Empty or a relative path - the palette is not generated.
     wallpaper: text({
       default: '',
-      label: 'Обои',
+      label: 'Wallpaper',
     }),
     contrast: num({
       default: 0,
       min: -1,
       max: 1,
       step: 0.5,
-      label: 'Контраст',
+      label: 'Contrast',
     }),
   },
   style: {
-    border: num({ default: 4, min: 0, max: 32, label: 'Рамка', unit: 'px' }),
+    border: num({ default: 4, min: 0, max: 32, label: 'Border', unit: 'px' }),
     screenRadius: num({
-      // углы экрана (= rounding в Hyprland)
+      // screen corners (= rounding in Hyprland)
       default: 10,
       min: 0,
       max: 64,
-      label: 'Углы экрана',
+      label: 'Screen corners',
       unit: 'px',
     }),
     windowRadius: num({
       default: 12,
       min: 0,
       max: 64,
-      label: 'Углы окон',
+      label: 'Window corners',
       unit: 'px',
     }),
-    // Радиус размытия: σ = blurRadius / 1.35.
-    blurRadius: num({ default: 10, min: 1, max: 64, label: 'Размытие' }),
-    // Дальность магнита: на каком зазоре окно притягивается, px.
+    // Blur radius: σ = blurRadius / 1.35.
+    blurRadius: num({ default: 10, min: 1, max: 64, label: 'Blur' }),
+    // Magnet reach: at what gap the window snaps, px.
     snapReach: num({
       default: 44,
       min: 0,
       max: 200,
-      label: 'Магнит',
+      label: 'Magnet',
       unit: 'px',
     }),
-    // Крутизна порога по альфе: чем больше, тем чётче край (≈1.5px при 2.2).
+    // Alpha threshold steepness: the higher, the sharper the edge (≈1.5px at 2.2).
     sharp: num({
       default: 2.2,
       min: 0.1,
       max: 20,
       step: 0.1,
-      label: 'Крутизна',
+      label: 'Steepness',
     }),
-    // Длительность твина магнита/выпихивания, мс.
+    // Magnet/push-out tween duration, ms.
     snapDuration: num({
       default: 340,
       min: 0,
       max: 2000,
-      label: 'Магнит, мс',
+      label: 'Magnet, ms',
     }),
-    // Длительность выезда/скрытия Pop и Float, мс.
+    // Pop and Float reveal/hide duration, ms.
     revealDuration: num({
       default: 400,
       min: 0,
       max: 2000,
-      label: 'Выезд, мс',
+      label: 'Reveal, ms',
     }),
-    // Толщина губы и input hover-зоны (см. lib/windows/popLayout.ts).
-    hoverDepth: num({ default: 6, min: 1, max: 64, label: 'Губа', unit: 'px' }),
+    // Lip and input hover-zone thickness (see lib/windows/popLayout.ts).
+    hoverDepth: num({ default: 6, min: 1, max: 64, label: 'Lip', unit: 'px' }),
     hoverDelay: num({
-      // 0 - мгновенно, как без задержек
+      // 0 - instant, as if there were no delays
       default: 120,
       min: 0,
       max: 2000,
-      label: 'Задержка hover, мс',
+      label: 'Hover delay, ms',
     }),
     hideDelay: num({
       default: 300,
       min: 0,
       max: 2000,
-      label: 'Задержка скрытия, мс',
+      label: 'Hide delay, ms',
     }),
   },
 } satisfies Node;
 
-// --- Вывод типов и значений ----------------------------------------------
-// Числа/строки/булевы расширяются до базовых типов (иначе .set принимал бы
-// только литерал дефолта), enum-тип сохраняется.
+// --- Type and value inference --------------------------------------------
+// Numbers/strings/booleans widen to base types (otherwise .set would accept
+// only the default literal), the enum type is preserved.
 
 export type Values<N> =
   N extends ChoiceSpec<infer T>
@@ -206,18 +206,18 @@ export type Values<N> =
             ? { [K in keyof N]: Values<N[K]> }
             : never;
 
-/** Статика конфига - тип, на который опирается всё остальное. */
+/** Static config type: everything else relies on it. */
 export type ConfigValues = Values<typeof SCHEMA>;
 
-/** Пользовательский стиль, общий для поля, окон и конфига. */
+/** User style shared by fields, windows and config. */
 export type FieldStyle = ConfigValues['style'];
 
-/** То же дерево с необязательными ключами на всех уровнях. */
+/** The same tree with optional keys at every level. */
 export type DeepPartial<T> = {
   [K in keyof T]?: T[K] extends Leaf ? T[K] : DeepPartial<T[K]>;
 };
 
-/** Схема → статика дефолтов. */
+/** Schema → static defaults. */
 export function values<N extends object>(node: N): Values<N> {
   return valuesNode(node as Node) as Values<N>;
 }
@@ -236,16 +236,16 @@ function valuesNode(node: Node): Leaf | Section {
   return out;
 }
 
-/** Лимиты листа: [min, max] для числа либо вложенный объект для секции. */
+/** Leaf limits: [min, max] for a number or a nested object for a section. */
 export type Limits = {
   [key: string]: readonly [number, number] | Limits;
 };
 
 /**
- * Точные лимиты по форме схемы: у числовых листьев - кортеж, у остальных -
- * ключа нет. Нужен, чтобы `LIMITS.style.border` читался как кортеж, а не как
- * `Limits`-объединение (иначе ломается типизация тестов). Считаем, что у всех
- * числовых листьев заданы обе границы - иначе `limitsNode` ключ не пишет.
+ * Exact limits by schema shape: numeric leaves get a tuple, the rest get
+ * no key. Needed so `LIMITS.style.border` reads as a tuple, not as a
+ * `Limits` union (otherwise test typing breaks). We assume every
+ * numeric leaf has both limits set - otherwise `limitsNode` writes no key.
  */
 export type LimitsOf<N> = {
   [K in keyof N]: N[K] extends NumberSpec
@@ -257,7 +257,7 @@ export type LimitsOf<N> = {
         : never;
 };
 
-/** Схема → лимиты для reactive(): только числа, у которых заданы обе границы. */
+/** Schema → limits for reactive(): only numbers that have both limits set. */
 export function limits<N extends object>(node: N): Limits {
   return limitsNode(node as Node);
 }
@@ -291,8 +291,8 @@ function limitsNode(node: Node): Limits {
 export const DEFAULTS: ConfigValues = values(SCHEMA);
 
 /**
- * Лимиты конфига: применяются при загрузке, update и прямом .set().
- * `& LimitsOf` даёт точные типы при чтении, `& Limits` - совместимость с
+ * Config limits: applied on load, update and direct .set().
+ * `& LimitsOf` gives exact types on read, `& Limits` - compatibility with
  * `reactive()`.
  */
 export const LIMITS = limits(SCHEMA) as unknown as Limits &
@@ -314,8 +314,8 @@ function pickChoice<T extends string>(spec: ChoiceSpec<T>, raw: unknown): T {
 }
 
 /**
- * Сырое значение из JSON → лист. Чужой тип, NaN/Infinity и значения вне
- * enum'а молча заменяются дефолтом; числа зажимаются в min/max.
+ * Raw value from JSON → leaf. A wrong type, NaN/Infinity and values outside
+ * the enum are silently replaced with the default; numbers are clamped to min/max.
  */
 export function normalize(spec: LeafSpec, raw: unknown): Leaf {
   switch (spec.kind) {
@@ -337,14 +337,14 @@ export function normalize(spec: LeafSpec, raw: unknown): Leaf {
 }
 
 export type ConfigMethods = {
-  /** Точечная правка листьев секции. */
+  /** Point edit of section leaves. */
   update<K extends keyof ConfigValues>(
     section: K,
     patch: DeepPartial<ConfigValues[K]>,
   ): void;
-  /** Любое изменение любого листа. Возвращает отписку. */
+  /** Any change to any leaf. Returns an unsubscribe. */
   subscribe(fn: () => void): () => void;
-  /** Записать сейчас (вызывается на выходе). */
+  /** Write now (called on exit). */
   flush(): void;
 };
 

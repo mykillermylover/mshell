@@ -9,7 +9,7 @@ interface Timer {
   canceled: boolean;
 }
 
-/** Фейковый планировщик: время двигаем вручную через flush(). */
+/** Fake scheduler: time is advanced manually via flush(). */
 const setup = () => {
   let open = false;
   const calls: string[] = [];
@@ -53,7 +53,7 @@ const setup = () => {
   };
 };
 
-test('enter: открывает после задержки', () => {
+test('enter: opens after the delay', () => {
   const env = setup();
 
   env.gate.enter(120);
@@ -64,7 +64,7 @@ test('enter: открывает после задержки', () => {
   assert.deepEqual(env.calls, ['open']);
 });
 
-test('enter → leave до срабатывания: открытие отменено', () => {
+test('enter → leave before firing: open canceled', () => {
   const env = setup();
 
   env.gate.enter(120);
@@ -75,7 +75,7 @@ test('enter → leave до срабатывания: открытие отмен
   assert.equal(env.isOpen(), false);
 });
 
-test('leave: закрывает открытое окно после задержки', () => {
+test('leave: closes an open window after the delay', () => {
   const env = setup();
   env.setOpen(true);
 
@@ -87,7 +87,7 @@ test('leave: закрывает открытое окно после задер�
   assert.deepEqual(env.calls, ['close']);
 });
 
-test('повторный enter отменяет запланированное закрытие', () => {
+test('repeated enter cancels the scheduled close', () => {
   const env = setup();
   env.setOpen(true);
 
@@ -99,7 +99,7 @@ test('повторный enter отменяет запланированное �
   assert.equal(env.isOpen(), true);
 });
 
-test('нулевые задержки срабатывают синхронно', () => {
+test('zero delays fire synchronously', () => {
   const env = setup();
 
   env.gate.enter(0);
@@ -109,7 +109,7 @@ test('нулевые задержки срабатывают синхронно'
   assert.deepEqual(env.calls, ['open', 'close']);
 });
 
-test('enter при открытом окне ничего не планирует', () => {
+test('enter on an open window schedules nothing', () => {
   const env = setup();
   env.setOpen(true);
 
@@ -119,7 +119,7 @@ test('enter при открытом окне ничего не планируе�
   assert.deepEqual(env.calls, []);
 });
 
-test('leave при закрытом окне ничего не планирует', () => {
+test('leave on a closed window schedules nothing', () => {
   const env = setup();
 
   env.gate.leave(300);
@@ -128,7 +128,7 @@ test('leave при закрытом окне ничего не планируе�
   assert.deepEqual(env.calls, []);
 });
 
-test('cancel: снимает запланированный переход', () => {
+test('cancel: removes the scheduled transition', () => {
   const env = setup();
 
   env.gate.enter(120);

@@ -17,11 +17,11 @@ const body = makeBody(180);
 
 const near = (a: number, b: number, eps = 0.05) => Math.abs(a - b) <= eps;
 
-test('стена: окно втягивается вплотную к внутренней кромке', () => {
+test('wall: the window is pulled flush against the inner edge', () => {
   assert.deepEqual(snapTo(env, body(10, 250)), { x: 4, y: 250 });
 });
 
-test('бок: окно встаёт в стык стороной', () => {
+test('side: the window joins side by side', () => {
   const other = body(100, 100, 200, 100);
   assert.deepEqual(snapTo(env, body(310, 100), [other]), {
     x: 300,
@@ -29,7 +29,7 @@ test('бок: окно встаёт в стык стороной', () => {
   });
 });
 
-test('диагональ: касание скруглёнными уголками', () => {
+test('diagonal: touch by rounded corners', () => {
   const other = body(100, 100, 200, 100);
   const result = snapTo(env, body(320, 220), [other]);
 
@@ -38,25 +38,25 @@ test('диагональ: касание скруглёнными уголкам
   assert.ok(near(result.y, 192.97));
 });
 
-test('закрытая hover-губа — полноценный сосед магнита', () => {
-  // Тонкая губа у верхней кромки: Float не должен примагнититься к рамке
-  // «сквозь» неё и лечь поверх. Это осознанное решение, не баг.
+test('a closed hover lip is a full-fledged magnet neighbor', () => {
+  // A thin lip at the top edge: Float must not snap to the frame
+  // "through" it and land on top. This is a deliberate decision, not a bug.
   const lip = body(400, 4, 420, 6);
   const self = body(500, 20, 180, 100);
 
   assert.deepEqual(snapTo(env, self, [lip]), { x: 500, y: 10 });
 });
 
-test('граница snapReach: на reach тянет, дальше — нет', () => {
+test('snapReach boundary: at reach it pulls, beyond it does not', () => {
   assert.deepEqual(snapTo(env, body(48, 250)), { x: 4, y: 250 });
   assert.equal(snapTo(env, body(49, 250)), null);
 });
 
-test('угол рамки: две стены закрываются парой', () => {
+test('frame corner: two walls are closed as a pair', () => {
   assert.deepEqual(snapTo(env, body(48, 48)), { x: 4, y: 4 });
 });
 
-test('пара стена + бок окна', () => {
+test('pair of wall + window side', () => {
   const other = body(100, 4, 200, 100);
   assert.deepEqual(snapTo(env, body(310, 14), [other]), {
     x: 300,
@@ -64,7 +64,7 @@ test('пара стена + бок окна', () => {
   });
 });
 
-test('порядок тел не влияет на результат', () => {
+test('body order does not affect the result', () => {
   const a = body(100, 100, 200, 100);
   const b = body(100, 300, 200, 100);
   const self = body(320, 220);
@@ -72,7 +72,7 @@ test('порядок тел не влияет на результат', () => {
   assert.deepEqual(snapTo(env, self, [a, b]), snapTo(env, self, [b, a]));
 });
 
-test('третье тело: кандидат с пересечением отбрасывается', () => {
+test('third body: a candidate with an intersection is discarded', () => {
   const c = body(10, 40, 30, 30);
   const result = snapTo(env, body(48, 48), [c]);
 
@@ -81,17 +81,17 @@ test('третье тело: кандидат с пересечением отб
   const moved = body(result.x, result.y);
   const contact = contactBetween(moved, c);
 
-  assert.ok(contact && contact.gap >= -0.01, 'пересекает третье тело');
+  assert.ok(contact && contact.gap >= -0.01, 'intersects the third body');
   assert.ok(
     contactsWithFrame(moved, env.frame).every((item) => item.gap >= -0.01),
-    'залезло в материал рамки',
+    'climbed into the frame material',
   );
-  // Пара «лево + верх» (4, 4) пересекает C и отброшена; побеждает более
-  // короткий снап к третьему телу.
+  // The "left + top" pair (4, 4) intersects C and is discarded; the shorter
+  // snap to the third body wins.
   assert.notDeepEqual(result, { x: 4, y: 4 });
 });
 
-test('выпихивание: частичное перекрытие по нормали', () => {
+test('push out: partial overlap along the normal', () => {
   const other = body(100, 100, 200, 100);
   const result = snapTo(env, body(290, 120), [other]);
 
@@ -103,7 +103,7 @@ test('выпихивание: частичное перекрытие по но�
   assert.ok(contact && contact.gap >= -0.01);
 });
 
-test('выпихивание: глубокое перекрытие по оси', () => {
+test('push out: deep overlap along an axis', () => {
   const other = body(100, 100, 200, 100);
   const result = snapTo(env, body(150, 120), [other]);
 
@@ -114,14 +114,14 @@ test('выпихивание: глубокое перекрытие по оси'
   assert.ok(contact && contact.gap >= -0.01);
 });
 
-test('глубокое проникновение в тонкую рамку: выпихивание внутрь', () => {
+test('deep penetration into a thin frame: pushing inward', () => {
   assert.deepEqual(snapTo(env, body(0, 250, 180, 100, 4)), {
     x: 4,
     y: 250,
   });
 });
 
-test('глубокое проникновение в толстую рамку: выпихивание внутрь', () => {
+test('deep penetration into a thick frame: pushing inward', () => {
   const thick: SnapEnv = { frame: { ...frame, border: 20 }, reach: 44 };
 
   assert.deepEqual(snapTo(thick, body(0, 250, 180, 100, 12)), {
@@ -134,7 +134,7 @@ test('глубокое проникновение в толстую рамку: 
   });
 });
 
-test('windowRadius = 0: окна стыкуются вплотную', () => {
+test('windowRadius = 0: windows join flush', () => {
   const other = body(100, 100, 200, 100, 0);
 
   assert.deepEqual(snapTo(env, body(310, 100, 180, 100, 0), [other]), {
@@ -143,7 +143,7 @@ test('windowRadius = 0: окна стыкуются вплотную', () => {
   });
 });
 
-test('симметрия: одинаковый зазор на всех четырёх стенах', () => {
+test('symmetry: the same gap on all four walls', () => {
   const gap = 6;
 
   assert.deepEqual(snapTo(env, body(4 + gap, 250)), { x: 4, y: 250 });
@@ -152,7 +152,7 @@ test('симметрия: одинаковый зазор на всех четы
   assert.deepEqual(snapTo(env, body(400, 496 - gap)), { x: 400, y: 496 });
 });
 
-test('равная дистанция: выбор по ключу не зависит от порядка тел', () => {
+test('equal distance: the choice by key does not depend on body order', () => {
   const left = body(260, 250);
   const right = body(640, 250);
   const self = body(450, 250);
@@ -161,7 +161,7 @@ test('равная дистанция: выбор по ключу не зави�
   assert.deepEqual(snapTo(env, self, [left, right]), { x: 440, y: 250 });
 });
 
-test('почти параллельные нормали: выбирается одиночный контакт', () => {
+test('nearly parallel normals: a single contact is chosen', () => {
   const a = body(200, 250, 180, 100);
   const b = body(200, 379, 190, 100);
   const result = snapTo(env, body(400, 300), [a, b]);
@@ -176,7 +176,7 @@ test('почти параллельные нормали: выбирается �
   }
 });
 
-test('угол с маленьким windowRadius не залезает в рамку', () => {
+test('a corner with a small windowRadius does not climb into the frame', () => {
   const result = snapTo(env, body(4, 4, 100, 100, 4));
 
   assert.ok(result);

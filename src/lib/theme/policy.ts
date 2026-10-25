@@ -10,7 +10,7 @@ function isThemePreference(value: string): value is ThemePreference {
   return preferences.includes(value);
 }
 
-/** Неизвестное значение из JSON не должно ломать запуск. */
+/** An unknown value from JSON must not break startup. */
 export function normalizeThemePreference(value: string): ThemePreference {
   return isThemePreference(value) ? value : ThemePreference.SYSTEM;
 }
@@ -33,8 +33,8 @@ function isThemeScheme(value: string): value is ThemeScheme {
 }
 
 /**
- * Префикс `scheme-` - синтаксис флага matugen, а не значение конфига:
- * старые файлы с ним ещё живут, поэтому срезаем.
+ * The `scheme-` prefix is matugen flag syntax, not a config value:
+ * old files with it still exist, so we strip it.
  */
 export function normalizeThemeScheme(value: string): ThemeScheme {
   const short = value.startsWith('scheme-')
@@ -45,8 +45,8 @@ export function normalizeThemeScheme(value: string): ThemeScheme {
 }
 
 /**
- * Минимальная проверка сгенерированной палитры: без этих токенов
- * компоненты останутся без цвета, поэтому файл не применяем.
+ * Minimal check of the generated palette: without these tokens
+ * the components would have no color, so we don't apply the file.
  */
 export function isPaletteCss(css: string): boolean {
   return css.includes('--surface') && css.includes('--on_surface');

@@ -10,10 +10,10 @@ import {
 } from '@lib/theme/policy';
 import { isAbsolutePath } from '@lib/utils';
 
-/** Как в приложении: содержимое файла → статика конфига. */
+/** As in the application: file contents → static config. */
 const fromJson = (text: string) => merge(SCHEMA, JSON.parse(text));
 
-test('theme: неизвестный режим сводится к system', () => {
+test('theme: an unknown mode falls back to system', () => {
   assert.equal(normalizeThemePreference('light'), 'light');
   assert.equal(normalizeThemePreference('dark'), 'dark');
   assert.equal(normalizeThemePreference('system'), 'system');
@@ -21,7 +21,7 @@ test('theme: неизвестный режим сводится к system', () =
   assert.equal(normalizeThemePreference(''), 'system');
 });
 
-test('path: wallpaper принимается только абсолютным', () => {
+test('path: wallpaper is accepted only as absolute', () => {
   assert.equal(isAbsolutePath('/home/u/wallpaper.jpg'), true);
   assert.equal(isAbsolutePath('~/wallpaper.jpg'), false);
   assert.equal(isAbsolutePath('$HOME/wallpaper.jpg'), false);
@@ -29,7 +29,7 @@ test('path: wallpaper принимается только абсолютным',
   assert.equal(isAbsolutePath(''), false);
 });
 
-test('palette: валидный CSS требует surface и on_surface', () => {
+test('palette: valid CSS requires surface and on_surface', () => {
   const valid = `
     :root { --surface: #111318; --on_surface: #e2e2e9; }
     @media (prefers-color-scheme: dark) {
@@ -43,7 +43,7 @@ test('palette: валидный CSS требует surface и on_surface', () =>
   assert.equal(isPaletteCss(''), false);
 });
 
-test('config: theme.mode проходит merge и не мутирует дефолты', () => {
+test('config: theme.mode passes merge and does not mutate defaults', () => {
   assert.equal(DEFAULTS.theme.mode, 'system');
 
   const tree = fromJson('{"theme":{"mode":"dark"}}');
@@ -52,14 +52,14 @@ test('config: theme.mode проходит merge и не мутирует деф�
   assert.equal(DEFAULTS.theme.mode, 'system');
 });
 
-test('config: чужой тип и неизвестный ключ theme не проходят', () => {
+test('config: a wrong type and an unknown theme key do not pass', () => {
   const tree = fromJson('{"theme":{"mode":1,"bogus":"x"}}');
 
   assert.equal(tree.theme.mode, 'system');
   assert.ok(!('bogus' in tree.theme));
 });
 
-test('theme: схема нормализуется и знает короткие имена', () => {
+test('theme: the scheme is normalized and knows short names', () => {
   assert.equal(normalizeThemeScheme('scheme-neutral'), ThemeScheme.NEUTRAL);
   assert.equal(normalizeThemeScheme('neutral'), ThemeScheme.NEUTRAL);
   assert.equal(normalizeThemeScheme('scheme-smart'), ThemeScheme.SMART);
@@ -67,12 +67,12 @@ test('theme: схема нормализуется и знает коротки�
   assert.equal(normalizeThemeScheme(''), ThemeScheme.TONAL_SPOT);
 });
 
-test('theme: значения enum без префикса', () => {
+test('theme: enum values without the prefix', () => {
   assert.equal(ThemeScheme.TONAL_SPOT, 'tonal-spot');
   assert.equal(ThemeScheme.FRUIT_SALAD, 'fruit-salad');
 });
 
-test('config: theme-параметры по умолчанию', () => {
+test('config: default theme parameters', () => {
   assert.equal(DEFAULTS.theme.mode, 'system');
   assert.equal(DEFAULTS.theme.scheme, 'tonal-spot');
   assert.ok(
@@ -81,7 +81,7 @@ test('config: theme-параметры по умолчанию', () => {
   assert.equal(DEFAULTS.theme.contrast, 0);
 });
 
-test('config: wallpaper/scheme/contrast проходят merge', () => {
+test('config: wallpaper/scheme/contrast pass merge', () => {
   const tree = fromJson(
     '{"theme":{"wallpaper":"/tmp/w.jpg","scheme":"neutral","contrast":0.5}}',
   );
@@ -91,7 +91,7 @@ test('config: wallpaper/scheme/contrast проходят merge', () => {
   assert.equal(tree.theme.contrast, 0.5);
 });
 
-test('config: contrast зажимается лимитами', () => {
+test('config: contrast is clamped by limits', () => {
   const tree = reactive({ theme: { contrast: 5 } }, () => {}, LIMITS);
 
   assert.equal(tree.theme.contrast(), 1);

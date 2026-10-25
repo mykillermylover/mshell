@@ -1,5 +1,5 @@
 // tests/types/config-infer.ts
-// Файл не выполняется: его компилирует `npm run test:types`.
+// The file is not executed: it is compiled by `npm run test:types`.
 import {
   type Config,
   type ConfigValues,
@@ -14,7 +14,7 @@ type Equal<A, B> =
     ? true
     : false;
 
-// enum сохраняется, числовые листья расширяются до number
+// the enum is preserved, numeric leaves widen to number
 export type ModeIsEnum = Assert<
   Equal<ConfigValues['theme']['mode'], ThemePreference>
 >;
@@ -24,12 +24,12 @@ export type ContrastIsNumber = Assert<
 >;
 
 declare const style: Reactive<FieldStyle>;
-style.border.set(5); // number — можно
+style.border.set(5); // number — allowed
 
-// @ts-expect-error число вне типа листа не принимается
+// @ts-expect-error a number outside the leaf type is not accepted
 style.border.set('5');
 
 declare const config: Config;
 config.update('style', { border: 5 });
-// @ts-expect-error чужой ключ в патче
+// @ts-expect-error an unknown key in the patch
 config.update('style', { bogus: 1 });

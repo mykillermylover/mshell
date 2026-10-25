@@ -1,7 +1,7 @@
-// Геометрия жидкости: тела - скруглённые прямоугольники, кромка рамки - прямые
-// участки стен и дуги внутренних углов. Здесь только поиск ближайших точек,
-// глобальных «якорей» и состояния нет.
-/** Прямоугольник в координатах поля. */
+// Liquid geometry: bodies are rounded rectangles, the frame edge is straight
+// wall sections and inner-corner arcs. Here there is only the search for nearest points;
+// no global "anchors" and no state.
+/** A rectangle in field coordinates. */
 export interface Rect {
   x: number;
   y: number;
@@ -10,7 +10,7 @@ export interface Rect {
 }
 
 export interface Body extends Rect {
-  /** Радиус скругления углов тела (для окон - `windowRadius`). */
+  /** Corner radius of the body (for windows it's `windowRadius`). */
   cornerRadius: number;
 }
 
@@ -19,18 +19,18 @@ export interface Point {
   y: number;
 }
 
-/** Точки контакта: a - на первом теле, b - на втором; nx, ny - нормаль a→b. */
+/** Contact points: a is on the first body, b is on the second; nx, ny is the normal a→b. */
 export interface Contact {
   a: Point;
   b: Point;
   gap: number;
-  /** Длина общего участка прямых сторон (0 - стык уголками/дугой). */
+  /** Length of the shared section of straight sides (0 means a joint by corners/arc). */
   seam: number;
   nx: number;
   ny: number;
 }
 
-/** Внутренняя кромка рамки: прямоугольник с отступом border и радиусом дуг. */
+/** Inner frame edge: a rectangle inset by border with arc radius. */
 export interface FrameSpec {
   w: number;
   h: number;
@@ -38,15 +38,15 @@ export interface FrameSpec {
   screenRadius: number;
 }
 
-/** Радиус, который реально влезает в тело (углы не больше половины стороны). */
+/** The radius that actually fits in the body (corners no larger than half a side). */
 export function clampRadius(body: Body): number {
   return Math.max(0, Math.min(body.cornerRadius, body.w / 2, body.h / 2));
 }
 
 /**
- * Сердцевина: скруглённый прямоугольник = прямоугольник ⊕ круг радиуса R
- * (сумма Минковского). Поэтому все расстояния считаем между сердцевинами
- * и вычитаем R1 + R2.
+ * Core: a rounded rectangle = rectangle ⊕ circle of radius R
+ * (Minkowski sum). So all distances are measured between cores
+ * and we subtract R1 + R2.
  */
 const coreOf = (body: Body): Rect => {
   const r = clampRadius(body);
@@ -54,12 +54,12 @@ const coreOf = (body: Body): Rect => {
 };
 
 /**
- * Зазор между двумя отрезками одной оси и точки, между которыми он меряется.
+ * The gap between two segments on the same axis and the points it is measured between.
  *
- * Если отрезки не пересекаются - ближайшие концы. Если пересекаются - берём
- * СЕРЕДИНУ общего участка: она рождается в точке касания и дальше едет
- * непрерывно. Иначе на переходе «диагональ → ребро» точка прыгала бы с угла
- * на середину стороны.
+ * If the segments don't intersect, use the nearest ends. If they intersect, take
+ * the MIDDLE of the shared section: it is born at the touch point and then moves
+ * continuously. Otherwise, at the "diagonal → edge" transition the point would jump from a corner
+ * to the middle of the side.
  */
 const axisGap = (a0: number, a1: number, b0: number, b1: number) => {
   if (b0 > a1) {
@@ -72,7 +72,7 @@ const axisGap = (a0: number, a1: number, b0: number, b1: number) => {
   return { from: mid, to: mid, gap: 0 };
 };
 
-/** Ближайшие точки двух тел; null - сердцевины перекрылись (тела уже слиты). */
+/** Nearest points of two bodies; null means the cores overlap (the bodies are already merged). */
 export function contactBetween(first: Body, second: Body): Contact | null {
   const r1 = clampRadius(first);
   const r2 = clampRadius(second);
@@ -88,9 +88,9 @@ export function contactBetween(first: Body, second: Body): Contact | null {
   }
   const nx = dx / dist;
   const ny = dy / dist;
-  // Стык - пересечение ПРЯМЫХ участков сторон (то есть сердцевин): скругления
-  // углов в стыкующееся ребро не входят. В момент «диагональ → ребро» он
-  // рождается из нуля и дальше растёт непрерывно - без скачка ширины капли.
+  // The joint is the intersection of the STRAIGHT side sections (that is, the cores): corner
+  // rounding does not enter the joining edge. At the "diagonal → edge" moment it
+  // is born from zero and then grows continuously - with no jump in blob width.
   let seam = 0;
 
   if (x.gap > 0) {
@@ -116,11 +116,11 @@ export function contactBetween(first: Body, second: Body): Contact | null {
 }
 
 /**
- * Контакты тела с кромкой рамки: 4 прямых участка и 4 дуги внутренних углов.
+ * Contacts of the body with the frame edge: 4 straight sections and 4 inner-corner arcs.
  *
- * Каждая фигура считается независимо, поэтому на 45° обе стены равноудалены
- * и обе дают контакт - выбора «какая ближе» нет, скачка нет по построению.
- * Порядок результата: [верх, низ, лево, право, ЛВ, ПВ, ЛН, ПН].
+ * Each figure is computed independently, so at 45° both walls are equidistant
+ * and both give a contact - there is no choice of "which is closer", no jump by construction.
+ * Result order: [top, bottom, left, right, TL, TR, BL, BR].
  */
 export function contactsWithFrame(body: Body, frame: FrameSpec): Contact[] {
   const rw = clampRadius(body);
@@ -129,22 +129,22 @@ export function contactsWithFrame(body: Body, frame: FrameSpec): Contact[] {
   const top = frame.border;
   const right = frame.w - frame.border;
   const bottom = frame.h - frame.border;
-  // Радиус дуги внутреннего угла и её центр. append_border рисует рамку так,
-  // что заданный screenRadius - это радиус ВНУТРЕННЕГО угла, а центр дуги
-  // лежит на border внутрь от края экрана; прямые полосы жидкости начинаются
-  // там, где кончается дуга: border + screenRadius.
+  // The radius of the inner-corner arc and its center. append_border draws the frame so
+  // that the given screenRadius is the radius of the INNER corner, and the arc center
+  // lies on border inward from the screen edge; the straight liquid strips start
+  // where the arc ends: border + screenRadius.
   const arc = frame.screenRadius;
 
-  /** Контакт по точке q на кромке рамки: тело ищем со своей стороны. */
+  /** Contact at point q on the frame edge: the body is searched on its own side. */
   const fromEdge = (q: Point, seam: number): Contact => {
-    // Ближайшая к q точка сердцевины тела - «квадратная» проекция.
+    // The core point nearest to q - the "square" projection.
     const qx = Math.max(core.x, Math.min(q.x, core.x + core.w));
     const qy = Math.max(core.y, Math.min(q.y, core.y + core.h));
     const dx = q.x - qx;
     const dy = q.y - qy;
     const dist = Math.hypot(dx, dy);
-    // При касании (dist = 0) нормаль не определена; берём любую - длина
-    // капсулы от этого не зависит, торец всё равно внутри тела.
+    // On touch (dist = 0) the normal is undefined; take any - the capsule
+    // length doesn't depend on it, the end cap stays inside the body anyway.
     const nx = dist === 0 ? 1 : dx / dist;
     const ny = dist === 0 ? 0 : dy / dist;
 
@@ -158,7 +158,7 @@ export function contactsWithFrame(body: Body, frame: FrameSpec): Contact[] {
     };
   };
 
-  /** Прямая стена: вдоль - середина стыка, поперёк - перпендикуляр. */
+  /** Straight wall: along it the middle of the joint, across it the perpendicular. */
   const side = (
     horizontal: boolean,
     fixed: number,
@@ -168,8 +168,8 @@ export function contactsWithFrame(body: Body, frame: FrameSpec): Contact[] {
     const span = horizontal
       ? axisGap(core.x, core.x + core.w, from, to)
       : axisGap(core.y, core.y + core.h, from, to);
-    // Стык - прямая часть стороны окна (между скруглениями), попавшая на
-    // прямой участок стены. Тот же смысл, что у contactBetween: seam из нуля.
+    // The joint is the straight part of the window side (between the roundings) that lands on
+    // the straight wall section. Same meaning as in contactBetween: seam from zero.
     const spanFrom = horizontal ? core.x : core.y;
     const spanTo = horizontal ? core.x + core.w : core.y + core.h;
     const seam = Math.max(0, Math.min(to, spanTo) - Math.max(from, spanFrom));
@@ -185,21 +185,21 @@ export function contactsWithFrame(body: Body, frame: FrameSpec): Contact[] {
     side(false, right, top + arc, bottom - arc),
   ];
 
-  // Дуги: центр угла и знак сектора, смотрящего В УГОЛ экрана (от комнаты).
-  // Дуга - вогнутая граница материала рамки; тело стоит с другой стороны,
-  // поэтому точка дуги ищется со стороны угла.
+  // Arcs: the corner center and the sign of the sector facing INTO the screen corner (from the interior).
+  // The arc is the concave boundary of the frame material; the body stands on the other side,
+  // so the arc point is searched from the corner side.
   const corners = [
-    { cx: left + arc, cy: top + arc, sx: -1, sy: -1 }, // ЛВ
-    { cx: right - arc, cy: top + arc, sx: 1, sy: -1 }, // ПВ
-    { cx: left + arc, cy: bottom - arc, sx: -1, sy: 1 }, // ЛН
-    { cx: right - arc, cy: bottom - arc, sx: 1, sy: 1 }, // ПН
+    { cx: left + arc, cy: top + arc, sx: -1, sy: -1 }, // TL
+    { cx: right - arc, cy: top + arc, sx: 1, sy: -1 }, // TR
+    { cx: left + arc, cy: bottom - arc, sx: -1, sy: 1 }, // BL
+    { cx: right - arc, cy: bottom - arc, sx: 1, sy: 1 }, // BR
   ];
   const arcs = corners.map((c) => {
-    // Направление от центра дуги к ближайшей точке сердцевины, прижатое к
-    // сектору дуги. Тело в комнате лежит по другую сторону от сектора, и
-    // прижатие даёт ноль - тогда точка - середина дуги (sx, sy - диагональ):
-    // на кромке и без прыжка при движении окна. Для тела сбоку от дуги
-    // прижатие даёт конец дуги, совпадающий с концом прямой стены.
+    // The direction from the arc center to the nearest core point, clamped to
+    // the arc sector. A body in the interior lies on the other side of the sector, and
+    // the clamp gives zero - then the point is the middle of the arc (sx, sy - the diagonal):
+    // on the edge and without a jump when the window moves. For a body beside the arc
+    // the clamp gives the arc end, matching the end of the straight wall.
     const px = Math.max(core.x, Math.min(c.cx, core.x + core.w));
     const py = Math.max(core.y, Math.min(c.cy, core.y + core.h));
     const vx = Math.max(0, (px - c.cx) * c.sx) * c.sx;
