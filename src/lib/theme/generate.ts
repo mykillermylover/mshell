@@ -4,12 +4,13 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import { PALETTE_DIR, PALETTE_FILE } from './paths';
-import type { ThemeScheme } from './policy';
+import type { ThemePreferredColors, ThemeScheme } from './policy';
 
 export interface PaletteRequest {
   wallpaper: string;
   scheme: ThemeScheme;
   contrast: number;
+  preferredColors: ThemePreferredColors;
 }
 
 const DEBOUNCE_MS = 300;
@@ -94,7 +95,7 @@ async function run() {
       'image',
       request.wallpaper,
       '--prefer',
-      'saturation',
+      request.preferredColors,
       '-t',
       `scheme-${request.scheme}`,
       '--contrast',

@@ -28,6 +28,15 @@ export enum ThemeScheme {
   VIBRANT = 'vibrant',
 }
 
+export enum ThemePreferredColors {
+  DARKNESS = 'darkness',
+  LIGHTNESS = 'lightness',
+  SATURATION = 'saturation',
+  LESS_SATURATION = 'less-saturation',
+  VALUE = 'value',
+  CLOSEST_TO_FALLBACK = 'closest-to-fallback',
+}
+
 function isThemeScheme(value: string): value is ThemeScheme {
   return (Object.values(ThemeScheme) as string[]).includes(value);
 }

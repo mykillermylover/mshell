@@ -11,7 +11,7 @@ function DropDown({ field }: { field: ChoiceField }) {
   const [open, setOpen] = createState(false);
 
   return (
-    <box orientation={Gtk.Orientation.VERTICAL}>
+    <box orientation={Gtk.Orientation.VERTICAL} hexpand>
       <button onClicked={() => setOpen(!open.peek())}>
         <label label={field.value} />
       </button>
@@ -28,7 +28,7 @@ function DropDown({ field }: { field: ChoiceField }) {
                 setOpen(false);
               }}
             >
-              <label xalign={0} label={option} />
+              <label label={option} />
             </button>
           ))}
         </box>

@@ -49,14 +49,15 @@ function syncPalette(force = false) {
 
   const scheme = normalizeThemeScheme(config.theme.scheme());
   const contrast = config.theme.contrast();
-  const signature = `${wallpaper}|${scheme}|${contrast}`;
+  const preferredColors = config.theme.preferredColors();
+  const signature = `${wallpaper}|${scheme}|${contrast}|${preferredColors}`;
 
   if (!force && signature === lastPaletteSignature) {
     return;
   }
 
   lastPaletteSignature = signature;
-  requestPalette({ wallpaper, scheme, contrast });
+  requestPalette({ wallpaper, scheme, contrast, preferredColors });
 }
 
 /** Single entry point: mode and palette are always applied together. */

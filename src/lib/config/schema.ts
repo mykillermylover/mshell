@@ -1,6 +1,7 @@
 import {
   normalizeThemeScheme,
   ThemePreference,
+  ThemePreferredColors,
   ThemeScheme,
 } from '@lib/theme/policy';
 import type { Accessor } from 'ags';
@@ -108,6 +109,11 @@ export const SCHEMA = {
       options: optionsOf(ThemeScheme),
       normalize: normalizeThemeScheme,
       label: 'Scheme',
+    }),
+    preferredColors: choice<ThemePreferredColors>({
+      default: ThemePreferredColors.SATURATION,
+      options: optionsOf(ThemePreferredColors),
+      label: 'Preferred Colors',
     }),
     // Empty or a relative path - the palette is not generated.
     wallpaper: text({
