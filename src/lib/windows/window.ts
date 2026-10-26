@@ -6,10 +6,10 @@ import GLib from 'gi://GLib';
 
 import {
   createWindowContent,
-  padded,
   type WindowApi,
   type WindowHost,
   type WindowSpec,
+  wrapped,
 } from './api';
 import { HoverGate } from './HoverGate';
 
@@ -88,6 +88,9 @@ export abstract class Window {
       id: options.id,
       monitor: options.host.monitor,
       pinned: this._pinned,
+      open: () => this.open(),
+      close: () => this.close(),
+      toggle: () => this.toggle(),
       togglePin: () => this.togglePin(),
       pin: () => this.pin(),
       unpin: () => this.unpin(),
@@ -105,7 +108,7 @@ export abstract class Window {
     };
 
     const { content, dispose } = createWindowContent(this.api, () =>
-      padded(options.content()),
+      wrapped(options.content()),
     );
     this.contentWidget = content;
     this.disposeContent = dispose;

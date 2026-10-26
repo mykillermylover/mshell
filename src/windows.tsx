@@ -4,10 +4,28 @@ import Settings from '@widgets/Settings';
 import Workspaces from '@widgets/Workspaces';
 import { Gtk } from 'ags/gtk4';
 
-// Window content. Do not set a background or padding: the background is drawn by the liquid field,
-// padding is set by .frame-body in style.css.
-function Card(props: { title: string; body: string; w: number; h: number }) {
+// Defaults live here, not in lib/windows: a window sets no styles of its own.
+// The background is drawn by the liquid field; padding and color are ours.
+function Body(child: JSX.Element) {
+  return <box class="frame-body">{child}</box>;
+}
+
+function FloatHeader(props: { title: string }) {
+  const api = useWindowApi();
+
   return (
+    <box class="float-grip" spacing={8}>
+      <label label={props.title} hexpand xalign={0} />
+      <button class="grip-button" onClicked={() => api.close()}>
+        <image iconName="window-close-symbolic" />
+      </button>
+    </box>
+  );
+}
+
+// Window content. Do not set a background: it is drawn by the liquid field.
+function Card(props: { title: string; body: string; w: number; h: number }) {
+  return Body(
     <box
       orientation={Gtk.Orientation.VERTICAL}
       spacing={6}
@@ -16,7 +34,7 @@ function Card(props: { title: string; body: string; w: number; h: number }) {
     >
       <label class="pop-title" label={props.title} xalign={0} />
       <label label={props.body} xalign={0} wrap />
-    </box>
+    </box>,
   );
 }
 
@@ -85,7 +103,7 @@ export const INITIAL_POPS: PopSpec[] = [
     id: 'settings',
     edge: 'right',
     hover: true,
-    content: Settings,
+    content: () => Body(<Settings />),
   },
   { id: 'launcher', edge: 'bottom', content: Launcher },
   {
@@ -95,12 +113,24 @@ export const INITIAL_POPS: PopSpec[] = [
     align: 'end',
     exclusive: false,
     offsetX: -100,
-    content: Workspaces,
+    content: () => Body(<Workspaces />),
   },
 ];
 
 /** Initial Floats: created synchronously; dynamic ones - via Frame.addFloat. */
 export const INITIAL_FLOATS: FloatSpec[] = [
-  { id: 'notes', title: 'Notes', x: 200, y: 260, content: Notes },
-  { id: 'mixer', title: 'Mixer', x: 560, y: 340, content: Mixer },
+  {
+    id: 'notes',
+    header: () => <FloatHeader title="Notes" />,
+    x: 200,
+    y: 260,
+    content: Notes,
+  },
+  {
+    id: 'mixer',
+    header: () => <FloatHeader title="Mixer" />,
+    x: 560,
+    y: 340,
+    content: Mixer,
+  },
 ];

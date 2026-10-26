@@ -9,6 +9,28 @@ import GLib from 'gi://GLib';
 
 import { easeOutBack } from './easing';
 
+/**
+ * The cursor is over something clickable (button, gesture click/drag area):
+ * dragging by the header must not steal its click. Walks up to the grip inclusive.
+ */
+function interactive(hit: Gtk.Widget | null, stop: Gtk.Widget): boolean {
+  for (let widget = hit; widget; widget = widget.get_parent()) {
+    if (widget instanceof Gtk.Button) {
+      return true;
+    }
+    const controllers = widget.observe_controllers();
+    for (let i = 0; i < controllers.get_n_items(); i++) {
+      if (controllers.get_item(i) instanceof Gtk.GestureSingle) {
+        return true;
+      }
+    }
+    if (widget === stop) {
+      break;
+    }
+  }
+  return false;
+}
+
 interface Tween {
   fromX: number;
   fromY: number;
@@ -162,7 +184,9 @@ export class FrameMotion {
         const hit = this.deps
           .bodies()
           .filter((body): body is Float => body instanceof Float)
-          .find((float) => inside(float.grip) && !inside(float.closeBtn));
+          .find(
+            (float) => inside(float.grip) && !interactive(picked, float.grip),
+          );
         if (!hit) {
           gesture.set_state(Gtk.EventSequenceState.DENIED);
           return;

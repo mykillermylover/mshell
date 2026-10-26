@@ -45,9 +45,10 @@ export function isVerticalEdge(spec: PopSpec): spec is VerticalPopSpec {
  */
 export type PopSpec = HorizontalPopSpec | VerticalPopSpec;
 
-/** Floating window: dragged by its title, snaps to the frame and merges with it. */
+/** Floating window: dragged by its header, snaps to the frame and merges with it. */
 export interface FloatSpec extends WindowSpec {
-  title?: string;
+  /** Header - the drag handle; any widget. Built in the window scope, so `useWindowApi` works. */
+  header: Content;
   x: number;
   y: number;
 }
@@ -63,6 +64,9 @@ export interface WindowApi {
   readonly monitor: Gdk.Monitor;
   /** Whether the window is pinned - reactive, for UI. */
   readonly pinned: Accessor<boolean>;
+  open(): void;
+  close(): void;
+  toggle(): void;
   togglePin(): void;
   pin(): void;
   unpin(): void;
@@ -133,10 +137,9 @@ export function asWidget(child: JSX.Element): Gtk.Widget {
   return child as Gtk.Widget;
 }
 
-/** Window content wrapper: padding and transparent background (background is drawn by LiquidField). */
-export function padded(child: JSX.Element): Gtk.Box {
+/** Window content wrapper: an unscoped box for the content root (no styles). */
+export function wrapped(child: JSX.Element): Gtk.Box {
   const body = new Gtk.Box();
-  body.add_css_class('frame-body');
   body.append(asWidget(child));
   return body;
 }

@@ -1,15 +1,21 @@
 import type { FieldStyle } from '@lib/config';
 import { Gtk } from 'ags/gtk4';
 
-import { boundsOf, type FloatSpec, type WindowHost } from './api';
+import {
+  asWidget,
+  boundsOf,
+  createWindowContent,
+  type FloatSpec,
+  type WindowHost,
+} from './api';
 import { Window, type WindowMeasure } from './window';
 
-/** Floating window: a "handle" header with a close button and a body with content. */
+/** Floating window: a "handle" header (any widget) above the body with content. */
 export class Float extends Window {
   readonly grip: Gtk.Box;
-  readonly closeBtn: Gtk.Widget;
   x: number;
   y: number;
+  private readonly disposeHeader: () => void;
 
   constructor(
     readonly spec: FloatSpec,
@@ -17,7 +23,7 @@ export class Float extends Window {
     host: WindowHost,
   ) {
     const revealer = new Gtk.Revealer({
-      transitionType: Gtk.RevealerTransitionType.SLIDE_DOWN,
+      transitionType: Gtk.RevealerTransitionType.FADE_SLIDE_UP,
       transitionDuration: style().revealDuration,
       revealChild: true,
     });
@@ -29,27 +35,24 @@ export class Float extends Window {
       keyboard: spec.keyboard,
     });
 
-    const grip = new Gtk.Box({ spacing: 8 });
-    grip.add_css_class('float-grip');
-    grip.append(
-      new Gtk.Label({ label: spec.title ?? spec.id, hexpand: true, xalign: 0 }),
-    );
-    const closeBtn = Gtk.Button.new_from_icon_name('window-close-symbolic');
-    closeBtn.add_css_class('flat');
-    closeBtn.add_css_class('grip-button');
-    closeBtn.connect('clicked', () => this.close());
-    grip.append(closeBtn);
+    const grip = new Gtk.Box();
+    const header = createWindowContent(this.api, () => asWidget(spec.header()));
+    grip.append(header.content);
 
     const box = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL });
-    box.add_css_class('float');
     box.append(grip);
     box.append(this.contentWidget);
     revealer.set_child(box);
 
     this.grip = grip;
-    this.closeBtn = closeBtn;
+    this.disposeHeader = header.dispose;
     this.x = spec.x;
     this.y = spec.y;
+  }
+
+  override dispose() {
+    this.disposeHeader();
+    super.dispose();
   }
 
   measure(relativeTo: Gtk.Widget): WindowMeasure {

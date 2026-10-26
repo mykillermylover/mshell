@@ -103,7 +103,6 @@ export function buildPopSlot(options: PopSlotOptions): PopSlot {
     spacer.append(spacerFiller);
 
     zone = new Gtk.Box();
-    zone.add_css_class('hover-zone');
     if (hover.content) {
       zone.append(hover.content);
     } else {

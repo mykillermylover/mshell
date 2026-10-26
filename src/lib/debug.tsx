@@ -171,7 +171,7 @@ export function handleDebug(frame: Frame, args: string[]): string | undefined {
         const index = spawnSeq++;
         frame.addFloat({
           id: `bench-${index}`,
-          title: `Bench ${index}`,
+          header: () => <label label={`Bench ${index}`} />,
           x: SPAWN_X + (index % SPAWN_COLUMNS) * SPAWN_STEP_X,
           y: SPAWN_Y + Math.floor(index / SPAWN_COLUMNS) * SPAWN_STEP_Y,
           content: () => <label label={`bench ${index}`} />,

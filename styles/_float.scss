@@ -1,8 +1,4 @@
-// Floating windows: the title is a "grip", we drag by it.
-.float .frame-body {
-  padding-top: 6px;
-}
-
+// Floating windows: the header is a "grip", we drag by it.
 .float-grip {
   padding: 14px 24px 0 24px;
   font-weight: 600;
