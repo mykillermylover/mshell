@@ -1,3 +1,4 @@
+import type { FileKind } from '@lib/files';
 import {
   normalizeThemeScheme,
   ThemePreference,
@@ -32,39 +33,46 @@ export type Reactive<T> = {
 // --- Leaf description -----------------------------------------------------
 // One declaration per key: value, limits and everything the form needs.
 
-export type NumberSpec = {
+/** Common to every leaf: the value to start from and the caption in the form. */
+export type LeafBase<T> = {
+  default: T;
+  label?: string;
+};
+
+export type NumberSpec = LeafBase<number> & {
   kind: 'number';
-  default: number;
   min?: number;
   max?: number;
   step?: number;
-  label?: string;
   unit?: string;
 };
 
-export type TextSpec = {
+export type TextSpec = LeafBase<string> & {
   kind: 'text';
-  default: string;
-  label?: string;
   placeholder?: string;
 };
 
-export type BoolSpec = {
+export type BoolSpec = LeafBase<boolean> & {
   kind: 'bool';
-  default: boolean;
-  label?: string;
 };
 
-export type ChoiceSpec<T extends string = string> = {
+export type ChoiceSpec<T extends string = string> = LeafBase<T> & {
   kind: 'choice';
-  default: T;
   options: readonly T[];
-  label?: string;
   /** Input canonicalization; an unknown value after it → default. */
   normalize?: (raw: string) => T;
 };
 
-export type LeafSpec = NumberSpec | TextSpec | BoolSpec | ChoiceSpec;
+/**
+ * Absolute path to a file; the form offers a picker next to the entry.
+ * `accept` names a filter from FILE_TYPES - only the ones declared there.
+ */
+export type FileSpec = LeafBase<string> & {
+  kind: 'file';
+  accept: FileKind;
+};
+
+export type LeafSpec = NumberSpec | TextSpec | BoolSpec | ChoiceSpec | FileSpec;
 
 /** Schema section: leaf or nested section. */
 export type Node = LeafSpec | { readonly [key: string]: Node };
@@ -89,6 +97,11 @@ export const bool = (spec: Omit<BoolSpec, 'kind'>): BoolSpec => ({
 export const choice = <T extends string>(
   spec: Omit<ChoiceSpec<T>, 'kind'>,
 ): ChoiceSpec<T> => ({ kind: 'choice', ...spec });
+
+export const file = (spec: Omit<FileSpec, 'kind'>): FileSpec => ({
+  kind: 'file',
+  ...spec,
+});
 
 /** Object.values without losing the enum type (otherwise you get string[]). */
 const optionsOf = <T extends string>(values: Record<string, T>): readonly T[] =>
@@ -116,9 +129,10 @@ export const SCHEMA = {
       label: 'Preferred Colors',
     }),
     // Empty or a relative path - the palette is not generated.
-    wallpaper: text({
+    wallpaper: file({
       default: '',
       label: 'Wallpaper',
+      accept: 'images',
     }),
     contrast: num({
       default: 0,
@@ -206,7 +220,7 @@ export type Values<N> =
       ? number
       : N extends BoolSpec
         ? boolean
-        : N extends TextSpec
+        : N extends TextSpec | FileSpec
           ? string
           : N extends object
             ? { [K in keyof N]: Values<N[K]> }
@@ -330,7 +344,8 @@ export function normalize(spec: LeafSpec, raw: unknown): Leaf {
         ? clamp(raw, spec.min, spec.max)
         : spec.default;
     }
-    case 'text': {
+    case 'text':
+    case 'file': {
       return typeof raw === 'string' ? raw : spec.default;
     }
     case 'bool': {

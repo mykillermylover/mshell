@@ -1,3 +1,4 @@
+import { FILE_TYPES, type FileTypes } from '@lib/files';
 import type { Accessor } from 'ags';
 
 import {
@@ -12,50 +13,46 @@ import {
   type State,
 } from './schema';
 
-export type NumberField = {
-  kind: 'number';
+/** Common to every field: where it lives and how it is captioned in the form. */
+type FieldBase<T> = {
   section: string;
   key: string;
   label?: string;
+  value: Accessor<T>;
+  set(value: T): void;
+};
+
+export type NumberField = FieldBase<number> & {
+  kind: 'number';
   unit?: string;
   min?: number;
   max?: number;
   step?: number;
-  value: Accessor<number>;
-  set(value: number): void;
 };
 
-export type TextField = {
+export type TextField = FieldBase<string> & {
   kind: 'text';
-  section: string;
-  key: string;
-  label?: string;
   placeholder?: string;
-  value: Accessor<string>;
-  set(value: string): void;
 };
 
-export type BoolField = {
+export type BoolField = FieldBase<boolean> & {
   kind: 'bool';
-  section: string;
-  key: string;
-  label?: string;
-  value: Accessor<boolean>;
-  set(value: boolean): void;
 };
 
-export type ChoiceField = {
+export type ChoiceField = FieldBase<string> & {
   kind: 'choice';
-  section: string;
-  key: string;
-  label?: string;
   options: readonly string[];
-  value: Accessor<string>;
-  set(value: string): void;
+};
+
+/** Absolute path to a file: entry plus a picker button. */
+export type FileField = FieldBase<string> & {
+  kind: 'file';
+  accept: FileTypes;
 };
 
 /** Form field: value and set are already narrowed by kind - the form branches on it. */
-export type Field = NumberField | TextField | BoolField | ChoiceField;
+export type Field =
+  NumberField | TextField | BoolField | ChoiceField | FileField;
 
 function makeField(
   section: string,
@@ -89,6 +86,17 @@ function makeField(
         key,
         label: spec.label,
         placeholder: spec.placeholder,
+        value: state as unknown as Accessor<string>,
+        set: (value: string) => state.set(value),
+      };
+    }
+    case 'file': {
+      return {
+        kind: 'file',
+        section,
+        key,
+        label: spec.label,
+        accept: FILE_TYPES[spec.accept],
         value: state as unknown as Accessor<string>,
         set: (value: string) => state.set(value),
       };

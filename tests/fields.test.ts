@@ -1,4 +1,5 @@
 import { type Config, type ConfigMethods, DEFAULTS, fields, LIMITS, reactive, SCHEMA, } from '@lib/config';
+import { FILE_TYPES } from '@lib/files';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -81,4 +82,17 @@ test('fields: choice.set writes an enum value', () => {
   assert.ok(mode && mode.kind === 'choice');
   mode.set('dark');
   assert.equal(config.theme.mode(), 'dark');
+});
+
+test('fields: file accepts an absolute path', () => {
+  const config = makeConfig();
+  const wallpaper = fields(config).find((f) => f.key === 'wallpaper');
+
+  assert.ok(wallpaper && wallpaper.kind === 'file');
+  assert.equal(wallpaper.accept, FILE_TYPES.images);
+  assert.equal(wallpaper.value(), '');
+
+  wallpaper.set('/home/user/wall.png');
+  assert.equal(config.theme.wallpaper(), '/home/user/wall.png');
+  assert.equal(wallpaper.value(), '/home/user/wall.png');
 });

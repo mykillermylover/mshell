@@ -22,6 +22,9 @@ export type BorderIsNumber = Assert<Equal<FieldStyle['border'], number>>;
 export type ContrastIsNumber = Assert<
   Equal<ConfigValues['theme']['contrast'], number>
 >;
+export type WallpaperIsString = Assert<
+  Equal<ConfigValues['theme']['wallpaper'], string>
+>;
 
 declare const style: Reactive<FieldStyle>;
 style.border.set(5); // number — allowed

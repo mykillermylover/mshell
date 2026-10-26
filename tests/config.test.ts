@@ -174,6 +174,14 @@ test('merge: the result type is ConfigValues', () => {
   assert.deepEqual(tree, DEFAULTS);
 });
 
+test('merge: a file leaf takes a string, anything else → default', () => {
+  const path = fromJson('{"theme":{"wallpaper":"/wall.png"}}');
+  assert.equal(path.theme.wallpaper, '/wall.png');
+
+  const tree = fromJson('{"theme":{"wallpaper":42}}');
+  assert.equal(tree.theme.wallpaper, DEFAULTS.theme.wallpaper);
+});
+
 test('merge: a bool leaf accepts only boolean', () => {
   const schema = { flag: bool({ default: true }) };
   assert.equal(merge(schema, { flag: false }).flag, false);
