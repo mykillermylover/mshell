@@ -1,20 +1,50 @@
 import { focusWorkspace } from '@lib/hyprland';
 import { useWindowApi } from '@lib/windows/api';
-import { createBinding, createComputed, For } from 'ags';
+import { createBinding, For } from 'ags';
+import type { Timer } from 'ags/time';
+import { timeout } from 'ags/time';
 import AstalHyprland from 'gi://AstalHyprland';
 
 export default function Workspaces() {
-  // The singleton is inside the content: the module also runs in the client (see App and CLI).
   const hyprland = AstalHyprland.get_default();
   const workspaces = createBinding(hyprland, 'workspaces');
+  const focusedMonitor = createBinding(hyprland, 'focusedMonitor');
 
-  const { monitor } = useWindowApi();
+  const { monitor, close, open, opened, hovered } = useWindowApi();
 
-  const currWorkspaces = createComputed(() =>
-    workspaces()
+  const currWorkspaces = workspaces((workspaces) =>
+    workspaces
       .filter((w) => w.id > 0 && w.monitor.model === monitor.model)
       .sort((a, b) => a.id - b.id),
   );
+
+  let timer: Timer;
+
+  hovered.subscribe(() => {
+    if (hovered() && timer) {
+      timer.cancel();
+    }
+  });
+
+  const showWindow = () => {
+    if (monitor.model !== focusedMonitor.peek()?.model) {
+      return;
+    }
+
+    if (timer) {
+      timer.cancel();
+    }
+
+    if (!opened()) {
+      open();
+    }
+
+    timer = timeout(1000, () => close());
+  };
+
+  hyprland.connect('workspace-added', showWindow);
+  hyprland.connect('workspace-removed', showWindow);
+  createBinding(hyprland, 'focusedWorkspace').subscribe(showWindow);
 
   return (
     <box spacing={8}>

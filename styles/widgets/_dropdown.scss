@@ -1,0 +1,18 @@
+.dropdown {
+  border: var(--primary) solid 1px;
+  border-radius: 10px;
+
+  button.dropdown-selected {
+    transition: border-radius 400ms ease;
+    border: none;
+    border-radius: 10px;
+
+    &.opened {
+      border-radius: 10px 10px 0 0;
+    }
+  }
+
+  button.dropdown-option {
+    border-radius: 0;
+  }
+}

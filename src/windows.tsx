@@ -109,9 +109,9 @@ export const INITIAL_POPS: PopSpec[] = [
   {
     id: 'workspaces',
     edge: 'top',
-    openByDefault: true,
     align: 'end',
     exclusive: false,
+    hover: true,
     offsetX: -100,
     content: () => Body(<Workspaces />),
   },
@@ -119,18 +119,18 @@ export const INITIAL_POPS: PopSpec[] = [
 
 /** Initial Floats: created synchronously; dynamic ones - via Frame.addFloat. */
 export const INITIAL_FLOATS: FloatSpec[] = [
-  {
-    id: 'notes',
-    header: () => <FloatHeader title="Notes" />,
-    x: 200,
-    y: 260,
-    content: Notes,
-  },
-  {
-    id: 'mixer',
-    header: () => <FloatHeader title="Mixer" />,
-    x: 560,
-    y: 340,
-    content: Mixer,
-  },
+  // {
+  //   id: 'notes',
+  //   header: () => <FloatHeader title="Notes" />,
+  //   x: 200,
+  //   y: 260,
+  //   content: Notes,
+  // },
+  // {
+  //   id: 'mixer',
+  //   header: () => <FloatHeader title="Mixer" />,
+  //   x: 560,
+  //   y: 340,
+  //   content: Mixer,
+  // },
 ];
