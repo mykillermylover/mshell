@@ -1,6 +1,6 @@
 import type { Rect } from '@lib/geometry';
 import type { Accessor, Setter } from 'ags';
-import { createState } from 'ags';
+import { createBinding, createState } from 'ags';
 import type { Gtk } from 'ags/gtk4';
 import GLib from 'gi://GLib';
 
@@ -47,7 +47,8 @@ export abstract class Window {
   private _setPinned: Setter<boolean>;
   private _keyboardGrabbed: Accessor<boolean>;
   private _setKeyboardGrabbed: Setter<boolean>;
-  private hovering = false;
+  private _hovering: Accessor<boolean>;
+  private _setHovering: Setter<boolean>;
   private readonly gate: HoverGate | null;
   private readonly host: WindowHost;
   private readonly activate: (() => void) | undefined;
@@ -65,6 +66,7 @@ export abstract class Window {
 
     [this._pinned, this._setPinned] = createState(false);
     [this._keyboardGrabbed, this._setKeyboardGrabbed] = createState(false);
+    [this._hovering, this._setHovering] = createState(false);
 
     const delays = options.delays;
     this.gate = delays
@@ -88,6 +90,8 @@ export abstract class Window {
       id: options.id,
       monitor: options.host.monitor,
       pinned: this._pinned,
+      hovered: this._hovering,
+      opened: createBinding(this.revealer, 'revealChild'),
       open: () => this.open(),
       close: () => this.close(),
       toggle: () => this.toggle(),
@@ -112,6 +116,14 @@ export abstract class Window {
     );
     this.contentWidget = content;
     this.disposeContent = dispose;
+  }
+
+  get hovering(): boolean {
+    return this._hovering.peek();
+  }
+
+  set hovering(value: boolean) {
+    this._setHovering(value);
   }
 
   get pinned(): boolean {

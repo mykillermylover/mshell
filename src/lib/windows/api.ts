@@ -64,6 +64,10 @@ export interface WindowApi {
   readonly monitor: Gdk.Monitor;
   /** Whether the window is pinned - reactive, for UI. */
   readonly pinned: Accessor<boolean>;
+  /** Whether the window is open */
+  readonly opened: Accessor<boolean>;
+  /** Whether the window has hover */
+  readonly hovered: Accessor<boolean>;
   open(): void;
   close(): void;
   toggle(): void;
