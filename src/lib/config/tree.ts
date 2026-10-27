@@ -1,17 +1,17 @@
 import { Accessor } from 'ags';
 
+import type { DeepPartial, Limits, Values } from './derive';
+import { normalize } from './derive';
 import type {
-  DeepPartial,
   Leaf,
-  Limits,
   Node,
   Reactive,
   ReactiveNode,
   ReactiveSection,
   Section,
   State,
-} from './schema';
-import { isLeaf, normalize, type Values } from './schema';
+} from './leaf';
+import { isLeaf } from './leaf';
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);

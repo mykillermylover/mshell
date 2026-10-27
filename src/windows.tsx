@@ -10,7 +10,7 @@ function Body(child: JSX.Element) {
   return <box class="frame-body">{child}</box>;
 }
 
-function FloatHeader(props: { title: string }) {
+function _FloatHeader(props: { title: string }) {
   const api = useWindowApi();
 
   return (
@@ -69,7 +69,7 @@ function Launcher() {
   );
 }
 
-function Notes() {
+function _Notes() {
   return (
     <Card
       title="Drag to the edge"
@@ -80,7 +80,7 @@ function Notes() {
   );
 }
 
-function Mixer() {
+function _Mixer() {
   return (
     <Card
       title="Or to another window"

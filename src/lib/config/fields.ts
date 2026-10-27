@@ -2,16 +2,15 @@ import { FILE_TYPES, type FileTypes } from '@lib/files';
 import type { Accessor } from 'ags';
 
 import {
-  type Config,
   isLeaf,
   type Leaf,
   type LeafSpec,
   type Node,
   type ReactiveNode,
   type ReactiveSection,
-  SCHEMA,
   type State,
-} from './schema';
+} from './leaf';
+import { type Config, SCHEMA } from './schema';
 
 /** Common to every field: where it lives and how it is captioned in the form. */
 type FieldBase<T> = {
