@@ -1,5 +1,4 @@
 import type { FieldStyle } from '@lib/config';
-import type { Rect } from '@lib/geometry';
 import { noop } from '@lib/utils';
 import type { Gtk } from 'ags/gtk4';
 
@@ -11,7 +10,7 @@ import {
   type PopSpec,
   type WindowHost,
 } from './api';
-import { popLayout } from './popLayout';
+import { popBody, popLayout } from './popLayout';
 import { buildPopRevealer, buildPopSlot, type PopSlot } from './popSlot';
 import { Window, type WindowMeasure } from './window';
 
@@ -97,8 +96,10 @@ export class Pop extends Window {
    * Visible body: everything except the frame strip (`spacer`). The frame is drawn
    * by LiquidField, so it is not part of the field body.
    *
-   * Input of the closed zone = lip + frame strip up to the screen edge. Of the open zone -
-   * body only. Both are computed from one `compute_bounds`.
+   * Input is the raw slot bounds: lip plus the frame strip up to the screen edge,
+   * open or closed. It deliberately does not depend on the open state: a strip left
+   * under the resting cursor would otherwise close the popover right after the
+   * reveal and catch it again - an endless cycle.
    */
   measure(relativeTo: Gtk.Widget): WindowMeasure {
     const raw = this.slot.bounds(relativeTo);
@@ -109,14 +110,11 @@ export class Pop extends Window {
       return { body: raw, input: raw };
     }
 
-    const body = this.bodyRect(raw);
-    // The closed zone catches the raw slot bounds: body plus the frame strip up
-    // to the screen edge. What is visible (the lip) is what gets caught.
-    const input = this.slot.revealed ? body : raw;
+    const body = popBody(raw, this.spec.edge, this.style().border);
 
     return {
       body: body.w >= 1 && body.h >= 1 ? body : null,
-      input,
+      input: raw,
     };
   }
 
@@ -129,25 +127,6 @@ export class Pop extends Window {
   protected watchedRevealers(): Gtk.Revealer[] {
     const zone = this.slot.zoneRevealer;
     return zone ? [this.revealer, zone] : [this.revealer];
-  }
-
-  /** Body without the frame strip; zero at `depth = 0` (invisible zone). */
-  private bodyRect(rect: Rect): Rect {
-    const { border } = this.style();
-    switch (this.spec.edge) {
-      case 'top': {
-        return { ...rect, y: rect.y + border, h: rect.h - border };
-      }
-      case 'bottom': {
-        return { ...rect, h: rect.h - border };
-      }
-      case 'left': {
-        return { ...rect, x: rect.x + border, w: rect.w - border };
-      }
-      default: {
-        return { ...rect, w: rect.w - border };
-      }
-    }
   }
 
   /** Lip thickness from the current config. */

@@ -11,7 +11,15 @@ import app from 'ags/gtk4/app';
 import GLib from 'gi://GLib';
 
 import { FrameInput } from './FrameInput';
+import { FrameKeyboard, type KeyboardMode } from './FrameKeyboard';
 import { FrameMotion } from './FrameMotion';
+
+/** The arbitration speaks in its own words; Astal names the same three states. */
+const KEYMODE: Record<KeyboardMode, Astal.Keymode> = {
+  none: Astal.Keymode.NONE,
+  'on-demand': Astal.Keymode.ON_DEMAND,
+  exclusive: Astal.Keymode.EXCLUSIVE,
+};
 
 /**
  * Field host for one monitor:
@@ -35,10 +43,7 @@ export class Frame {
   private readonly overlay: Gtk.Overlay;
   private readonly input: FrameInput;
   private readonly motion: FrameMotion;
-  /** Someone holds the keyboard exclusively: hover does not override it. */
-  private exclusiveKeyboardOwner: string | null = null;
-  /** Window with on-demand keyboard under the cursor. */
-  private hoverKeyboardOwner: string | null = null;
+  private readonly keyboard: FrameKeyboard;
 
   /** Narrow access for debug commands; see lib/debug.tsx. */
   readonly debug = {
@@ -87,10 +92,10 @@ export class Frame {
       monitor,
       addFloat: (spec) => this.addFloat(spec),
       remove: (id) => this.remove(id),
-      hoverKeyboard: (owner, entering) => this.hoverKeyboard(owner, entering),
+      hoverKeyboard: (owner, entering) => this.keyboard.hover(owner, entering),
       exclusiveKeyboard: (owner, active) =>
-        this.exclusiveKeyboard(owner, active),
-      unfocusKeyboard: (owner) => this.unfocusKeyboard(owner),
+        this.keyboard.exclusive(owner, active),
+      unfocusKeyboard: (owner) => this.keyboard.unfocus(owner),
       isolateFocus: (owner) => this.isolateFocus(owner),
     };
     const { TOP, BOTTOM, LEFT, RIGHT } = Astal.WindowAnchor;
@@ -109,6 +114,13 @@ export class Frame {
     });
 
     this.input = new FrameInput(this.surface);
+    // Keymode lives on the surface, focusability on every window: both are injected.
+    this.keyboard = new FrameKeyboard({
+      keymode: (mode) => {
+        this.surface.keymode = KEYMODE[mode];
+      },
+      focus: (owner) => this.isolateFocus(owner),
+    });
     this.field.configure(() => snapshot(this.style));
     this.field.rects = () => {
       // Single pass: the scene draws visible bodies, input may be wider
@@ -298,61 +310,6 @@ export class Frame {
   }
 
   // ───────────────────────── field ─────────────────────────
-
-  /** Hover over a window with input: on-demand, if there is no exclusive owner. */
-  private hoverKeyboard(owner: string, entering: boolean) {
-    if (entering) {
-      if (this.exclusiveKeyboardOwner !== null) {
-        return;
-      }
-      if (this.hoverKeyboardOwner === owner) {
-        return;
-      }
-      this.hoverKeyboardOwner = owner;
-      this.surface.keymode = Astal.Keymode.ON_DEMAND;
-      this.isolateFocus(owner);
-      return;
-    }
-
-    // The one leaving is not the current owner - another window has already taken it over.
-    if (this.hoverKeyboardOwner !== owner) {
-      return;
-    }
-    this.hoverKeyboardOwner = null;
-    if (this.exclusiveKeyboardOwner !== null) {
-      return;
-    }
-    this.surface.keymode = Astal.Keymode.NONE;
-    this.isolateFocus(null);
-  }
-
-  private exclusiveKeyboard(owner: string, active: boolean) {
-    if (active) {
-      this.exclusiveKeyboardOwner = owner;
-      this.surface.keymode = Astal.Keymode.EXCLUSIVE;
-      this.isolateFocus(owner);
-      return;
-    }
-
-    if (this.exclusiveKeyboardOwner !== owner) {
-      return;
-    }
-    this.exclusiveKeyboardOwner = null;
-    // A hovered window may have remained under the modal - give it back on-demand.
-    if (this.hoverKeyboardOwner !== null) {
-      this.surface.keymode = Astal.Keymode.ON_DEMAND;
-      this.isolateFocus(this.hoverKeyboardOwner);
-      return;
-    }
-    this.surface.keymode = Astal.Keymode.NONE;
-    this.isolateFocus(null);
-  }
-
-  /** Window close: release both kinds of grab, without touching others. */
-  private unfocusKeyboard(owner: string) {
-    this.exclusiveKeyboard(owner, false);
-    this.hoverKeyboard(owner, false);
-  }
 
   /** Only the specified window remains focusable. */
   private isolateFocus(owner: string | null) {

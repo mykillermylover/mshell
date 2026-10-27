@@ -1,7 +1,16 @@
-import { type Config, type ConfigMethods, DEFAULTS, fields, LIMITS, reactive, SCHEMA, } from '@lib/config';
-import { FILE_TYPES } from '@lib/files';
 import assert from 'node:assert/strict';
 import test from 'node:test';
+
+import {
+  type Config,
+  type ConfigMethods,
+  DEFAULTS,
+  fields,
+  LIMITS,
+  reactive,
+  SCHEMA,
+} from '@lib/config';
+import { FILE_TYPES } from '@lib/files';
 
 const noop = () => {};
 
@@ -15,8 +24,7 @@ function makeConfig(): Config {
 
   return Object.assign(
     {},
-    reactive(structuredClone(DEFAULTS), () => {
-    }, LIMITS),
+    reactive(structuredClone(DEFAULTS), () => {}, LIMITS),
     methods,
   ) as Config;
 }

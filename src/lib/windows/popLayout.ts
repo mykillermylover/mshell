@@ -2,6 +2,8 @@
 // child order (spacer at the frame, Revealer, zone at the far edge) and thickness.
 // Without GJS - tested in node.
 
+import type { Rect } from '@lib/geometry';
+
 export type HorizontalEdge = 'top' | 'bottom';
 export type VerticalEdge = 'left' | 'right';
 export type Edge = HorizontalEdge | VerticalEdge;
@@ -179,4 +181,25 @@ export function popLayout(
     spacer,
     zone,
   };
+}
+
+/**
+ * Visible body: the slot without the frame strip. The strip is frame material drawn
+ * by LiquidField, so it is not a body.
+ */
+export function popBody(rect: Rect, edge: Edge, border: number): Rect {
+  switch (edge) {
+    case 'top': {
+      return { ...rect, y: rect.y + border, h: rect.h - border };
+    }
+    case 'bottom': {
+      return { ...rect, h: rect.h - border };
+    }
+    case 'left': {
+      return { ...rect, x: rect.x + border, w: rect.w - border };
+    }
+    default: {
+      return { ...rect, w: rect.w - border };
+    }
+  }
 }
