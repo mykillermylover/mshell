@@ -4,14 +4,11 @@ import { createBinding, createState } from 'ags';
 import type { Gtk } from 'ags/gtk4';
 import GLib from 'gi://GLib';
 
-import {
-  createWindowContent,
-  type WindowApi,
-  type WindowHost,
-  type WindowSpec,
-  wrapped,
-} from './api';
+import type { WindowApi, WindowHost } from './host';
 import { HoverGate } from './HoverGate';
+import { createWindowScope } from './scope';
+import type { WindowSpec } from './spec';
+import { wrapped } from './widgets';
 
 interface WindowOptions extends Pick<
   WindowSpec,
@@ -111,7 +108,7 @@ export abstract class Window {
       keyboardGrabbed: this._keyboardGrabbed,
     };
 
-    const { content, dispose } = createWindowContent(this.api, () =>
+    const { content, dispose } = createWindowScope(this.api, () =>
       wrapped(options.content()),
     );
     this.contentWidget = content;

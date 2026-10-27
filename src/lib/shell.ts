@@ -6,7 +6,7 @@ import GLib from 'gi://GLib';
 import { config } from './config/app';
 import { handleDebug } from './debug';
 import { Frame } from './frame/Frame';
-import type { FloatSpec, PopSpec } from './windows/api';
+import type { FloatSpec, PopSpec } from './windows/spec';
 
 const debugEnabled = GLib.getenv('MSHELL_DEBUG') === '1';
 

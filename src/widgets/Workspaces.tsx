@@ -1,5 +1,5 @@
 import { focusWorkspace } from '@lib/hyprland';
-import { useWindowApi } from '@lib/windows/api';
+import { useWindowApi } from '@lib/windows/host';
 import { createBinding, For } from 'ags';
 import type { Timer } from 'ags/time';
 import { timeout } from 'ags/time';

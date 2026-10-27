@@ -1,7 +1,7 @@
 import type { Field, FileField } from '@lib/config';
 import { fields } from '@lib/config';
 import { config } from '@lib/config/app';
-import { useWindowApi, type WindowApi } from '@lib/windows/api';
+import { useWindowApi, type WindowApi } from '@lib/windows/host';
 import { ICONS } from '@widgets/icons';
 import DropDown from '@widgets/shared/DropDown';
 import pickFile from '@widgets/shared/filePicker';

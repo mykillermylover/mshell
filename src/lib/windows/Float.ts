@@ -1,13 +1,11 @@
 import type { FieldStyle } from '@lib/config';
 import { Gtk } from 'ags/gtk4';
 
-import {
-  asWidget,
-  boundsOf,
-  createWindowContent,
-  type FloatSpec,
-  type WindowHost,
-} from './api';
+import { boundsOf } from './bounds';
+import type { WindowHost } from './host';
+import { createWindowScope } from './scope';
+import type { FloatSpec } from './spec';
+import { asWidget } from './widgets';
 import { Window, type WindowMeasure } from './window';
 
 /** Floating window: a "handle" header (any widget) above the body with content. */
@@ -36,7 +34,7 @@ export class Float extends Window {
     });
 
     const grip = new Gtk.Box();
-    const header = createWindowContent(this.api, () => asWidget(spec.header()));
+    const header = createWindowScope(this.api, () => asWidget(spec.header()));
     grip.append(header.content);
 
     const box = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL });

@@ -2,16 +2,12 @@ import type { FieldStyle } from '@lib/config';
 import { noop } from '@lib/utils';
 import type { Gtk } from 'ags/gtk4';
 
-import {
-  asWidget,
-  createWindowContent,
-  type HoverSpec,
-  isVerticalEdge,
-  type PopSpec,
-  type WindowHost,
-} from './api';
+import type { WindowHost } from './host';
 import { popBody, popLayout } from './popLayout';
 import { buildPopRevealer, buildPopSlot, type PopSlot } from './popSlot';
+import { createWindowScope } from './scope';
+import { type HoverSpec, isVerticalEdge, type PopSpec } from './spec';
+import { asWidget } from './widgets';
 import { Window, type WindowMeasure } from './window';
 
 /**
@@ -49,7 +45,7 @@ export class Pop extends Window {
     this.hover = hoverSpec;
 
     const hoverContent = hoverSpec
-      ? createWindowContent(this.api, () =>
+      ? createWindowScope(this.api, () =>
           hoverSpec.content ? asWidget(hoverSpec.content()) : null,
         )
       : null;

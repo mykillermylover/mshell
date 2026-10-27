@@ -1,9 +1,10 @@
 import { type FieldStyle, type Reactive, snapshot } from '@lib/config';
 import type { Rect } from '@lib/geometry';
 import { LiquidField } from '@lib/liquid/LiquidField';
-import type { FloatSpec, PopSpec, WindowHost } from '@lib/windows/api';
 import { Float } from '@lib/windows/Float';
+import type { WindowHost } from '@lib/windows/host';
 import { Pop } from '@lib/windows/Pop';
+import type { FloatSpec, PopSpec } from '@lib/windows/spec';
 import type { Window } from '@lib/windows/window';
 import type { Gdk } from 'ags/gtk4';
 import { Astal, Gtk } from 'ags/gtk4';
