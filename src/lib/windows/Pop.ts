@@ -3,6 +3,8 @@ import type { Gtk } from 'ags/gtk4';
 
 const noop = () => {};
 
+import type { MRevealer } from '@ui/MRevealer';
+
 import type { WindowHost } from './host';
 import { popBody, popLayout } from './popLayout';
 import { buildPopRevealer, buildPopSlot, type PopSlot } from './popSlot';
@@ -121,7 +123,7 @@ export class Pop extends Window {
     this.slot.apply(style.revealDuration, this.layout(style));
   }
 
-  protected watchedRevealers(): Gtk.Revealer[] {
+  protected watchedRevealers(): MRevealer[] {
     const zone = this.slot.zoneRevealer;
     return zone ? [this.revealer, zone] : [this.revealer];
   }

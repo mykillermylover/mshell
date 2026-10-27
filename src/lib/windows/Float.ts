@@ -1,4 +1,5 @@
 import type { FieldStyle } from '@lib/config';
+import { MRevealer } from '@ui/MRevealer';
 import { Gtk } from 'ags/gtk4';
 
 import type { WindowHost } from './host';
@@ -20,7 +21,7 @@ export class Float extends Window {
     private style: () => FieldStyle,
     host: WindowHost,
   ) {
-    const revealer = new Gtk.Revealer({
+    const revealer = new MRevealer({
       transitionType: Gtk.RevealerTransitionType.FADE_SLIDE_UP,
       transitionDuration: style().revealDuration,
       revealChild: true,

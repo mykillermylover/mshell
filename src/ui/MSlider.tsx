@@ -1,5 +1,5 @@
 /** Everything a regular <slider> accepts. */
-export type SliderProps = JSX.IntrinsicElements['slider'];
+export type MSliderProps = JSX.IntrinsicElements['slider'];
 
 /**
  * Snap the value to the `min + k * step` grid. GTK does not hold a step on its own: `step_increment`
@@ -17,20 +17,20 @@ export function snapStep(value: number, min: number, step: number): number {
 }
 
 /** The prop comes as a number or an Accessor (then gnim subscribes itself). */
-const number = (value: SliderProps['step'], fallback: number): number =>
+const number = (value: MSliderProps['step'], fallback: number): number =>
   typeof value === 'number' ? value : (value?.peek() ?? fallback);
 
 /**
- * Slider whose value always lies on the `min + k * step` grid -
+ * MSlider whose value always lies on the `min + k * step` grid -
  * with dragging, wheel and arrows alike.
  */
-export default function Slider({
+export default function MSlider({
   step,
   min,
   page,
   onChangeValue,
   ...props
-}: SliderProps) {
+}: MSliderProps) {
   // Astal default
   const stepValue = number(step, 0.05);
   const minValue = number(min, 0);

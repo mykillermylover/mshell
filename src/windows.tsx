@@ -96,7 +96,7 @@ export const INITIAL_POPS: PopSpec[] = [
   {
     id: 'player',
     edge: 'top',
-    hover: { content: PlayerHover },
+    hover: { content: PlayerHover, hideOnReveal: true },
     content: Player,
   },
   {
@@ -111,9 +111,12 @@ export const INITIAL_POPS: PopSpec[] = [
     edge: 'top',
     align: 'end',
     exclusive: false,
-    hover: true,
+    hover: {
+      hideOnReveal: true,
+      content: () => <box heightRequest={2} />,
+    },
     offsetX: -100,
-    content: () => Body(<Workspaces />),
+    content: () => <Workspaces />,
   },
 ];
 

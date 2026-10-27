@@ -1,4 +1,5 @@
 import type { Rect } from '@lib/field/geometry';
+import { MRevealer } from '@ui/MRevealer';
 import { Gtk } from 'ags/gtk4';
 
 import type { Edge, PopLayout } from './popLayout';
@@ -44,14 +45,8 @@ const filler = () => {
 };
 
 /** Main popover Revealer; the edge sets the direction. */
-export function buildPopRevealer(
-  edge: Edge,
-  revealChild = false,
-): Gtk.Revealer {
-  return new Gtk.Revealer({
-    transitionType: SLIDE[edge].pop,
-    revealChild,
-  });
+export function buildPopRevealer(edge: Edge, revealChild = false): MRevealer {
+  return new MRevealer({ transitionType: SLIDE[edge].pop, revealChild });
 }
 
 interface HoverSlot {
@@ -62,7 +57,7 @@ interface HoverSlot {
 interface PopSlotOptions {
   edge: Edge;
   layout: PopLayout;
-  revealer: Gtk.Revealer;
+  revealer: MRevealer;
   content: Gtk.Widget;
   hover: HoverSlot | null;
 }
@@ -74,7 +69,7 @@ export interface PopSlot {
   /** The main Revealer is fully revealed. */
   readonly revealed: boolean;
   /** Revealer of the hover zone; null if there is no zone. */
-  readonly zoneRevealer: Gtk.Revealer | null;
+  readonly zoneRevealer: MRevealer | null;
   bounds(relativeTo: Gtk.Widget): Rect | null;
   apply(duration: number, layout: PopLayout): void;
   cleanup(): void;
@@ -90,7 +85,7 @@ export function buildPopSlot(options: PopSlotOptions): PopSlot {
   const widget = new Gtk.Box();
   let spacer: Gtk.Box | null = null;
   let zone: Gtk.Box | null = null;
-  let zoneRevealer: Gtk.Revealer | null = null;
+  let zoneRevealer: MRevealer | null = null;
   let spacerFiller: Gtk.Box | null = null;
   let zoneFiller: Gtk.Box | null = null;
 
@@ -110,7 +105,7 @@ export function buildPopSlot(options: PopSlotOptions): PopSlot {
       zone.append(zoneFiller);
     }
 
-    zoneRevealer = new Gtk.Revealer({
+    zoneRevealer = new MRevealer({
       transitionType: SLIDE[edge].zone,
       revealChild: true,
     });

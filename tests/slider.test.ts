@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { snapStep } from '@widgets/Slider';
+import { snapStep } from '@ui/MSlider';
 
 test('snapStep: rounds to the grid from min', () => {
   assert.equal(snapStep(0.31, 0, 0.5), 0.5);

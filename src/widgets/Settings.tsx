@@ -2,13 +2,13 @@ import type { Field, FileField } from '@lib/config';
 import { fields } from '@lib/config';
 import { config } from '@lib/config/app';
 import { useWindowApi, type WindowApi } from '@lib/windows/host';
+import pickFile from '@ui/filePicker';
+import MDropDown from '@ui/MDropDown';
+import MSlider from '@ui/MSlider';
 import { ICONS } from '@widgets/icons';
-import DropDown from '@widgets/shared/DropDown';
-import pickFile from '@widgets/shared/filePicker';
-import Slider from '@widgets/Slider';
 import { Gtk } from 'ags/gtk4';
 
-// function DropDown({ field }: { field: ChoiceField }) {
+// function MDropDown({ field }: { field: ChoiceField }) {
 //   const [open, setOpen] = createState(false);
 //
 //   return (
@@ -103,7 +103,7 @@ function FieldControl({ field, api }: { field: Field; api: WindowApi }) {
             label={field.value((v) => v.toFixed(2))}
             widthRequest={100}
           />
-          <Slider
+          <MSlider
             widthRequest={200}
             min={field.min}
             max={field.max}
@@ -116,7 +116,7 @@ function FieldControl({ field, api }: { field: Field; api: WindowApi }) {
     }
     case 'choice': {
       return (
-        <DropDown
+        <MDropDown
           value={field.value}
           widthRequest={200}
           halign={Gtk.Align.END}

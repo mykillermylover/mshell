@@ -53,11 +53,14 @@ export default function Workspaces() {
   createBinding(hyprland, 'focusedWorkspace').subscribe(showWindow);
 
   return (
-    <box spacing={8}>
+    <box spacing={8} class="workspaces">
       <For each={currWorkspaces}>
         {(item) => {
           return (
-            <button onClicked={() => focusWorkspace(item.id)}>
+            <button
+              class={'workspaces-btn'}
+              onClicked={() => focusWorkspace(item.id)}
+            >
               <label label={item.id.toString()} />
             </button>
           );

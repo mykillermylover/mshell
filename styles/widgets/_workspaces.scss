@@ -1,4 +1,8 @@
-// Demo widgets: content padding comes from CSS, not from TSX.
-.workspaces-pad {
-  margin-right: 100px;
+.workspaces {
+  color: var(--fg);
+  padding: 4px;
+
+  .workspaces-btn {
+    padding: 2px 4px;
+  }
 }

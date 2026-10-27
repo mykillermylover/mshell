@@ -1,4 +1,5 @@
 import type { Rect } from '@lib/field/geometry';
+import type { MRevealer } from '@ui/MRevealer';
 import type { Accessor, Setter } from 'ags';
 import { createBinding, createState } from 'ags';
 import type { Gtk } from 'ags/gtk4';
@@ -14,7 +15,7 @@ interface WindowOptions extends Pick<
   WindowSpec,
   'id' | 'content' | 'keyboard'
 > {
-  revealer: Gtk.Revealer;
+  revealer: MRevealer;
   /** Whether the window participates in popover exclusivity. */
   exclusive?: boolean;
   /** Frame the window lives in. */
@@ -31,7 +32,7 @@ interface WindowOptions extends Pick<
  */
 export abstract class Window {
   readonly id: string;
-  readonly revealer: Gtk.Revealer;
+  readonly revealer: MRevealer;
   readonly api: WindowApi;
   /** Whether the window participates in popover exclusivity. */
   readonly exclusive: boolean;
@@ -281,7 +282,7 @@ export abstract class Window {
   }
 
   /** Revealers whose animations move the shape; Pop adds the hover zone. */
-  protected watchedRevealers(): Gtk.Revealer[] {
+  protected watchedRevealers(): MRevealer[] {
     return [this.revealer];
   }
 

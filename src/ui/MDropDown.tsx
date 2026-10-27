@@ -2,24 +2,26 @@ import { Accessor, For } from 'ags';
 import { createComputed, createState } from 'ags';
 import Gtk from 'gi://Gtk';
 
+import { MRevealer } from './MRevealer';
+
 /** The prop comes as a plain value or an Accessor: one shape for the body. */
 const asAccessor = <T,>(value: T | Accessor<T>): Accessor<T> =>
   value instanceof Accessor ? value : new Accessor(() => value);
 
-export type DropDownProps<T extends string> = JSX.IntrinsicElements['box'] & {
+export type MDropDownProps<T extends string> = JSX.IntrinsicElements['box'] & {
   options: T[] | readonly T[] | Accessor<T[]>;
   value?: T | Accessor<T>;
   onValueChange: (value: T) => void;
   maxRows?: number | Accessor<number>;
 };
 
-export default function DropDown<T extends string>({
+export default function MDropDown<T extends string>({
   onValueChange,
   options,
   maxRows,
   value,
   ...restProps
-}: DropDownProps<T>) {
+}: MDropDownProps<T>) {
   const optionsAccessor = asAccessor(options);
   const maxRowsAccessor = asAccessor(
     maxRows ?? optionsAccessor.as((options) => options.length),
@@ -61,7 +63,7 @@ export default function DropDown<T extends string>({
         onClicked={() => setOpen(!open.peek())}
       />
 
-      <revealer
+      <MRevealer
         revealChild={open}
         transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN}
       >
@@ -87,7 +89,7 @@ export default function DropDown<T extends string>({
             </For>
           </box>
         </scrolledwindow>
-      </revealer>
+      </MRevealer>
     </box>
   );
 }
