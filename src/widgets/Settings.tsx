@@ -8,36 +8,6 @@ import MSlider from '@ui/MSlider';
 import { ICONS } from '@widgets/icons';
 import { Gtk } from 'ags/gtk4';
 
-// function MDropDown({ field }: { field: ChoiceField }) {
-//   const [open, setOpen] = createState(false);
-//
-//   return (
-//     <box orientation={Gtk.Orientation.VERTICAL} hexpand>
-//       <button onClicked={() => setOpen(!open.peek())}>
-//         <label label={field.value} />
-//       </button>
-//
-//       <revealer
-//         revealChild={open}
-//         transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN}
-//       >
-//         <box orientation={Gtk.Orientation.VERTICAL}>
-//           {field.options.map((option) => (
-//             <button
-//               onClicked={() => {
-//                 field.set(option);
-//                 setOpen(false);
-//               }}
-//             >
-//               <label label={option} />
-//             </button>
-//           ))}
-//         </box>
-//       </revealer>
-//     </box>
-//   );
-// }
-
 function FileControl({ field, api }: { field: FileField; api: WindowApi }) {
   async function browse() {
     // The dialog is a separate window: the cursor leaves the hover zone and the

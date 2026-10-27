@@ -103,19 +103,20 @@ export const INITIAL_POPS: PopSpec[] = [
     id: 'settings',
     edge: 'right',
     hover: true,
+    keyboard: true,
     content: () => Body(<Settings />),
   },
   { id: 'launcher', edge: 'bottom', content: Launcher },
   {
     id: 'workspaces',
     edge: 'top',
-    align: 'end',
+    align: 'start',
     exclusive: false,
     hover: {
       hideOnReveal: true,
       content: () => <box heightRequest={2} />,
     },
-    offsetX: -100,
+    offsetX: 45,
     content: () => <Workspaces />,
   },
 ];

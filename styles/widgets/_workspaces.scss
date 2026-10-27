@@ -3,6 +3,28 @@
   padding: 4px;
 
   .workspaces-btn {
-    padding: 2px 4px;
+    outline: unset;
+    padding: 1px 7px;
+    min-height: 0;
+    min-width: 0;
+
+    background-color: var(--on_secondary);
+    color: var(--secondary);
+    border: var(--secondary) 1px solid;
+
+    transition: 150ms ease-in-out;
+    transition-property: background-color, color, border, padding;
+
+    &:hover {
+      background-color: color-mix(in srgb, var(--inverse_primary) 30%, transparent);
+      color: var(--fg);
+    }
+
+    &.focused {
+      padding: 20px 80px;
+      border: unset;
+      background-color: var(--primary);
+      color: var(--on_primary);
+    }
   }
 }
