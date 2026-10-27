@@ -126,10 +126,16 @@ export class Pop extends Window {
     return zone ? [this.revealer, zone] : [this.revealer];
   }
 
-  /** Lip thickness from the current config. */
-  private depth(style = this.style()) {
+  /**
+   * Lip thickness from the current config; `null` when the zone has its own
+   * content - then the content is the lip and must not be clipped to a minimum.
+   */
+  private depth(style = this.style()): number | null {
     if (!this.hover) {
       return 0;
+    }
+    if (this.hover.content) {
+      return null;
     }
     // The lower bound is already clamped by the config (LIMITS.style.hoverDepth >= 1).
     return style.hoverDepth;

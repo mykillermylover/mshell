@@ -71,6 +71,10 @@ const shiftAlong = (
  * Along the edge - align; for start/end an offset from the corner is added:
  * border + screenRadius. Across it - pinning to the frame edge.
  *
+ * `depth` is the lip thickness of a hover zone without its own content.
+ * `null` - size the zone by that content, so a small widget is not clipped
+ * to a minimum it never asked for.
+ *
  * Without hover, the frame-side offset is the Box margin: the overlay does not read it for
  * the position, and the content box shrinks by the margin. With hover, the offset
  * becomes a real spacer inside the Box: the zone does not lose thickness. The spacer
@@ -81,7 +85,7 @@ export function popLayout(
   edge: Edge,
   align: EdgeAlign,
   style: LayoutStyle,
-  depth: number,
+  depth: number | null,
   hover: boolean,
   offset = 0,
 ): PopLayout {
@@ -170,9 +174,10 @@ export function popLayout(
     ? { widthRequest: NATURAL_SIZE, heightRequest: hover ? style.border : 0 }
     : { widthRequest: hover ? style.border : 0, heightRequest: NATURAL_SIZE };
 
+  const lip = depth ?? NATURAL_SIZE;
   const zone = horizontal
-    ? { widthRequest: NATURAL_SIZE, heightRequest: depth }
-    : { widthRequest: depth, heightRequest: NATURAL_SIZE };
+    ? { widthRequest: NATURAL_SIZE, heightRequest: lip }
+    : { widthRequest: lip, heightRequest: NATURAL_SIZE };
 
   return {
     orientation: horizontal ? 'vertical' : 'horizontal',

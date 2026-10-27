@@ -165,6 +165,22 @@ test('popLayout: hover removes the frame-side margin and adds a spacer', () => {
   });
 });
 
+/**
+ * A hover zone with its own content sizes itself: the content is the lip, and
+ * a minimum thickness would clip it. `null` depth means "no minimum".
+ */
+test('popLayout: a null depth sizes the zone by its own content', () => {
+  const top = popLayout('top', 'center', style, null, true);
+  assert.deepEqual(top.zone, { widthRequest: -1, heightRequest: -1 });
+
+  const right = popLayout('right', 'center', style, null, true);
+  assert.deepEqual(right.zone, { widthRequest: -1, heightRequest: -1 });
+
+  // The spacer still holds the frame strip: only the zone becomes natural.
+  assert.deepEqual(top.spacer, { widthRequest: -1, heightRequest: 4 });
+  assert.deepEqual(right.spacer, { widthRequest: 4, heightRequest: -1 });
+});
+
 test('popLayout: hover, align start/end does not touch the frame-side margin', () => {
   const top = popLayout('top', 'start', style, 6, true);
   assert.equal(top.anchor.marginStart, 14);
