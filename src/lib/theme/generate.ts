@@ -1,3 +1,5 @@
+import { glibScheduler } from '@lib/glibScheduler';
+import { Debounce } from '@lib/schedule';
 import { isAbsolutePath } from '@lib/utils';
 import { execAsync } from 'ags/process';
 import Gio from 'gi://Gio';
@@ -16,7 +18,7 @@ export interface PaletteRequest {
 const DEBOUNCE_MS = 300;
 
 let pending: PaletteRequest | null = null;
-let debounceId: number | null = null;
+const debounce = new Debounce(DEBOUNCE_MS, glibScheduler);
 let running = false;
 
 function templateFile(): string {
@@ -124,13 +126,5 @@ export function requestPalette(request: PaletteRequest) {
     ...request,
   };
 
-  if (debounceId !== null) {
-    GLib.source_remove(debounceId);
-  }
-
-  debounceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, DEBOUNCE_MS, () => {
-    debounceId = null;
-    void run();
-    return GLib.SOURCE_REMOVE;
-  });
+  debounce.schedule(() => void run());
 }

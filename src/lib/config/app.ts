@@ -1,3 +1,5 @@
+import { glibScheduler } from '@lib/glibScheduler';
+import { Debounce } from '@lib/schedule';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
@@ -50,12 +52,10 @@ function init(): Config {
   }
 
   const listeners = new Set<() => void>();
-  let pending: number | null = null;
+  const saveDebounce = new Debounce(SAVE_DELAY_MS, glibScheduler);
   let applyingExternal = false;
 
   function save(): void {
-    pending = null;
-
     try {
       const text = `${JSON.stringify(snapshot(values), null, 4)}\n`;
       if (text === lastWritten) {
@@ -78,13 +78,7 @@ function init(): Config {
 
   function scheduleSave(): void {
     // Debounce: a series of edits in a row (a slider) gives one write at the end.
-    if (pending !== null) {
-      GLib.source_remove(pending);
-    }
-    pending = GLib.timeout_add(GLib.PRIORITY_DEFAULT, SAVE_DELAY_MS, () => {
-      save();
-      return GLib.SOURCE_REMOVE;
-    });
+    saveDebounce.schedule(save);
   }
 
   function changed(): void {
@@ -113,11 +107,11 @@ function init(): Config {
       };
     },
     flush: () => {
-      if (pending === null) {
+      if (!saveDebounce.pending) {
         return; // the debounce already wrote - do not write a second time
       }
 
-      GLib.source_remove(pending);
+      saveDebounce.cancel();
       save();
     },
   };
@@ -138,10 +132,7 @@ function init(): Config {
         return;
       }
 
-      if (pending !== null) {
-        GLib.source_remove(pending);
-        pending = null;
-      }
+      saveDebounce.cancel();
 
       const raw = JSON.parse(text) as DeepPartial<ConfigValues>;
       const next = merge(SCHEMA, raw);
@@ -177,26 +168,14 @@ function init(): Config {
       Gio.FileMonitorFlags.NONE,
       null,
     );
-    let reloadId: number | null = null;
+    const reloadDebounce = new Debounce(RELOAD_DELAY_MS, glibScheduler);
 
     monitor.connect('changed', (_monitor, file) => {
       if (file?.get_basename() !== name) {
         return;
       }
 
-      if (reloadId !== null) {
-        GLib.source_remove(reloadId);
-      }
-
-      reloadId = GLib.timeout_add(
-        GLib.PRIORITY_DEFAULT,
-        RELOAD_DELAY_MS,
-        () => {
-          reloadId = null;
-          reload();
-          return GLib.SOURCE_REMOVE;
-        },
-      );
+      reloadDebounce.schedule(reload);
     });
 
     configMonitors.push(monitor);

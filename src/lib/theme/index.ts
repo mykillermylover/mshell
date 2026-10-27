@@ -1,4 +1,6 @@
 import { config } from '@lib/config/app';
+import { glibScheduler } from '@lib/glibScheduler';
+import { Debounce } from '@lib/schedule';
 import { Gdk, Gtk } from 'ags/gtk4';
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
@@ -136,19 +138,7 @@ export function initTheme(css: string) {
 
   sm.connect('notify::dark', sync);
 
-  let reloadId: number | null = null;
-
-  const schedule = () => {
-    if (reloadId !== null) {
-      GLib.source_remove(reloadId);
-    }
-
-    reloadId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, RELOAD_DELAY_MS, () => {
-      reloadId = null;
-      reload();
-      return GLib.SOURCE_REMOVE;
-    });
-  };
+  const reloadDebounce = new Debounce(RELOAD_DELAY_MS, glibScheduler);
 
   const monitor = Gio.File.new_for_path(PALETTE_DIR).monitor_directory(
     Gio.FileMonitorFlags.NONE,
@@ -157,7 +147,7 @@ export function initTheme(css: string) {
 
   monitor.connect('changed', (_monitor, file) => {
     if (file?.get_basename() === 'palette.css') {
-      schedule();
+      reloadDebounce.schedule(reload);
     }
   });
 
