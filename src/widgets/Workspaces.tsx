@@ -1,9 +1,15 @@
-import { focusWorkspace } from '@lib/hyprland';
 import { useWindowApi } from '@lib/windows/host';
 import { createBinding, For } from 'ags';
 import type { Timer } from 'ags/time';
 import { timeout } from 'ags/time';
 import AstalHyprland from 'gi://AstalHyprland';
+
+function focusWorkspace(id: number) {
+  AstalHyprland.get_default()?.dispatch(
+    `hl.dsp.focus({ workspace = "${id}" })`,
+    '',
+  );
+}
 
 export default function Workspaces() {
   const hyprland = AstalHyprland.get_default();

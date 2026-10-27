@@ -10,7 +10,7 @@ import {
   reactive,
   SCHEMA,
 } from '@lib/config';
-import { FILE_TYPES } from '@lib/files';
+import { FILE_TYPES } from '@lib/config/fileTypes';
 
 const noop = () => {};
 

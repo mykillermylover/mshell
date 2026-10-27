@@ -4,8 +4,7 @@ import AstalHyprland from 'gi://AstalHyprland';
 import GLib from 'gi://GLib';
 
 import { debugDomain } from './commands/debug';
-import type { MonitorFrames } from './commands/MonitorFrames';
-import type { DomainTable } from './commands/registry';
+import type { DomainTable, MonitorFrames } from './commands/registry';
 import { Registry } from './commands/registry';
 import { formatReply } from './commands/reply';
 import { windowDomain } from './commands/window';

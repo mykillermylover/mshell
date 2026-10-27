@@ -1,10 +1,10 @@
 import type { FieldStyle } from '@lib/config';
 import { Gtk } from 'ags/gtk4';
 
-import { boundsOf } from './bounds';
 import type { WindowHost } from './host';
 import { createWindowScope } from './scope';
 import type { FloatSpec } from './spec';
+import { boundsOf } from './widgets';
 import { asWidget } from './widgets';
 import { Window, type WindowMeasure } from './window';
 

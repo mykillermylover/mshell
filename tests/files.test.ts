@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { FILE_TYPES } from '@lib/files';
+import { FILE_TYPES } from '@lib/config/fileTypes';
 
 // The table claims a suffix resolves to a listed mime type; a typo like
 // `image/jpg` (the real type is image/jpeg) never matches and GTK reports nothing.

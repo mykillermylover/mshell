@@ -1,8 +1,13 @@
 // The debug domain: the same flat handler the shell always had, wrapped as a
 // domain. handleDebug is injected, so this module stays free of GJS and the
 // argument layout of the debug commands is unchanged.
-import type { MonitorFrames } from './MonitorFrames';
-import type { CallContext, Command, CommandTable, Domain } from './registry';
+import type {
+  CallContext,
+  Command,
+  CommandTable,
+  Domain,
+  MonitorFrames,
+} from './registry';
 
 /** What handleDebug looks like: it answers with text, undefined means "not mine". */
 export type DebugHandler<F> = (frame: F, argv: string[]) => string | undefined;

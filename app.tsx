@@ -1,7 +1,7 @@
 import { config } from '@lib/config/app';
 import { hookExit } from '@lib/exit';
 import { Shell } from '@lib/shell';
-import { applyTheme, initTheme } from '@lib/theme';
+import { applyTheme, initTheme } from '@lib/theme/apply';
 import { createBinding } from 'ags';
 import app from 'ags/gtk4/app';
 

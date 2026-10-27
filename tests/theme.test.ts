@@ -8,7 +8,7 @@ import {
   normalizeThemeScheme,
   ThemeScheme,
 } from '@lib/theme/policy';
-import { isAbsolutePath } from '@lib/utils';
+import { isAbsolutePath } from '@lib/theme/policy';
 
 /** As in the application: file contents → static config. */
 const fromJson = (text: string) => merge(SCHEMA, JSON.parse(text));

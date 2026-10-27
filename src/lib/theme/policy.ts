@@ -60,3 +60,8 @@ export function normalizeThemeScheme(value: string): ThemeScheme {
 export function isPaletteCss(css: string): boolean {
   return css.includes('--surface') && css.includes('--on_surface');
 }
+
+/** Only absolute paths: the palette is generated from the file as is. */
+export function isAbsolutePath(value: string): boolean {
+  return value.startsWith('/');
+}

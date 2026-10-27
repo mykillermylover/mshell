@@ -1,6 +1,7 @@
 import type { FieldStyle } from '@lib/config';
-import { noop } from '@lib/utils';
 import type { Gtk } from 'ags/gtk4';
+
+const noop = () => {};
 
 import type { WindowHost } from './host';
 import { popBody, popLayout } from './popLayout';

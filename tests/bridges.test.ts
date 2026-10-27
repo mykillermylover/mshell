@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { contactBetween, type FrameSpec } from '@lib/geometry';
+import { contactBetween, type FrameSpec } from '@lib/field/geometry';
 import {
   type Bridge,
   bridges,

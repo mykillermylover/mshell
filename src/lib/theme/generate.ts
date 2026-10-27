@@ -1,12 +1,15 @@
-import { glibScheduler } from '@lib/glibScheduler';
-import { Debounce } from '@lib/schedule';
-import { isAbsolutePath } from '@lib/utils';
+import { glibScheduler } from '@lib/time/glibScheduler';
+import { Debounce } from '@lib/time/schedule';
 import { execAsync } from 'ags/process';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import { PALETTE_DIR, PALETTE_FILE } from './paths';
-import type { ThemePreferredColors, ThemeScheme } from './policy';
+import {
+  isAbsolutePath,
+  type ThemePreferredColors,
+  type ThemeScheme,
+} from './policy';
 
 export interface PaletteRequest {
   wallpaper: string;

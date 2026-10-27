@@ -1,4 +1,4 @@
-import type { Body } from '@lib/geometry';
+import type { Body } from '@lib/field/geometry';
 
 /** Test body factory: the default width is set in each file. */
 export const makeBody =

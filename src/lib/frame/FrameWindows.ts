@@ -1,7 +1,7 @@
 // The window registry of one frame: ids, order, subscriptions and the single
 // measurement pass the whole field depends on. No GJS: a body only has to
 // measure, subscribe, apply and dispose.
-import type { Rect } from '@lib/geometry';
+import type { Rect } from '@lib/field/geometry';
 
 /** What the registry needs from a window. Window (Pop, Float) provides more. */
 export interface Measured {

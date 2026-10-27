@@ -1,4 +1,4 @@
-import { FILE_TYPES, type FileTypes } from '@lib/files';
+import { FILE_TYPES, type FileTypes } from '@lib/config/fileTypes';
 import type { Accessor } from 'ags';
 
 import {

@@ -1,5 +1,5 @@
-import { glibScheduler } from '@lib/glibScheduler';
-import { Debounce } from '@lib/schedule';
+import { glibScheduler } from '@lib/time/glibScheduler';
+import { Debounce } from '@lib/time/schedule';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 

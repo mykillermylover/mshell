@@ -1,6 +1,6 @@
 // Leaf descriptors: one declaration per key - the value, the limits and what
 // the form needs. No schema, no GJS.
-import type { FileKind } from '@lib/files';
+import type { FileKind } from '@lib/config/fileTypes';
 import type { Accessor } from 'ags';
 
 /** Config leaf: a value stored in JSON and compared by data. */

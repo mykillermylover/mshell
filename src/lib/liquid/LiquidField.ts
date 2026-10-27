@@ -1,5 +1,5 @@
 import type { FieldStyle } from '@lib/config';
-import { type Body, clampRadius, type Rect } from '@lib/geometry';
+import { type Body, clampRadius, type Rect } from '@lib/field/geometry';
 import { Gdk, Gtk } from 'ags/gtk4'; // first: pins Gtk 4 before Gsk is loaded
 import Graphene from 'gi://Graphene';
 import Gsk from 'gi://Gsk';

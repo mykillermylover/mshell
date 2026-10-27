@@ -5,7 +5,7 @@ import {
   contactBetween,
   contactsWithFrame,
   type FrameSpec,
-} from '@lib/geometry';
+} from '@lib/field/geometry';
 
 import { makeBody } from './support/body';
 

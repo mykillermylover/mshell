@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { debugDomain } from '@lib/commands/debug';
-import type { MonitorFrames } from '@lib/commands/MonitorFrames';
+import type { MonitorFrames } from '@lib/commands/registry';
 import { Registry } from '@lib/commands/registry';
 
 interface FakeFrame {

@@ -1,6 +1,7 @@
 // A gnim scope per window content: the lifecycle that gives content its api.
-import { noop } from '@lib/utils';
 import { createRoot } from 'ags';
+
+const noop = () => {};
 
 import { type WindowApi, WindowContext } from './host';
 

@@ -1,4 +1,4 @@
-import type { Rect } from '@lib/geometry';
+import type { Rect } from '@lib/field/geometry';
 import type { Accessor, Setter } from 'ags';
 import { createBinding, createState } from 'ags';
 import type { Gtk } from 'ags/gtk4';

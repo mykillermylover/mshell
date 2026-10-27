@@ -1,6 +1,5 @@
 // The window domain: the only place that knows about frames and monitors.
-import type { MonitorFrames } from './MonitorFrames';
-import type { CallContext, Command, Domain } from './registry';
+import type { CallContext, Command, Domain, MonitorFrames } from './registry';
 
 /** Actions on one window. A closed set: each one is a method of CommandFrame. */
 export type WindowAction = 'toggle' | 'open' | 'close';

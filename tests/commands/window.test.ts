@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import type { MonitorFrames } from '@lib/commands/MonitorFrames';
+import type { MonitorFrames } from '@lib/commands/registry';
 import type { CommandFrame, WindowCommand } from '@lib/commands/window';
 import { windowDomain } from '@lib/commands/window';
 

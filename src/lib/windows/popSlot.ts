@@ -1,8 +1,8 @@
-import type { Rect } from '@lib/geometry';
+import type { Rect } from '@lib/field/geometry';
 import { Gtk } from 'ags/gtk4';
 
-import { boundsOf } from './bounds';
 import type { Edge, PopLayout } from './popLayout';
+import { boundsOf } from './widgets';
 
 // The popover slides away from its edge, the zone - toward the edge. One source for both Revealers.
 const SLIDE = {

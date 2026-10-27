@@ -1,4 +1,4 @@
-import type { Rect } from '@lib/geometry';
+import type { Rect } from '@lib/field/geometry';
 import type { Astal } from 'ags/gtk4';
 import type giCairo from 'cairo';
 import Cairo from 'gi://cairo';

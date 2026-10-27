@@ -1,8 +1,10 @@
-import { asAccessor } from '@lib/utils';
-import type { Accessor } from 'ags';
-import { For } from 'ags';
+import { Accessor, For } from 'ags';
 import { createComputed, createState } from 'ags';
 import Gtk from 'gi://Gtk';
+
+/** The prop comes as a plain value or an Accessor: one shape for the body. */
+const asAccessor = <T,>(value: T | Accessor<T>): Accessor<T> =>
+  value instanceof Accessor ? value : new Accessor(() => value);
 
 export type DropDownProps<T extends string> = JSX.IntrinsicElements['box'] & {
   options: T[] | readonly T[] | Accessor<T[]>;

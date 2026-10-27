@@ -4,7 +4,7 @@ import {
   contactBetween,
   contactsWithFrame,
   type FrameSpec,
-} from '@lib/geometry';
+} from '@lib/field/geometry';
 
 /** Tolerance for closing the chosen contact, px. */
 const RESIDUAL = 0.5;

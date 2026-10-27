@@ -5,8 +5,8 @@ import {
   contactBetween,
   contactsWithFrame,
   type FrameSpec,
-} from '@lib/geometry';
-import { type SnapEnv, snapTo } from '@lib/snap';
+} from '@lib/field/geometry';
+import { type SnapEnv, snapTo } from '@lib/field/snap';
 
 import { makeBody } from './support/body';
 

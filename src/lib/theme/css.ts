@@ -1,7 +1,7 @@
 // CSS of the shell: one display-wide provider over the base styles plus the
 // generated palette. Nothing here knows about config or matugen.
-import { glibScheduler } from '@lib/glibScheduler';
-import { Debounce } from '@lib/schedule';
+import { glibScheduler } from '@lib/time/glibScheduler';
+import { Debounce } from '@lib/time/schedule';
 import { Gdk, Gtk } from 'ags/gtk4';
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';

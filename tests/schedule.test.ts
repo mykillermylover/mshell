@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { Debounce, type Scheduler } from '@lib/schedule';
+import { Debounce, type Scheduler } from '@lib/time/schedule';
 
 /** Fake scheduler: timers fire only when the test advances them. */
 const setup = () => {

@@ -2,7 +2,7 @@
 // child order (spacer at the frame, Revealer, zone at the far edge) and thickness.
 // Without GJS - tested in node.
 
-import type { Rect } from '@lib/geometry';
+import type { Rect } from '@lib/field/geometry';
 
 export type HorizontalEdge = 'top' | 'bottom';
 export type VerticalEdge = 'left' | 'right';
