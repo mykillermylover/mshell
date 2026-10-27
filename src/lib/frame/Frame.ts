@@ -1,5 +1,4 @@
 import { type FieldStyle, type Reactive, snapshot } from '@lib/config';
-import type { Rect } from '@lib/geometry';
 import { LiquidField } from '@lib/liquid/LiquidField';
 import { Float } from '@lib/windows/Float';
 import type { WindowHost } from '@lib/windows/host';
@@ -14,6 +13,7 @@ import GLib from 'gi://GLib';
 import { FrameInput } from './FrameInput';
 import { FrameKeyboard, type KeyboardMode } from './FrameKeyboard';
 import { FrameMotion } from './FrameMotion';
+import { FrameWindows } from './FrameWindows';
 
 /** The arbitration speaks in its own words; Astal names the same three states. */
 const KEYMODE: Record<KeyboardMode, Astal.Keymode> = {
@@ -37,9 +37,7 @@ export class Frame {
   readonly connector: string | null;
   private field = new LiquidField();
   private fixed = new Gtk.Fixed();
-  private windows = new Map<string, Window>();
-  /** Window unsubscribes from its Revealers; removed in remove(). */
-  private readonly unsubscribes = new Map<string, () => void>();
+  private readonly windows: FrameWindows<Window>;
   private readonly host: WindowHost;
   private readonly overlay: Gtk.Overlay;
   private readonly input: FrameInput;
@@ -58,8 +56,8 @@ export class Frame {
     },
     size: () => ({ w: this.field.get_width(), h: this.field.get_height() }),
     border: () => this.style.border(),
-    rects: () => this.measure().rects,
-    inputs: () => this.measure().inputs,
+    rects: () => this.windows.measure().rects,
+    inputs: () => this.windows.measure().inputs,
     region: () => this.input.boxes,
     move: (float: Float, x: number, y: number) => {
       this.motion.move(float, x, y);
@@ -115,6 +113,8 @@ export class Frame {
     });
 
     this.input = new FrameInput(this.surface);
+    // Windows are measured in field coordinates: the shape is a function of the layout.
+    this.windows = new FrameWindows<Window>((body) => body.measure(this.field));
     // Keymode lives on the surface, focusability on every window: both are injected.
     this.keyboard = new FrameKeyboard({
       keymode: (mode) => {
@@ -126,7 +126,7 @@ export class Frame {
     this.field.rects = () => {
       // Single pass: the scene draws visible bodies, input may be wider
       // (for a closed hover zone it includes the lip and the frame strip up to the edge).
-      const { rects, inputs } = this.measure();
+      const { rects, inputs } = this.windows.measure();
       this.input.sync(inputs);
       return rects;
     };
@@ -146,7 +146,7 @@ export class Frame {
       field: this.field,
       fixed: this.fixed,
       style: () => snapshot(this.style),
-      bodies: () => this.bodies(),
+      bodies: () => this.windows.bodies(),
     });
 
     for (const spec of floats) {
@@ -173,7 +173,7 @@ export class Frame {
     motion.connect('motion', check);
     motion.connect('enter', check);
     motion.connect('leave', () => {
-      for (const body of this.windows.values()) {
+      for (const body of this.windows.bodies()) {
         body.hoverOut();
       }
     });
@@ -183,7 +183,7 @@ export class Frame {
       this.input.reset();
 
       GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-        for (const body of this.windows.values()) {
+        for (const body of this.windows.bodies()) {
           if (body instanceof Pop) {
             body.prewarm();
           }
@@ -218,7 +218,7 @@ export class Frame {
   }
 
   closeAll() {
-    for (const body of this.bodies()) {
+    for (const body of this.windows.bodies()) {
       body.close();
     }
     this.motion.tick();
@@ -226,16 +226,12 @@ export class Frame {
 
   /** Apply the current config: durations and paddings, poke() will update the shape. */
   refresh() {
-    for (const body of this.windows.values()) {
-      body.apply();
-    }
+    this.windows.apply();
     this.motion.poke();
   }
 
   destroy() {
-    for (const body of this.bodies()) {
-      body.dispose();
-    }
+    this.windows.dispose();
     this.surface.destroy();
   }
 
@@ -268,20 +264,17 @@ export class Frame {
   /** Remove a window together with its content and subscriptions. */
   remove(id: string) {
     const body = this.windows.get(id);
-    if (!body) {
+
+    if (!this.windows.remove(id)) {
       return;
     }
 
-    this.windows.delete(id);
-    this.unsubscribes.get(id)?.();
-    this.unsubscribes.delete(id);
     if (body instanceof Pop) {
       this.overlay.remove_overlay(body.widget);
     } else if (body instanceof Float) {
       this.motion.forget(body);
       this.fixed.remove(body.revealer);
     }
-    body.dispose();
     this.motion.poke();
   }
 
@@ -296,17 +289,14 @@ export class Frame {
     create: () => T,
     mount: (body: T) => void,
   ) {
+    // The registry rejects a duplicate id; the mount must not run in that case.
     if (this.windows.has(id)) {
       throw new Error(`duplicate window id: ${id}`);
     }
 
     const body = create();
-    this.unsubscribes.set(
-      id,
-      body.subscribe(() => this.motion.poke()),
-    );
+    this.windows.add(body, () => this.motion.poke());
     mount(body);
-    this.windows.set(id, body);
     this.motion.poke();
   }
 
@@ -314,49 +304,23 @@ export class Frame {
 
   /** Only the specified window remains focusable. */
   private isolateFocus(owner: string | null) {
-    for (const [id, body] of this.windows) {
-      body.setFocusable(id === owner);
+    for (const body of this.windows.bodies()) {
+      body.setFocusable(body.id === owner);
     }
   }
 
   private probe(x: number, y: number) {
-    for (const body of this.windows.values()) {
+    for (const body of this.windows.bodies()) {
       body.probe(x, y, this.surface);
     }
   }
 
   /** A popover opened: other exclusive windows close unless pinned. */
   private activate(activeId: string) {
-    for (const body of this.windows.values()) {
+    for (const body of this.windows.bodies()) {
       if (body.id !== activeId && body.exclusive) {
         body.dismiss();
       }
     }
-  }
-
-  /** All field bodies: pops and floats. */
-  private bodies(): Window[] {
-    return [...this.windows.values()];
-  }
-
-  /**
-   * Bodies and input areas in field coordinates in a single pass over the windows.
-   * No other keys: liquid is a function of the layout.
-   */
-  private measure(): { rects: Rect[]; inputs: Rect[] } {
-    const rects: Rect[] = [];
-    const inputs: Rect[] = [];
-
-    for (const body of this.windows.values()) {
-      const measured = body.measure(this.field);
-      if (measured.body) {
-        rects.push(measured.body);
-      }
-      if (measured.input) {
-        inputs.push(measured.input);
-      }
-    }
-
-    return { rects, inputs };
   }
 }
