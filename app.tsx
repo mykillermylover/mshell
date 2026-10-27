@@ -1,4 +1,5 @@
-import { config, hookExit } from '@lib/config/app';
+import { config } from '@lib/config/app';
+import { hookExit } from '@lib/exit';
 import { Shell } from '@lib/shell';
 import { applyTheme, initTheme } from '@lib/theme';
 import { createBinding } from 'ags';

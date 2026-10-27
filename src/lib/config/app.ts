@@ -1,8 +1,5 @@
-import { Gtk } from 'ags/gtk4';
-import app from 'ags/gtk4/app';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
-import GLibUnix from 'gi://GLibUnix';
 
 import {
   type Config,
@@ -27,45 +24,9 @@ const PATH = GLib.build_filenamev([
 ]);
 const SAVE_DELAY_MS = 500;
 const RELOAD_DELAY_MS = 200;
-// POSIX signal numbers: GLibUnix does not export them.
-const SIGTERM = 15;
-const SIGINT = 2;
-
-// Points where the process actually exits. AGS 3 in quit() immediately calls
-// exit(): Gtk.Application::shutdown is not emitted, and the DBus handler `ags quit`
-// holds its own app.quit binding from the App constructor - it cannot be
-// replaced. The common path of any quit(), including the DBus copy, is the
-// Gtk.Application prototype. Plus session signals: Hyprland logout, kill, Ctrl+C.
-let exitHooked = false;
 
 // FileMonitor must live as long as the application lives.
 const configMonitors: Gio.FileMonitor[] = [];
-
-export function hookExit(flush: () => void): void {
-  if (exitHooked) {
-    return;
-  }
-
-  const quit = Gtk.Application.prototype.quit;
-  Gtk.Application.prototype.quit = function (this: Gtk.Application) {
-    try {
-      flush();
-    } finally {
-      quit.call(this);
-    }
-  };
-
-  app.connect('shutdown', flush);
-
-  const stop = () => {
-    app.quit(); // the hook above writes the config
-    return GLib.SOURCE_REMOVE;
-  };
-  GLibUnix.signal_add(GLib.PRIORITY_DEFAULT, SIGTERM, stop);
-  GLibUnix.signal_add(GLib.PRIORITY_DEFAULT, SIGINT, stop);
-
-  exitHooked = true;
-}
 
 function init(): Config {
   const exists = GLib.file_test(PATH, GLib.FileTest.EXISTS);
