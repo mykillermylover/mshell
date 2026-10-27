@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import type { Rect } from '@lib/geometry';
 import { FrameWindows, type Measured } from '@lib/frame/FrameWindows';
+import type { Rect } from '@lib/geometry';
+import { noop } from '@lib/utils';
 
 interface Body extends Measured {
   readonly id: string;
@@ -23,7 +24,7 @@ const body = (
   shape: state,
   disposed: false,
   applied: 0,
-  subscribe: () => () => {},
+  subscribe: () => noop,
   dispose() {
     this.disposed = true;
   },

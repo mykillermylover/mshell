@@ -13,6 +13,7 @@ const shell = new Shell(INITIAL_POPS, INITIAL_FLOATS);
 
 app.start({
   main() {
+    applyTheme(true);
     initTheme(style);
 
     // The exit hook installs the GObject patch and catches session signals: only in main.
