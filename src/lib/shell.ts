@@ -3,6 +3,12 @@ import app from 'ags/gtk4/app';
 import AstalHyprland from 'gi://AstalHyprland';
 import GLib from 'gi://GLib';
 
+import { debugDomain } from './commands/debug';
+import type { MonitorFrames } from './commands/MonitorFrames';
+import type { DomainTable } from './commands/registry';
+import { Registry } from './commands/registry';
+import { formatReply } from './commands/reply';
+import { windowDomain } from './commands/window';
 import { config } from './config/app';
 import { handleDebug } from './debug';
 import { Frame } from './frame/Frame';
@@ -11,17 +17,39 @@ import type { FloatSpec, PopSpec } from './windows/spec';
 const debugEnabled = GLib.getenv('MSHELL_DEBUG') === '1';
 
 /**
- * Window host for all monitors: keeps a Frame per screen, creates and
- * destroys them when the monitor list changes, and handles request commands.
+ * Window host for all monitors: keeps a Frame per screen and creates and
+ * destroys them when the monitor list changes. Commands are domains, wired
+ * together here (see lib/commands/).
  */
 export class Shell {
   private frames = new Map<Gdk.Monitor, Frame>();
   private readonly queued = new Set<string>();
+  private readonly commands: Registry;
 
   constructor(
     private readonly pops: PopSpec[],
     private readonly floats: FloatSpec[],
-  ) {}
+  ) {
+    const frames: MonitorFrames<Frame> = {
+      byConnector: (connector) =>
+        [...this.frames.values()].find(
+          (frame) => frame.connector === connector,
+        ),
+      all: () => [...this.frames.values()],
+      focused: () => {
+        const list = [...this.frames.values()];
+        const name = AstalHyprland.get_default()?.focusedMonitor?.name;
+        return list.find((frame) => frame.connector === name) ?? list[0];
+      },
+    };
+
+    const domains: DomainTable = { window: windowDomain(frames) };
+    if (debugEnabled) {
+      domains.debug = debugDomain(frames, handleDebug);
+    }
+
+    this.commands = new Registry(domains);
+  }
 
   reconcile() {
     const current = app.get_monitors();
@@ -65,53 +93,11 @@ export class Shell {
     });
   }
 
-  request(argv: string[], respond: (r: string) => void) {
-    const named = [...this.frames.values()].find(
-      (frame) => frame.connector === argv[0],
+  /** `mshell <domain> <action> [args...] [--monitor <connector>]` */
+  request(argv: string[], respond: (reply: string) => void) {
+    void Promise.resolve(this.commands.run(argv)).then((reply) =>
+      respond(formatReply(reply)),
     );
-    const args = named ? argv.slice(1) : argv;
-    const [cmd, id] = args;
-
-    // Without a connector closeall applies to all monitors, not only
-    // the focused one: that's exactly what the command name promises.
-    if (cmd === 'closeall') {
-      const targets = named ? [named] : this.frames.values();
-      for (const frame of targets) {
-        frame.closeAll();
-      }
-      return respond('ok');
-    }
-
-    const frame = named ?? this.focusedFrame();
-    if (!frame) {
-      return respond('no frame');
-    }
-
-    switch (cmd) {
-      case 'toggle':
-      case 'open':
-      case 'close': {
-        if (!id || !frame.has(id)) {
-          return respond(`unknown window: ${id ?? ''}`);
-        }
-        if (cmd === 'toggle') {
-          frame.toggle(id);
-        } else if (cmd === 'open') {
-          frame.open(id);
-        } else {
-          frame.close(id);
-        }
-        return respond('ok');
-      }
-    }
-
-    if (debugEnabled) {
-      const result = handleDebug(frame, args);
-      if (result !== undefined) {
-        return respond(result);
-      }
-    }
-    return respond(`unknown command: ${cmd}`);
   }
 
   /** Idle coalescing: several calls in a row give one pass. */
@@ -125,11 +111,5 @@ export class Shell {
       run();
       return GLib.SOURCE_REMOVE;
     });
-  }
-
-  private focusedFrame(): Frame | undefined {
-    const frames = [...this.frames.values()];
-    const name = AstalHyprland.get_default()?.focusedMonitor?.name;
-    return frames.find((frame) => frame.connector === name) ?? frames[0];
   }
 }

@@ -2,8 +2,9 @@
 # Launcher for the built shell (npm run build).
 #
 #   mshell-dev                      — run the build/mshell-dev bundle
-#   mshell-dev closeall             — AGS 3 IPC request to the running instance
-#   mshell-dev toggle player
+#   mshell-dev window closeall      — AGS 3 IPC request to the running instance
+#   mshell-dev window toggle player
+#   mshell-dev window close settings --monitor DP-3
 #
 # A symlink is placed in ~/.bin (npm run update-binary): the bundle path is resolved
 # from the script itself, a copy in another directory would not find it.
@@ -27,4 +28,7 @@ fi
 
 # Arguments are passed separately: requestHandler in app.tsx parses the
 # argv array, not a string (in AGS 2 it was the other way around).
-exec ags request "$@"
+#
+# `--` ends the flags of `ags request` itself (cobra would reject --monitor
+# as its own unknown flag), so the shell always receives the arguments as-is.
+exec ags request -- "$@"

@@ -27,8 +27,8 @@ app.start({
       shell.refresh();
     });
   },
-  // ags request [<connector>] toggle|open|close|closeall <id>
-  // Debug commands — only with MSHELL_DEBUG=1, gated in lib/shell.ts.
+  // ags request <domain> <action> [args...] [--monitor <connector>]
+  // Domains are wired in lib/shell.ts; `debug` exists only with MSHELL_DEBUG=1.
   requestHandler(argv: string[], respond: (r: string) => void) {
     shell.request(argv, respond);
   },
