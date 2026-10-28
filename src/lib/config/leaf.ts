@@ -1,16 +1,13 @@
 // Leaf descriptors: one declaration per key - the value, the limits and what
 // the form needs. No schema, no GJS.
 import type { FileKind } from '@lib/config/fileTypes';
-import type { Accessor } from 'ags';
+import type { State } from '@lib/reactive';
 
 /** Config leaf: a value stored in JSON and compared by data. */
 export type Leaf = string | number | boolean;
 
 /** Static config: leaf or nested section. */
 export type Section = { [key: string]: Leaf | Section };
-
-/** Config leaf: Accessor plus setter. */
-export type State<T> = Accessor<T> & { set(value: T): void };
 
 /** Reactive tree node: leaf state or nested section. */
 export type ReactiveNode = State<Leaf> | ReactiveSection;

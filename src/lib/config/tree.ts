@@ -1,3 +1,4 @@
+import { settable, type State } from '@lib/reactive';
 import { Accessor } from 'ags';
 
 import type { DeepPartial, Limits, Values } from './derive';
@@ -9,7 +10,6 @@ import type {
   ReactiveNode,
   ReactiveSection,
   Section,
-  State,
 } from './leaf';
 import { isLeaf } from './leaf';
 
@@ -56,26 +56,24 @@ function state<T>(
     },
   );
 
-  return Object.assign(read, {
-    set(next: T) {
-      // NaN/Infinity from computations must not reach the settings.
-      if (typeof next === 'number' && !Number.isFinite(next)) {
-        return;
-      }
+  return settable(read, (next: T) => {
+    // NaN/Infinity from computations must not reach the settings.
+    if (typeof next === 'number' && !Number.isFinite(next)) {
+      return;
+    }
 
-      const nextValue = clampNumber(next, range);
+    const nextValue = clampNumber(next, range);
 
-      // Leaves are primitives: comparison by value is enough.
-      if (Object.is(nextValue, value)) {
-        return;
-      }
+    // Leaves are primitives: comparison by value is enough.
+    if (Object.is(nextValue, value)) {
+      return;
+    }
 
-      value = nextValue;
-      for (const listener of listeners) {
-        listener();
-      }
-      changed();
-    },
+    value = nextValue;
+    for (const listener of listeners) {
+      listener();
+    }
+    changed();
   });
 }
 

@@ -1,4 +1,5 @@
 import { FILE_TYPES, type FileTypes } from '@lib/config/fileTypes';
+import type { State } from '@lib/reactive';
 import type { Accessor } from 'ags';
 
 import {
@@ -8,7 +9,6 @@ import {
   type Node,
   type ReactiveNode,
   type ReactiveSection,
-  type State,
 } from './leaf';
 import { type Config, SCHEMA } from './schema';
 
