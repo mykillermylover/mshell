@@ -1,5 +1,5 @@
 // Хаб плееров: список обёрток, приоритет по правилам priority.ts, ручной выбор.
-// Модульный инстанс создаётся один раз; consumers берут `players`.
+// Инстанс один на приложение: consumers берут Mpris.get_default().
 import { type Accessor, createBinding, createComputed, createState } from 'ags';
 import AstalMpris from 'gi://AstalMpris';
 

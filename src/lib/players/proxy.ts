@@ -38,9 +38,11 @@ export function wrap<T extends GObject.Object>(raw: T): Wrapped<T> {
         return Reflect.get(obj, prop);
       }
 
-      // Прокси не должен быть thenable: иначе `await player` зависнет.
-      if (prop === 'then') {
-        return;
+      // Неизвестное имя не должно превращаться в биндинг: createBinding бросит
+      // «cannot get property». Так JSON.stringify (ищет toJSON), console.log и
+      // опечатки получают обычный undefined вместо исключения.
+      if (!(prop in obj)) {
+        return Reflect.get<object, PropertyKey>(obj, prop);
       }
 
       let isMethod = method.get(prop);
