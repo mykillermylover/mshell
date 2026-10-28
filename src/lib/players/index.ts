@@ -1,13 +1,22 @@
 // Хаб плееров: список обёрток, приоритет по правилам priority.ts, ручной выбор.
 // Инстанс один на приложение: consumers берут Mpris.get_default().
-import { type Accessor, createBinding, createComputed, createState } from 'ags';
+import {
+  type Accessor,
+  createBinding,
+  createComputed,
+  createState,
+  type Setter,
+} from 'ags';
 import AstalMpris from 'gi://AstalMpris';
 
-import { initial, type Peer, step } from './priority';
+import { initial, type Peer, type PriorityState, step } from './priority';
 import { type Player, wrap } from './proxy';
 
-const isPlaying = (status: AstalMpris.PlaybackStatus) =>
-  status === AstalMpris.PlaybackStatus.PLAYING;
+const toPeer = (player: AstalMpris.Player): Peer => ({
+  busName: player.busName,
+  playing: player.playbackStatus === AstalMpris.PlaybackStatus.PLAYING,
+  available: player.available,
+});
 
 export class Mpris {
   static #instance: Mpris | null = null;
@@ -20,8 +29,28 @@ export class Mpris {
     return Mpris.#instance;
   }
 
+  /** Источник событий и данных — AstalMpris, инжектится в конструктор. */
+  readonly #source: AstalMpris.Mpris;
+
+  /** Сырые плееры Astal; источник для list. */
+  readonly #rawPlayers: Accessor<AstalMpris.Player[]>;
+
+  /** Имя приоритетного плеера — единственный реактивный выход автомата. */
+  readonly #primaryName: Accessor<string | null>;
+  readonly #setPrimaryName: Setter<string | null>;
+
+  /** Ручной выбор по busName: имя переживает пересоздание объекта плеера. */
+  readonly #chosenName: Accessor<string | null>;
+  readonly #setChosenName: Setter<string | null>;
+
   /** Обёртки по исходному объекту: один плеер — один Player. */
-  #cache = new WeakMap<AstalMpris.Player, Player>();
+  readonly #cache = new WeakMap<AstalMpris.Player, Player>();
+
+  /** id коннектов notify::playback-status по каждому наблюдаемому плееру. */
+  readonly #connections = new Map<AstalMpris.Player, number>();
+
+  /** Состояние автомата: двигается событиями, живёт вне gnim. */
+  #state: PriorityState = initial();
 
   /** Все плееры, видимые Astal, по возрастанию busName. */
   readonly list: Accessor<Player[]>;
@@ -32,59 +61,121 @@ export class Mpris {
   /** Ручной выбор, пока плеер жив; иначе приоритетный. */
   readonly selected: Accessor<Player | null>;
 
-  /** Зафиксировать выбор; null — вернуть авто. */
-  readonly select: (busName: string | null) => void;
+  private constructor(source: AstalMpris.Mpris) {
+    this.#source = source;
+    this.#rawPlayers = createBinding(source, 'players');
 
-  private constructor(mpris: AstalMpris.Mpris) {
-    const raw = createBinding(mpris, 'players');
+    [this.#primaryName, this.#setPrimaryName] = createState<string | null>(
+      null,
+    );
+    [this.#chosenName, this.#setChosenName] = createState<string | null>(null);
 
-    const wrapCached = (p: AstalMpris.Player): Player => {
-      let w = this.#cache.get(p);
-      if (!w) {
-        w = wrap(p);
-        this.#cache.set(p, w);
-      }
-      return w;
-    };
+    this.list = createComputed(() => this.#sortedPlayers());
+    this.primary = createComputed(() =>
+      this.#playerByName(this.#primaryName()),
+    );
+    this.selected = createComputed(() => this.#chosenOrPrimary());
 
-    this.list = createComputed(() =>
-      raw()
-        .map(wrapCached)
-        .sort((a, b) => a.busName.peek().localeCompare(b.busName.peek())),
+    source.connect('player-added', () => this.#sync());
+    source.connect('player-closed', (_source, player) => this.#sync(player));
+
+    this.#sync();
+  }
+
+  /** Зафиксировать выбор плеера; null — вернуть авто. */
+  select(player: Player | null): void {
+    if (player === null) {
+      this.#setChosenName(null);
+      return;
+    }
+
+    this.#setChosenName(player.busName.peek());
+  }
+
+  #sortedPlayers(): Player[] {
+    return this.#rawPlayers()
+      .map((player) => this.#wrap(player))
+      .sort((a, b) => a.busName.peek().localeCompare(b.busName.peek()));
+  }
+
+  #playerByName(busName: string | null): Player | null {
+    if (busName === null) {
+      return null;
+    }
+
+    const found = this.list().find(
+      (player) => player.busName.peek() === busName,
     );
 
-    // Состояние автомата живёт в замыкании computed: пересчёт только при
-    // смене состава или playbackStatus/available, но не на тик позиции.
-    let state = initial();
-    this.primary = createComputed(() => {
-      const all = this.list();
-      const peers: Peer[] = all.map((p) => ({
-        busName: p.busName.peek(),
-        playing: isPlaying(p.playbackStatus()),
-        available: p.available(),
-      }));
+    return found ?? null;
+  }
 
-      state = step(state, peers);
+  #chosenOrPrimary(): Player | null {
+    const chosen = this.#playerByName(this.#chosenName());
 
-      return all.find((p) => p.busName.peek() === state.primary) ?? null;
-    });
+    if (chosen !== null) {
+      return chosen;
+    }
 
-    const [chosen, setChosen] = createState<string | null>(null);
-    this.select = setChosen;
+    return this.primary();
+  }
 
-    this.selected = createComputed(() => {
-      const want = chosen();
-      const all = this.list();
+  #wrap(player: AstalMpris.Player): Player {
+    let wrapped = this.#cache.get(player);
 
-      if (want) {
-        const found = all.find((p) => p.busName.peek() === want);
-        if (found) {
-          return found;
-        }
+    if (!wrapped) {
+      wrapped = wrap(player);
+      this.#cache.set(player, wrapped);
+    }
+
+    return wrapped;
+  }
+
+  // Автомат двигают события, а не чтение: шаг выполняется в момент notify,
+  // поэтому переходы не схлопываются, пока primary никто не читает.
+  // Нас интересует только playback-status — Astal присваивает его в каждом
+  // sync(), так что одно событие на плеер покрывает все изменения.
+  #watch(player: AstalMpris.Player): void {
+    if (this.#connections.has(player)) {
+      return;
+    }
+
+    // Обработчик получает первым аргументом источник — оборачиваем, иначе
+    // #sync примет плеер за «закрытый» и выбросит его из среза.
+    this.#connections.set(
+      player,
+      player.connect('notify::playback-status', () => this.#sync()),
+    );
+  }
+
+  #unwatch(player: AstalMpris.Player): void {
+    const id = this.#connections.get(player);
+
+    if (id === undefined) {
+      return;
+    }
+
+    player.disconnect(id);
+    this.#connections.delete(player);
+  }
+
+  // Закрытый плеер Astal убирает из players уже после сигнала, поэтому
+  // payload исключается руками: иначе правило «приоритет исчез» не сработает.
+  #sync(closed?: AstalMpris.Player): void {
+    const players = this.#source.players.filter((player) => player !== closed);
+
+    for (const player of players) {
+      this.#watch(player);
+    }
+
+    for (const player of this.#connections.keys()) {
+      if (!players.includes(player)) {
+        this.#unwatch(player);
       }
+    }
 
-      return this.primary();
-    });
+    this.#state = step(this.#state, players.map(toPeer));
+    this.#setPrimaryName(this.#state.primary);
   }
 }
 
