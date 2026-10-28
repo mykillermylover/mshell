@@ -39,22 +39,22 @@ const MIN_SIGMA = 1;
  */
 @register({ GTypeName: 'FrameLiquidField' })
 export class LiquidField extends Gtk.Widget {
-  private style: (() => FieldStyle) | null = null;
+  #style: (() => FieldStyle) | null = null;
   rects: () => Rect[] = () => [];
 
   /** The style is passed as a getter: the snapshot is taken at draw time. */
   configure(style: () => FieldStyle) {
-    this.style = style;
+    this.#style = style;
   }
 
   vfunc_snapshot(snap: Gtk.Snapshot) {
     const width = this.get_width();
     const height = this.get_height();
-    if (!this.style || width <= 0 || height <= 0) {
+    if (!this.#style || width <= 0 || height <= 0) {
       return;
     }
     const { border, screenRadius, windowRadius, blurRadius, snapReach, sharp } =
-      this.style();
+      this.#style();
     const sigma = Math.max(MIN_SIGMA, blurRadius * SIGMA_PER_MELT);
 
     const cssColor = this.get_color(); // CSS: .frame-shape { color: ... }

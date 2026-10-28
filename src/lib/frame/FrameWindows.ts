@@ -32,46 +32,50 @@ export type MeasureBody<T> = (body: T) => {
  * so the shape is a function of the windows and nothing else.
  */
 export class FrameWindows<T extends Registered = Registered> {
-  private readonly map = new Map<string, T>();
-  private readonly unsubscribes = new Map<string, () => void>();
+  readonly #map = new Map<string, T>();
+  readonly #unsubscribes = new Map<string, () => void>();
 
   /** The measure is injected: the registry knows nothing about GTK coordinates. */
-  constructor(private readonly measureBody: MeasureBody<T>) {}
+  readonly #measureBody: MeasureBody<T>;
+
+  constructor(measureBody: MeasureBody<T>) {
+    this.#measureBody = measureBody;
+  }
 
   /** Add with a unique id, subscribe to its shape changes. */
   add(body: T, poke: () => void = () => {}) {
-    if (this.map.has(body.id)) {
+    if (this.#map.has(body.id)) {
       throw new Error(`duplicate window id: ${body.id}`);
     }
 
-    this.map.set(body.id, body);
-    this.unsubscribes.set(body.id, body.subscribe(poke));
+    this.#map.set(body.id, body);
+    this.#unsubscribes.set(body.id, body.subscribe(poke));
   }
 
   get(id: string): T | undefined {
-    return this.map.get(id);
+    return this.#map.get(id);
   }
 
   has(id: string): boolean {
-    return this.map.has(id);
+    return this.#map.has(id);
   }
 
   /** Drop the window from the field and dispose it; false if there was none. */
   remove(id: string): boolean {
-    const body = this.map.get(id);
+    const body = this.#map.get(id);
     if (!body) {
       return false;
     }
 
-    this.map.delete(id);
-    this.unsubscribes.get(id)?.();
-    this.unsubscribes.delete(id);
+    this.#map.delete(id);
+    this.#unsubscribes.get(id)?.();
+    this.#unsubscribes.delete(id);
     body.dispose();
     return true;
   }
 
   bodies(): T[] {
-    return [...this.map.values()];
+    return [...this.#map.values()];
   }
 
   /**
@@ -83,8 +87,8 @@ export class FrameWindows<T extends Registered = Registered> {
     const rects: Rect[] = [];
     const inputs: Rect[] = [];
 
-    for (const body of this.map.values()) {
-      const measured = this.measureBody(body);
+    for (const body of this.#map.values()) {
+      const measured = this.#measureBody(body);
       if (measured.body) {
         rects.push(measured.body);
       }
@@ -97,7 +101,7 @@ export class FrameWindows<T extends Registered = Registered> {
   }
 
   apply() {
-    for (const body of this.map.values()) {
+    for (const body of this.#map.values()) {
       body.apply();
     }
   }
@@ -106,7 +110,7 @@ export class FrameWindows<T extends Registered = Registered> {
     for (const body of this.bodies()) {
       body.dispose();
     }
-    this.map.clear();
-    this.unsubscribes.clear();
+    this.#map.clear();
+    this.#unsubscribes.clear();
   }
 }

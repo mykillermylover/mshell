@@ -15,42 +15,42 @@ interface HoverGateDeps {
  * `hideDelay`. A repeated event cancels the opposite timer.
  */
 export class HoverGate {
-  private pending: Cancel | null = null;
-  private readonly deps: HoverGateDeps;
+  #pending: Cancel | null = null;
+  readonly #deps: HoverGateDeps;
 
   constructor(deps: HoverGateDeps) {
-    this.deps = deps;
+    this.#deps = deps;
   }
 
   enter(openDelay: number) {
     this.cancel();
-    if (this.deps.isOpen()) {
+    if (this.#deps.isOpen()) {
       return;
     }
-    this.after(openDelay, () => this.deps.open());
+    this.#after(openDelay, () => this.#deps.open());
   }
 
   leave(hideDelay: number) {
     this.cancel();
-    if (!this.deps.isOpen()) {
+    if (!this.#deps.isOpen()) {
       return;
     }
-    this.after(hideDelay, () => this.deps.close());
+    this.#after(hideDelay, () => this.#deps.close());
   }
 
   /** Cancel the scheduled transition (destroy, explicit open/close via IPC). */
   cancel() {
-    this.pending?.();
-    this.pending = null;
+    this.#pending?.();
+    this.#pending = null;
   }
 
-  private after(ms: number, run: () => void) {
+  #after(ms: number, run: () => void) {
     if (ms <= 0) {
       run();
       return;
     }
-    this.pending = this.deps.schedule(ms, () => {
-      this.pending = null;
+    this.#pending = this.#deps.schedule(ms, () => {
+      this.#pending = null;
       run();
     });
   }

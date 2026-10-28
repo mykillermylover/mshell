@@ -21,22 +21,24 @@ const debugEnabled = GLib.getenv('MSHELL_DEBUG') === '1';
  * together here (see lib/commands/).
  */
 export class Shell {
-  private frames = new Map<Gdk.Monitor, Frame>();
-  private readonly queued = new Set<string>();
-  private readonly commands: Registry;
+  #frames = new Map<Gdk.Monitor, Frame>();
+  readonly #queued = new Set<string>();
+  readonly #commands: Registry;
+  readonly #pops: PopSpec[];
+  readonly #floats: FloatSpec[];
 
-  constructor(
-    private readonly pops: PopSpec[],
-    private readonly floats: FloatSpec[],
-  ) {
+  constructor(pops: PopSpec[], floats: FloatSpec[]) {
+    this.#pops = pops;
+    this.#floats = floats;
+
     const frames: MonitorFrames<Frame> = {
       byConnector: (connector) =>
-        [...this.frames.values()].find(
+        [...this.#frames.values()].find(
           (frame) => frame.connector === connector,
         ),
-      all: () => [...this.frames.values()],
+      all: () => [...this.#frames.values()],
       focused: () => {
-        const list = [...this.frames.values()];
+        const list = [...this.#frames.values()];
         const name = AstalHyprland.get_default()?.focusedMonitor?.name;
         return list.find((frame) => frame.connector === name) ?? list[0];
       },
@@ -47,25 +49,25 @@ export class Shell {
       domains.debug = debugDomain(frames, handleDebug);
     }
 
-    this.commands = new Registry(domains);
+    this.#commands = new Registry(domains);
   }
 
   reconcile() {
     const current = app.get_monitors();
 
     for (const monitor of current) {
-      if (!this.frames.has(monitor)) {
-        this.frames.set(
+      if (!this.#frames.has(monitor)) {
+        this.#frames.set(
           monitor,
-          new Frame(monitor, this.pops, this.floats, config.style),
+          new Frame(monitor, this.#pops, this.#floats, config.style),
         );
       }
     }
 
-    for (const [monitor, frame] of this.frames) {
+    for (const [monitor, frame] of this.#frames) {
       if (!current.includes(monitor)) {
         frame.destroy();
-        this.frames.delete(monitor);
+        this.#frames.delete(monitor);
       }
     }
   }
@@ -76,7 +78,7 @@ export class Shell {
    * coalesce a batch of changes (two monitors plugged in at once - one reconcile).
    */
   scheduleReconcile() {
-    this.queueOnce('reconcile', () => this.reconcile());
+    this.#queueOnce('reconcile', () => this.reconcile());
   }
 
   /**
@@ -85,8 +87,8 @@ export class Shell {
    * a full snap on every pixel.
    */
   refresh() {
-    this.queueOnce('refresh', () => {
-      for (const frame of this.frames.values()) {
+    this.#queueOnce('refresh', () => {
+      for (const frame of this.#frames.values()) {
         frame.refresh();
       }
     });
@@ -94,19 +96,19 @@ export class Shell {
 
   /** `mshell <domain> <action> [args...] [--monitor <connector>]` */
   request(argv: string[], respond: (reply: string) => void) {
-    void Promise.resolve(this.commands.run(argv)).then((reply) =>
+    void Promise.resolve(this.#commands.run(argv)).then((reply) =>
       respond(formatReply(reply)),
     );
   }
 
   /** Idle coalescing: several calls in a row give one pass. */
-  private queueOnce(key: string, run: () => void) {
-    if (this.queued.has(key)) {
+  #queueOnce(key: string, run: () => void) {
+    if (this.#queued.has(key)) {
       return;
     }
-    this.queued.add(key);
+    this.#queued.add(key);
     GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-      this.queued.delete(key);
+      this.#queued.delete(key);
       run();
       return GLib.SOURCE_REMOVE;
     });

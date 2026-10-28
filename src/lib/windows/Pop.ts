@@ -20,13 +20,14 @@ import { Window, type WindowMeasure } from './window';
  */
 export class Pop extends Window {
   readonly widget: Gtk.Box;
-  private readonly slot: PopSlot;
-  private readonly hover: HoverSpec | null;
-  private readonly disposeHover: () => void;
+  readonly #slot: PopSlot;
+  readonly #hover: HoverSpec | null;
+  readonly #disposeHover: () => void;
+  #style: () => FieldStyle;
 
   constructor(
     readonly spec: PopSpec,
-    private style: () => FieldStyle,
+    style: () => FieldStyle,
     onActivate: () => void,
     host: WindowHost,
   ) {
@@ -45,18 +46,19 @@ export class Pop extends Window {
         : undefined,
     });
 
-    this.hover = hoverSpec;
+    this.#style = style;
+    this.#hover = hoverSpec;
 
     const hoverContent = hoverSpec
       ? createWindowScope(this.api, () =>
           hoverSpec.content ? asWidget(hoverSpec.content()) : null,
         )
       : null;
-    this.disposeHover = hoverContent?.dispose ?? noop;
+    this.#disposeHover = hoverContent?.dispose ?? noop;
 
-    this.slot = buildPopSlot({
+    this.#slot = buildPopSlot({
       edge: spec.edge,
-      layout: this.layout(),
+      layout: this.#layout(),
       revealer,
       content: this.contentWidget,
       hover: hoverSpec
@@ -66,12 +68,12 @@ export class Pop extends Window {
           }
         : null,
     });
-    this.widget = this.slot.widget;
+    this.widget = this.#slot.widget;
     this.apply();
   }
 
   get animating(): boolean {
-    return this.slot.animating;
+    return this.#slot.animating;
   }
 
   /** Prewarm the preferred size after map: the first hover does not pay for layout. */
@@ -81,14 +83,14 @@ export class Pop extends Window {
   }
 
   dispose() {
-    this.slot.cleanup();
-    this.disposeHover();
+    this.#slot.cleanup();
+    this.#disposeHover();
     super.dispose();
   }
 
   /** Hover is needed both for the hover zone and for a window with input. */
   protected override get acceptsHover(): boolean {
-    return this.hover !== null || this.keyboard;
+    return this.#hover !== null || this.keyboard;
   }
 
   /**
@@ -101,15 +103,15 @@ export class Pop extends Window {
    * reveal and catch it again - an endless cycle.
    */
   measure(relativeTo: Gtk.Widget): WindowMeasure {
-    const raw = this.slot.bounds(relativeTo);
+    const raw = this.#slot.bounds(relativeTo);
     if (!raw) {
       return { body: null, input: null };
     }
-    if (!this.hover) {
+    if (!this.#hover) {
       return { body: raw, input: raw };
     }
 
-    const body = popBody(raw, this.spec.edge, this.style().border);
+    const body = popBody(raw, this.spec.edge, this.#style().border);
 
     return {
       body: body.w >= 1 && body.h >= 1 ? body : null,
@@ -119,12 +121,12 @@ export class Pop extends Window {
 
   /** Apply durations and layout from the current config. */
   apply() {
-    const style = this.style();
-    this.slot.apply(style.revealDuration, this.layout(style));
+    const style = this.#style();
+    this.#slot.apply(style.revealDuration, this.#layout(style));
   }
 
   protected watchedRevealers(): MRevealer[] {
-    const zone = this.slot.zoneRevealer;
+    const zone = this.#slot.zoneRevealer;
     return zone ? [this.revealer, zone] : [this.revealer];
   }
 
@@ -132,11 +134,11 @@ export class Pop extends Window {
    * Lip thickness from the current config; `null` when the zone has its own
    * content - then the content is the lip and must not be clipped to a minimum.
    */
-  private depth(style = this.style()): number | null {
-    if (!this.hover) {
+  #depth(style = this.#style()): number | null {
+    if (!this.#hover) {
       return 0;
     }
-    if (this.hover.content) {
+    if (this.#hover.content) {
       return null;
     }
     // The lower bound is already clamped by the config (LIMITS.style.hoverDepth >= 1).
@@ -144,7 +146,7 @@ export class Pop extends Window {
   }
 
   /** Layout from the current config. */
-  private layout(style = this.style()) {
+  #layout(style = this.#style()) {
     const offset = isVerticalEdge(this.spec)
       ? (this.spec.offsetY ?? 0)
       : (this.spec.offsetX ?? 0);
@@ -153,8 +155,8 @@ export class Pop extends Window {
       this.spec.edge,
       this.spec.align ?? 'center',
       { border: style.border, screenRadius: style.screenRadius },
-      this.depth(style),
-      Boolean(this.hover),
+      this.#depth(style),
+      Boolean(this.#hover),
       offset,
     );
   }

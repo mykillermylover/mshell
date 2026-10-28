@@ -70,21 +70,21 @@ export interface MRevealerProps {
 @register({ GTypeName: 'MRevealer' })
 export class MRevealer extends Gtk.Revealer {
   /** Eased position: 0 hidden, 1 revealed. */
-  private position = 0;
-  private from = 0;
-  private to = 0;
-  private startedAt: number | null = null;
-  private tickId = 0;
+  #position = 0;
+  #from = 0;
+  #to = 0;
+  #startedAt: number | null = null;
+  #tickId = 0;
 
   constructor(props: MRevealerProps = {}) {
     super(props);
     // A revealer built already revealed starts there: no animation to play.
-    this.position = props.revealChild ? 1 : 0;
-    this.from = this.position;
-    this.to = this.position;
+    this.#position = props.revealChild ? 1 : 0;
+    this.#from = this.#position;
+    this.#to = this.#position;
 
     this.connect('notify::reveal-child', () => {
-      this.animate(this.revealChild ? 1 : 0);
+      this.#animate(this.revealChild ? 1 : 0);
     });
   }
 
@@ -94,11 +94,11 @@ export class MRevealer extends Gtk.Revealer {
   ): [number, number, number, number] {
     // Crossfade and no-transition keep their size; only slides animate it.
     const sliding = SLIDING.has(this.transitionType);
-    const position = sliding ? this.position : 1;
-    const scale = this.isAxis(orientation) ? position : 1;
+    const position = sliding ? this.#position : 1;
+    const scale = this.#isAxis(orientation) ? position : 1;
     // The cross axis keeps its size, so the child is measured through the
     // scaled axis size, exactly as gtk_revealer_measure does.
-    const opposite = this.isAxis(orientation) ? 1 : position;
+    const opposite = this.#isAxis(orientation) ? 1 : position;
 
     if (scale === 0) {
       return [0, 0, -1, -1];
@@ -106,7 +106,7 @@ export class MRevealer extends Gtk.Revealer {
 
     const request =
       forSize < 0 || opposite === 0 ? -1 : Math.floor(forSize / opposite);
-    const [min, natural] = this.measureChild(orientation, request);
+    const [min, natural] = this.#measureChild(orientation, request);
 
     if (scale === 1) {
       return [min, natural, -1, -1];
@@ -127,8 +127,8 @@ export class MRevealer extends Gtk.Revealer {
     // The child keeps its natural size and is only clipped by our allocation,
     // so a fractional progress never squeezes the content. measure() answers
     // [minimum, natural, ...] - the natural size is the second one.
-    const [, naturalWidth] = this.measureChild(Gtk.Orientation.HORIZONTAL, -1);
-    const [, naturalHeight] = this.measureChild(Gtk.Orientation.VERTICAL, -1);
+    const [, naturalWidth] = this.#measureChild(Gtk.Orientation.HORIZONTAL, -1);
+    const [, naturalHeight] = this.#measureChild(Gtk.Orientation.VERTICAL, -1);
     const vertical = VERTICAL.has(this.transitionType);
     const childWidth = vertical ? width : naturalWidth;
     const childHeight = vertical ? naturalHeight : height;
@@ -151,11 +151,11 @@ export class MRevealer extends Gtk.Revealer {
   }
 
   /** Slides need clipping: the child is allocated at natural size and offset. */
-  private get clips() {
+  get #clips() {
     return SLIDING.has(this.transitionType);
   }
 
-  private shouldAnimate() {
+  #shouldAnimate() {
     return (
       this.get_mapped() &&
       this.transitionDuration > 0 &&
@@ -165,7 +165,7 @@ export class MRevealer extends Gtk.Revealer {
     );
   }
 
-  private isAxis(orientation: Gtk.Orientation) {
+  #isAxis(orientation: Gtk.Orientation) {
     const axis = VERTICAL.has(this.transitionType)
       ? Gtk.Orientation.VERTICAL
       : Gtk.Orientation.HORIZONTAL;
@@ -173,7 +173,7 @@ export class MRevealer extends Gtk.Revealer {
     return orientation === axis;
   }
 
-  private measureChild(orientation: Gtk.Orientation, forSize: number) {
+  #measureChild(orientation: Gtk.Orientation, forSize: number) {
     const child = this.get_child();
 
     if (!child || !child.get_visible()) {
@@ -184,44 +184,44 @@ export class MRevealer extends Gtk.Revealer {
   }
 
   /** Play the size transition; the base class keeps animating for `child_revealed`. */
-  private animate(target: number) {
-    this.from = this.position;
-    this.to = target;
-    this.startedAt = null;
+  #animate(target: number) {
+    this.#from = this.#position;
+    this.#to = target;
+    this.#startedAt = null;
 
-    if (this.tickId !== 0) {
+    if (this.#tickId !== 0) {
       return;
     }
     // Same conditions as gtk_revealer_start_animation: an unmapped or
     // unanimated revealer jumps straight to the target.
-    if (!this.shouldAnimate()) {
-      this.position = target;
+    if (!this.#shouldAnimate()) {
+      this.#position = target;
       this.queue_resize();
       return;
     }
-    if (this.clips) {
+    if (this.#clips) {
       this.set_overflow(Gtk.Overflow.HIDDEN);
     }
 
-    this.tickId = this.add_tick_callback(
+    this.#tickId = this.add_tick_callback(
       (_widget: Gtk.Widget, clock: Gdk.FrameClock) => {
         const now = clock.get_frame_time();
-        this.startedAt ??= now;
+        this.#startedAt ??= now;
 
         const duration = this.transitionDuration;
-        const elapsed = (now - this.startedAt) / 1000;
+        const elapsed = (now - this.#startedAt) / 1000;
         const progress = duration > 0 ? Math.min(1, elapsed / duration) : 1;
-        this.position =
-          this.from + (this.to - this.from) * easeOutCubic(progress);
+        this.#position =
+          this.#from + (this.#to - this.#from) * easeOutCubic(progress);
         this.queue_resize();
 
         if (progress < 1) {
           return true;
         }
 
-        this.position = this.to;
-        this.tickId = 0;
-        if (this.clips) {
+        this.#position = this.#to;
+        this.#tickId = 0;
+        if (this.#clips) {
           this.set_overflow(Gtk.Overflow.VISIBLE);
         }
         return false;

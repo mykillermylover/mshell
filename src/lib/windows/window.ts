@@ -41,33 +41,33 @@ export abstract class Window {
   /** Content in its own scope; wrapped with padding, but not yet inserted into the window. */
   protected readonly contentWidget: Gtk.Box;
 
-  private _pinned: Accessor<boolean>;
-  private _setPinned: Setter<boolean>;
-  private _keyboardGrabbed: Accessor<boolean>;
-  private _setKeyboardGrabbed: Setter<boolean>;
-  private _hovering: Accessor<boolean>;
-  private _setHovering: Setter<boolean>;
-  private readonly gate: HoverGate | null;
-  private readonly host: WindowHost;
-  private readonly activate: (() => void) | undefined;
-  private readonly delays: WindowOptions['delays'];
-  private readonly disposeContent: () => void;
+  #pinned: Accessor<boolean>;
+  #setPinned: Setter<boolean>;
+  #keyboardGrabbed: Accessor<boolean>;
+  #setKeyboardGrabbed: Setter<boolean>;
+  #hovering: Accessor<boolean>;
+  #setHovering: Setter<boolean>;
+  readonly #gate: HoverGate | null;
+  readonly #host: WindowHost;
+  readonly #activate: (() => void) | undefined;
+  readonly #delays: WindowOptions['delays'];
+  readonly #disposeContent: () => void;
 
   protected constructor(options: WindowOptions) {
     this.id = options.id;
     this.revealer = options.revealer;
     this.exclusive = options.exclusive ?? false;
     this.keyboard = options.keyboard ?? false;
-    this.host = options.host;
-    this.activate = options.activate;
-    this.delays = options.delays;
+    this.#host = options.host;
+    this.#activate = options.activate;
+    this.#delays = options.delays;
 
-    [this._pinned, this._setPinned] = createState(false);
-    [this._keyboardGrabbed, this._setKeyboardGrabbed] = createState(false);
-    [this._hovering, this._setHovering] = createState(false);
+    [this.#pinned, this.#setPinned] = createState(false);
+    [this.#keyboardGrabbed, this.#setKeyboardGrabbed] = createState(false);
+    [this.#hovering, this.#setHovering] = createState(false);
 
     const delays = options.delays;
-    this.gate = delays
+    this.#gate = delays
       ? new HoverGate({
           open: () => this.open(),
           close: () => this.close(),
@@ -87,8 +87,8 @@ export abstract class Window {
     this.api = {
       id: options.id,
       monitor: options.host.monitor,
-      pinned: this._pinned,
-      hovered: this._hovering,
+      pinned: this.#pinned,
+      hovered: this.#hovering,
       opened: createBinding(this.revealer, 'revealChild'),
       open: () => this.open(),
       close: () => this.close(),
@@ -96,40 +96,40 @@ export abstract class Window {
       togglePin: () => this.togglePin(),
       pin: () => this.pin(),
       unpin: () => this.unpin(),
-      addFloat: (spec) => this.host.addFloat(spec),
-      remove: (id) => this.host.remove(id),
+      addFloat: (spec) => this.#host.addFloat(spec),
+      remove: (id) => this.#host.remove(id),
       grabKeyboard: () => {
-        this._setKeyboardGrabbed(true);
-        this.host.exclusiveKeyboard(this.id, true);
+        this.#setKeyboardGrabbed(true);
+        this.#host.exclusiveKeyboard(this.id, true);
       },
       releaseKeyboard: () => {
-        this._setKeyboardGrabbed(false);
-        this.host.unfocusKeyboard(this.id);
+        this.#setKeyboardGrabbed(false);
+        this.#host.unfocusKeyboard(this.id);
       },
-      keyboardGrabbed: this._keyboardGrabbed,
+      keyboardGrabbed: this.#keyboardGrabbed,
     };
 
     const { content, dispose } = createWindowScope(this.api, () =>
       wrapped(options.content()),
     );
     this.contentWidget = content;
-    this.disposeContent = dispose;
+    this.#disposeContent = dispose;
   }
 
   get hovering(): boolean {
-    return this._hovering.peek();
+    return this.#hovering.peek();
   }
 
   set hovering(value: boolean) {
-    this._setHovering(value);
+    this.#setHovering(value);
   }
 
   get pinned(): boolean {
-    return this._pinned.peek();
+    return this.#pinned.peek();
   }
 
   set pinned(value: boolean) {
-    this._setPinned(value);
+    this.#setPinned(value);
   }
 
   get isOpen(): boolean {
@@ -141,13 +141,13 @@ export abstract class Window {
   }
 
   open() {
-    this.gate?.cancel();
+    this.#gate?.cancel();
     this.revealer.reveal_child = true;
-    this.activate?.();
+    this.#activate?.();
   }
 
   close() {
-    this.gate?.cancel();
+    this.#gate?.cancel();
     this.pinned = false;
     this.revealer.reveal_child = false;
     // A closed window does not hold the keyboard.
@@ -163,25 +163,25 @@ export abstract class Window {
 
   enter() {
     if (this.keyboard) {
-      this.host.hoverKeyboard(this.id, true);
+      this.#host.hoverKeyboard(this.id, true);
     }
     if (this.pinned) {
       return;
     }
-    if (this.delays) {
-      this.gate?.enter(this.delays().open);
+    if (this.#delays) {
+      this.#gate?.enter(this.#delays().open);
     }
   }
 
   leave() {
     if (this.keyboard) {
-      this.host.hoverKeyboard(this.id, false);
+      this.#host.hoverKeyboard(this.id, false);
     }
     if (this.pinned) {
       return;
     }
-    if (this.delays) {
-      this.gate?.leave(this.delays().hide);
+    if (this.#delays) {
+      this.#gate?.leave(this.#delays().hide);
     }
   }
 
@@ -236,8 +236,8 @@ export abstract class Window {
   }
 
   dispose() {
-    this.gate?.cancel();
-    this.disposeContent();
+    this.#gate?.cancel();
+    this.#disposeContent();
   }
 
   /**

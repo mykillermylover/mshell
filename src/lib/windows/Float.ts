@@ -14,11 +14,12 @@ export class Float extends Window {
   readonly grip: Gtk.Box;
   x: number;
   y: number;
-  private readonly disposeHeader: () => void;
+  readonly #disposeHeader: () => void;
+  #style: () => FieldStyle;
 
   constructor(
     readonly spec: FloatSpec,
-    private style: () => FieldStyle,
+    style: () => FieldStyle,
     host: WindowHost,
   ) {
     const revealer = new MRevealer({
@@ -34,6 +35,8 @@ export class Float extends Window {
       keyboard: spec.keyboard,
     });
 
+    this.#style = style;
+
     const grip = new Gtk.Box();
     const header = createWindowScope(this.api, () => asWidget(spec.header()));
     grip.append(header.content);
@@ -44,13 +47,13 @@ export class Float extends Window {
     revealer.set_child(box);
 
     this.grip = grip;
-    this.disposeHeader = header.dispose;
+    this.#disposeHeader = header.dispose;
     this.x = spec.x;
     this.y = spec.y;
   }
 
   override dispose() {
-    this.disposeHeader();
+    this.#disposeHeader();
     super.dispose();
   }
 
@@ -68,7 +71,7 @@ export class Float extends Window {
 
   /** Update the duration from the current config. */
   apply() {
-    this.revealer.transitionDuration = this.style().revealDuration;
+    this.revealer.transitionDuration = this.#style().revealDuration;
   }
 
   /** The size the window wants itself (independent of the current layout). */

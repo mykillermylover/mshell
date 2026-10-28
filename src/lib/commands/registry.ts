@@ -42,7 +42,7 @@ export type DomainTable = Record<string, Domain>;
  * the registry is its own help.
  */
 export class Registry {
-  private readonly domains = new Map<string, Domain>();
+  readonly #domains = new Map<string, Domain>();
 
   constructor(domains: DomainTable = {}) {
     for (const [name, domain] of Object.entries(domains)) {
@@ -52,7 +52,7 @@ export class Registry {
 
   /** Add or replace a domain; the last registration wins. */
   register(domain: string, value: Domain) {
-    this.domains.set(domain, value);
+    this.#domains.set(domain, value);
   }
 
   run(argv: string[]): Reply | Promise<Reply> {
@@ -65,10 +65,10 @@ export class Registry {
     const { monitor, domain, action, args } = result.parsed;
 
     if (!domain) {
-      return { kind: 'text', text: align(domainsToHelp(this.domains)) };
+      return { kind: 'text', text: align(domainsToHelp(this.#domains)) };
     }
 
-    const entry = this.domains.get(domain);
+    const entry = this.#domains.get(domain);
     if (!entry) {
       return { kind: 'unknown-command', name: domain };
     }

@@ -33,34 +33,35 @@ const KEYMODE: Record<KeyboardMode, Astal.Keymode> = {
  * animation and shape do not drift apart.
  */
 export class Frame {
-  private readonly surface: Astal.Window;
+  readonly #surface: Astal.Window;
   readonly connector: string | null;
-  private field = new LiquidField();
-  private fixed = new Gtk.Fixed();
-  private readonly windows: FrameWindows<Window>;
-  private readonly host: WindowHost;
-  private readonly overlay: Gtk.Overlay;
-  private readonly input: FrameInput;
-  private readonly motion: FrameMotion;
-  private readonly keyboard: FrameKeyboard;
+  #field = new LiquidField();
+  #fixed = new Gtk.Fixed();
+  readonly #windows: FrameWindows<Window>;
+  readonly #host: WindowHost;
+  readonly #overlay: Gtk.Overlay;
+  readonly #input: FrameInput;
+  readonly #motion: FrameMotion;
+  readonly #keyboard: FrameKeyboard;
+  #style: Reactive<FieldStyle>;
 
   /** Narrow access for debug commands; see lib/debug.tsx. */
   readonly debug = {
     float: (id: string) => {
-      const body = this.windows.get(id);
+      const body = this.#windows.get(id);
       return body instanceof Float ? body : undefined;
     },
     pop: (id: string) => {
-      const body = this.windows.get(id);
+      const body = this.#windows.get(id);
       return body instanceof Pop ? body : undefined;
     },
-    size: () => ({ w: this.field.get_width(), h: this.field.get_height() }),
-    border: () => this.style.border(),
-    rects: () => this.windows.measure().rects,
-    inputs: () => this.windows.measure().inputs,
-    region: () => this.input.boxes,
+    size: () => ({ w: this.#field.get_width(), h: this.#field.get_height() }),
+    border: () => this.#style.border(),
+    rects: () => this.#windows.measure().rects,
+    inputs: () => this.#windows.measure().inputs,
+    region: () => this.#input.boxes,
     move: (float: Float, x: number, y: number) => {
-      this.motion.move(float, x, y);
+      this.#motion.move(float, x, y);
     },
     tween: (
       float: Float,
@@ -70,36 +71,38 @@ export class Frame {
       toY: number,
       duration: number,
     ) => {
-      this.motion.tween(float, fromX, fromY, toX, toY, duration);
+      this.#motion.tween(float, fromX, fromY, toX, toY, duration);
     },
-    snap: (float: Float) => this.motion.snap(float),
+    snap: (float: Float) => this.#motion.snap(float),
   };
 
   /** Processed ticks - for the debug frames command. */
   get tickCount(): number {
-    return this.motion.tickCount;
+    return this.#motion.tickCount;
   }
 
   constructor(
     monitor: Gdk.Monitor,
     pops: PopSpec[],
     floats: FloatSpec[],
-    private style: Reactive<FieldStyle>,
+    style: Reactive<FieldStyle>,
   ) {
+    this.#style = style;
+
     this.connector = monitor.get_connector();
-    this.host = {
+    this.#host = {
       monitor,
       addFloat: (spec) => this.addFloat(spec),
       remove: (id) => this.remove(id),
-      hoverKeyboard: (owner, entering) => this.keyboard.hover(owner, entering),
+      hoverKeyboard: (owner, entering) => this.#keyboard.hover(owner, entering),
       exclusiveKeyboard: (owner, active) =>
-        this.keyboard.exclusive(owner, active),
-      unfocusKeyboard: (owner) => this.keyboard.unfocus(owner),
-      isolateFocus: (owner) => this.isolateFocus(owner),
+        this.#keyboard.exclusive(owner, active),
+      unfocusKeyboard: (owner) => this.#keyboard.unfocus(owner),
+      isolateFocus: (owner) => this.#isolateFocus(owner),
     };
     const { TOP, BOTTOM, LEFT, RIGHT } = Astal.WindowAnchor;
 
-    this.surface = new Astal.Window({
+    this.#surface = new Astal.Window({
       application: app,
       namespace: 'frame', // for layerrule in Hyprland
       gdkmonitor: monitor,
@@ -112,41 +115,43 @@ export class Frame {
       cssClasses: ['mshell-frame'],
     });
 
-    this.input = new FrameInput(this.surface);
+    this.#input = new FrameInput(this.#surface);
     // Windows are measured in field coordinates: the shape is a function of the layout.
-    this.windows = new FrameWindows<Window>((body) => body.measure(this.field));
+    this.#windows = new FrameWindows<Window>((body) =>
+      body.measure(this.#field),
+    );
     // Keymode lives on the surface, focusability on every window: both are injected.
-    this.keyboard = new FrameKeyboard({
+    this.#keyboard = new FrameKeyboard({
       keymode: (mode) => {
-        this.surface.keymode = KEYMODE[mode];
+        this.#surface.keymode = KEYMODE[mode];
       },
-      focus: (owner) => this.isolateFocus(owner),
+      focus: (owner) => this.#isolateFocus(owner),
     });
-    this.field.configure(() => snapshot(this.style));
-    this.field.rects = () => {
+    this.#field.configure(() => snapshot(this.#style));
+    this.#field.rects = () => {
       // Single pass: the scene draws visible bodies, input may be wider
       // (for a closed hover zone it includes the lip and the frame strip up to the edge).
-      const { rects, inputs } = this.windows.measure();
-      this.input.sync(inputs);
+      const { rects, inputs } = this.#windows.measure();
+      this.#input.sync(inputs);
       return rects;
     };
-    this.field.add_css_class('frame-shape');
-    this.field.hexpand = true;
-    this.field.vexpand = true;
+    this.#field.add_css_class('frame-shape');
+    this.#field.hexpand = true;
+    this.#field.vexpand = true;
 
     const overlay = new Gtk.Overlay();
-    this.overlay = overlay;
-    overlay.set_child(this.field);
-    this.fixed.hexpand = true;
-    this.fixed.vexpand = true;
-    overlay.add_overlay(this.fixed); // under the sliding windows
+    this.#overlay = overlay;
+    overlay.set_child(this.#field);
+    this.#fixed.hexpand = true;
+    this.#fixed.vexpand = true;
+    overlay.add_overlay(this.#fixed); // under the sliding windows
 
     // Motion is created before the windows: their subscribe calls motion.poke().
-    this.motion = new FrameMotion({
-      field: this.field,
-      fixed: this.fixed,
-      style: () => snapshot(this.style),
-      bodies: () => this.windows.bodies(),
+    this.#motion = new FrameMotion({
+      field: this.#field,
+      fixed: this.#fixed,
+      style: () => snapshot(this.#style),
+      bodies: () => this.#windows.bodies(),
     });
 
     for (const spec of floats) {
@@ -159,31 +164,31 @@ export class Frame {
     // Overlay places children on any size change of any window inside -
     // it is a free hook "content changed size, the shape must be updated".
     overlay.connect('get-child-position', () => {
-      this.motion.poke();
+      this.#motion.poke();
       return false;
     });
 
-    this.surface.set_child(overlay);
+    this.#surface.set_child(overlay);
 
     // One controller for the whole window: each hover window checks only its own
     // input bounds and fires only its own enter/leave.
     const motion = new Gtk.EventControllerMotion();
     const check = (_motion: Gtk.EventControllerMotion, x: number, y: number) =>
-      this.probe(x, y);
+      this.#probe(x, y);
     motion.connect('motion', check);
     motion.connect('enter', check);
     motion.connect('leave', () => {
-      for (const body of this.windows.bodies()) {
+      for (const body of this.#windows.bodies()) {
         body.hoverOut();
       }
     });
-    this.surface.add_controller(motion);
+    this.#surface.add_controller(motion);
 
-    this.surface.connect('map', () => {
-      this.input.reset();
+    this.#surface.connect('map', () => {
+      this.#input.reset();
 
       GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-        for (const body of this.windows.bodies()) {
+        for (const body of this.#windows.bodies()) {
           if (body instanceof Pop) {
             body.prewarm();
           }
@@ -191,133 +196,133 @@ export class Frame {
         return GLib.SOURCE_REMOVE;
       });
 
-      this.motion.poke();
+      this.#motion.poke();
     });
-    this.surface.present();
+    this.#surface.present();
   }
 
   // ───────────────────────── control ─────────────────────────
 
   open(id: string) {
-    this.windows.get(id)?.open();
-    this.motion.tick();
+    this.#windows.get(id)?.open();
+    this.#motion.tick();
   }
 
   close(id: string) {
-    this.windows.get(id)?.close();
-    this.motion.tick();
+    this.#windows.get(id)?.close();
+    this.#motion.tick();
   }
 
   toggle(id: string) {
-    const body = this.windows.get(id);
+    const body = this.#windows.get(id);
     if (!body) {
       return;
     }
     body.toggle();
-    this.motion.tick();
+    this.#motion.tick();
   }
 
   closeAll() {
-    for (const body of this.windows.bodies()) {
+    for (const body of this.#windows.bodies()) {
       body.close();
     }
-    this.motion.tick();
+    this.#motion.tick();
   }
 
   /** Apply the current config: durations and paddings, poke() will update the shape. */
   refresh() {
-    this.windows.apply();
-    this.motion.poke();
+    this.#windows.apply();
+    this.#motion.poke();
   }
 
   destroy() {
-    this.windows.dispose();
-    this.surface.destroy();
+    this.#windows.dispose();
+    this.#surface.destroy();
   }
 
   // ───────────────────────── windows ─────────────────────────
 
   /** Add a popover; can be called after the frame is initialized. */
   addPop(spec: PopSpec) {
-    this.addWindow(
+    this.#addWindow(
       spec.id,
       () =>
         new Pop(
           spec,
-          () => snapshot(this.style),
-          () => this.activate(spec.id),
-          this.host,
+          () => snapshot(this.#style),
+          () => this.#activate(spec.id),
+          this.#host,
         ),
-      (pop) => this.overlay.add_overlay(pop.widget),
+      (pop) => this.#overlay.add_overlay(pop.widget),
     );
   }
 
   /** Add a Float; can be called after the frame is initialized. */
   addFloat(spec: FloatSpec) {
-    this.addWindow(
+    this.#addWindow(
       spec.id,
-      () => new Float(spec, () => snapshot(this.style), this.host),
-      (float) => this.fixed.put(float.revealer, float.x, float.y),
+      () => new Float(spec, () => snapshot(this.#style), this.#host),
+      (float) => this.#fixed.put(float.revealer, float.x, float.y),
     );
   }
 
   /** Remove a window together with its content and subscriptions. */
   remove(id: string) {
-    const body = this.windows.get(id);
+    const body = this.#windows.get(id);
 
-    if (!this.windows.remove(id)) {
+    if (!this.#windows.remove(id)) {
       return;
     }
 
     if (body instanceof Pop) {
-      this.overlay.remove_overlay(body.widget);
+      this.#overlay.remove_overlay(body.widget);
     } else if (body instanceof Float) {
-      this.motion.forget(body);
-      this.fixed.remove(body.revealer);
+      this.#motion.forget(body);
+      this.#fixed.remove(body.revealer);
     }
-    this.motion.poke();
+    this.#motion.poke();
   }
 
   /** Whether this frame has a window with this id. */
   has(id: string): boolean {
-    return this.windows.has(id);
+    return this.#windows.has(id);
   }
 
   /** Common add path: unique id, shape subscription, insertion. */
-  private addWindow<T extends Window>(
+  #addWindow<T extends Window>(
     id: string,
     create: () => T,
     mount: (body: T) => void,
   ) {
     // The registry rejects a duplicate id; the mount must not run in that case.
-    if (this.windows.has(id)) {
+    if (this.#windows.has(id)) {
       throw new Error(`duplicate window id: ${id}`);
     }
 
     const body = create();
-    this.windows.add(body, () => this.motion.poke());
+    this.#windows.add(body, () => this.#motion.poke());
     mount(body);
-    this.motion.poke();
+    this.#motion.poke();
   }
 
   // ───────────────────────── field ─────────────────────────
 
   /** Only the specified window remains focusable. */
-  private isolateFocus(owner: string | null) {
-    for (const body of this.windows.bodies()) {
+  #isolateFocus(owner: string | null) {
+    for (const body of this.#windows.bodies()) {
       body.setFocusable(body.id === owner);
     }
   }
 
-  private probe(x: number, y: number) {
-    for (const body of this.windows.bodies()) {
-      body.probe(x, y, this.surface);
+  #probe(x: number, y: number) {
+    for (const body of this.#windows.bodies()) {
+      body.probe(x, y, this.#surface);
     }
   }
 
   /** A popover opened: other exclusive windows close unless pinned. */
-  private activate(activeId: string) {
-    for (const body of this.windows.bodies()) {
+  #activate(activeId: string) {
+    for (const body of this.#windows.bodies()) {
       if (body.id !== activeId && body.exclusive) {
         body.dismiss();
       }

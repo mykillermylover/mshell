@@ -66,13 +66,13 @@ export interface MAnimatedContainerProps extends Partial<Gtk.Widget.ConstructorP
  */
 @register({ GTypeName: 'MAnimatedContainer' })
 export class MAnimatedContainer extends Gtk.Widget {
-  private width = tween();
-  private height = tween();
+  #width = tween();
+  #height = tween();
 
-  private startedAt: number | null = null;
+  #startedAt: number | null = null;
   /** Linear progress of the running tween: a retarget re-aims from it. */
-  private progress = 0;
-  private tickId = 0;
+  #progress = 0;
+  #tickId = 0;
 
   // `declare`: a real field would be initialized after GObject has applied the
   // constructor properties and would overwrite the value passed in.
@@ -118,8 +118,8 @@ export class MAnimatedContainer extends Gtk.Widget {
         ? child.measure(orientation, forSize)
         : [0, 0];
 
-    const tween = this.axis(orientation);
-    this.retarget(tween, natural);
+    const tween = this.#axis(orientation);
+    this.#retarget(tween, natural);
 
     const size = Math.round(tween.current);
 
@@ -137,17 +137,17 @@ export class MAnimatedContainer extends Gtk.Widget {
 
     // The child keeps its natural size, so the content never squeezes. The
     // last measure already knows it - no need to measure the subtree again.
-    child.allocate(this.width.target, this.height.target, baseline, null);
+    child.allocate(this.#width.target, this.#height.target, baseline, null);
   }
 
-  private axis(orientation: Gtk.Orientation) {
+  #axis(orientation: Gtk.Orientation) {
     return orientation === Gtk.Orientation.HORIZONTAL
-      ? this.width
-      : this.height;
+      ? this.#width
+      : this.#height;
   }
 
   /** A new content size: snap the first time, animate every time after. */
-  private retarget(tween: Tween, natural: number) {
+  #retarget(tween: Tween, natural: number) {
     if (natural === tween.target) {
       return;
     }
@@ -159,19 +159,19 @@ export class MAnimatedContainer extends Gtk.Widget {
       return;
     }
 
-    const running = this.tickId !== 0;
+    const running = this.#tickId !== 0;
 
     if (running) {
       // The running tween picks the new target up without restarting: a child
       // animating its own CSS (padding) moves the target every single frame,
       // and restarting per frame froze the curve and stepped instead.
-      this.reaim(tween, natural);
+      this.#reaim(tween, natural);
     }
 
     tween.target = natural;
 
     if (!running) {
-      this.start();
+      this.#start();
     }
   }
 
@@ -181,8 +181,8 @@ export class MAnimatedContainer extends Gtk.Widget {
    * Near the end of the curve the remainder is negligible - restart instead.
    * `abs`: overshooting easings (EASE_OUT_BACK) cross 1 in the middle.
    */
-  private reaim(tween: Tween, target: number) {
-    const eased = Adw.easing_ease(this.transitionType, this.progress);
+  #reaim(tween: Tween, target: number) {
+    const eased = Adw.easing_ease(this.transitionType, this.#progress);
     const left = 1 - eased;
 
     tween.from =
@@ -191,7 +191,7 @@ export class MAnimatedContainer extends Gtk.Widget {
         : tween.current;
   }
 
-  private shouldAnimate() {
+  #shouldAnimate() {
     return (
       this.transitionDuration > 0 &&
       this.get_mapped() &&
@@ -200,32 +200,32 @@ export class MAnimatedContainer extends Gtk.Widget {
     );
   }
 
-  private start() {
+  #start() {
     // An axis that did not change eases from its target to itself.
-    for (const tween of [this.width, this.height]) {
+    for (const tween of [this.#width, this.#height]) {
       tween.from = tween.current;
     }
 
-    if (!this.shouldAnimate()) {
-      for (const tween of [this.width, this.height]) {
+    if (!this.#shouldAnimate()) {
+      for (const tween of [this.#width, this.#height]) {
         tween.current = tween.target;
       }
       return;
     }
 
-    this.startedAt = null;
-    this.progress = 0;
-    this.tickId = this.add_tick_callback(
+    this.#startedAt = null;
+    this.#progress = 0;
+    this.#tickId = this.add_tick_callback(
       (_widget: Gtk.Widget, clock: Gdk.FrameClock) => {
         const now = clock.get_frame_time();
-        this.startedAt ??= now;
+        this.#startedAt ??= now;
 
-        const elapsed = (now - this.startedAt) / 1000;
+        const elapsed = (now - this.#startedAt) / 1000;
         const progress = Math.min(1, elapsed / this.transitionDuration);
         const eased = Adw.easing_ease(this.transitionType, progress);
-        this.progress = progress;
+        this.#progress = progress;
 
-        for (const tween of [this.width, this.height]) {
+        for (const tween of [this.#width, this.#height]) {
           tween.current =
             progress === 1
               ? tween.target
@@ -238,7 +238,7 @@ export class MAnimatedContainer extends Gtk.Widget {
           return true;
         }
 
-        this.tickId = 0;
+        this.#tickId = 0;
         return false;
       },
     );

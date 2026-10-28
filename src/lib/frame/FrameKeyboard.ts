@@ -17,54 +17,58 @@ interface FrameKeyboardDeps {
  * back to the window under the cursor.
  */
 export class FrameKeyboard {
-  private exclusiveOwner: string | null = null;
-  private hoverOwner: string | null = null;
+  #exclusiveOwner: string | null = null;
+  #hoverOwner: string | null = null;
 
-  constructor(private readonly deps: FrameKeyboardDeps) {}
+  readonly #deps: FrameKeyboardDeps;
+
+  constructor(deps: FrameKeyboardDeps) {
+    this.#deps = deps;
+  }
 
   hover(owner: string, entering: boolean) {
     if (entering) {
-      if (this.exclusiveOwner !== null || this.hoverOwner === owner) {
+      if (this.#exclusiveOwner !== null || this.#hoverOwner === owner) {
         return;
       }
-      this.hoverOwner = owner;
-      this.deps.keymode('on-demand');
-      this.deps.focus(owner);
+      this.#hoverOwner = owner;
+      this.#deps.keymode('on-demand');
+      this.#deps.focus(owner);
       return;
     }
 
     // The one leaving is not the current owner - another window has already taken it over.
-    if (this.hoverOwner !== owner) {
+    if (this.#hoverOwner !== owner) {
       return;
     }
-    this.hoverOwner = null;
-    if (this.exclusiveOwner !== null) {
+    this.#hoverOwner = null;
+    if (this.#exclusiveOwner !== null) {
       return;
     }
-    this.deps.keymode('none');
-    this.deps.focus(null);
+    this.#deps.keymode('none');
+    this.#deps.focus(null);
   }
 
   exclusive(owner: string, active: boolean) {
     if (active) {
-      this.exclusiveOwner = owner;
-      this.deps.keymode('exclusive');
-      this.deps.focus(owner);
+      this.#exclusiveOwner = owner;
+      this.#deps.keymode('exclusive');
+      this.#deps.focus(owner);
       return;
     }
 
-    if (this.exclusiveOwner !== owner) {
+    if (this.#exclusiveOwner !== owner) {
       return;
     }
-    this.exclusiveOwner = null;
+    this.#exclusiveOwner = null;
     // A hovered window may have remained under the modal - give it back on-demand.
-    if (this.hoverOwner !== null) {
-      this.deps.keymode('on-demand');
-      this.deps.focus(this.hoverOwner);
+    if (this.#hoverOwner !== null) {
+      this.#deps.keymode('on-demand');
+      this.#deps.focus(this.#hoverOwner);
       return;
     }
-    this.deps.keymode('none');
-    this.deps.focus(null);
+    this.#deps.keymode('none');
+    this.#deps.focus(null);
   }
 
   /**

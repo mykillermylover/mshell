@@ -12,31 +12,33 @@ export interface Scheduler {
  * is released before the callback, so the new id is not clobbered.
  */
 export class Debounce {
-  private id: number | null = null;
+  #id: number | null = null;
+  readonly #ms: number;
+  readonly #scheduler: Scheduler;
 
-  constructor(
-    private readonly ms: number,
-    private readonly scheduler: Scheduler,
-  ) {}
+  constructor(ms: number, scheduler: Scheduler) {
+    this.#ms = ms;
+    this.#scheduler = scheduler;
+  }
 
   /** Whether a run is scheduled. */
   get pending(): boolean {
-    return this.id !== null;
+    return this.#id !== null;
   }
 
   schedule(run: () => void) {
     this.cancel();
-    this.id = this.scheduler.after(this.ms, () => {
-      this.id = null;
+    this.#id = this.#scheduler.after(this.#ms, () => {
+      this.#id = null;
       run();
     });
   }
 
   cancel() {
-    if (this.id === null) {
+    if (this.#id === null) {
       return;
     }
-    this.scheduler.cancel(this.id);
-    this.id = null;
+    this.#scheduler.cancel(this.#id);
+    this.#id = null;
   }
 }

@@ -9,25 +9,29 @@ import Cairo from 'gi://cairo';
  * match the current frame.
  */
 export class FrameInput {
-  private key: string | null = null;
-  private warned = false;
+  #key: string | null = null;
+  #warned = false;
 
-  constructor(private readonly window: Astal.Window) {}
+  readonly #window: Astal.Window;
+
+  constructor(window: Astal.Window) {
+    this.#window = window;
+  }
 
   /** Last applied region (debug). */
   get boxes(): string | null {
-    return this.key;
+    return this.#key;
   }
 
   /** A new surface must get the region again. */
   reset() {
-    this.key = null;
+    this.#key = null;
     // Warning - once per surface, not for the whole life of the frame.
-    this.warned = false;
+    this.#warned = false;
   }
 
   sync(rects: Rect[]) {
-    const surface = this.window.get_surface();
+    const surface = this.#window.get_surface();
     if (!surface) {
       return;
     }
@@ -41,7 +45,7 @@ export class FrameInput {
     const key = boxes
       .map((box) => `${box.x},${box.y},${box.width},${box.height}`)
       .join(';');
-    if (key === this.key) {
+    if (key === this.#key) {
       return;
     }
 
@@ -51,10 +55,10 @@ export class FrameInput {
         region.unionRectangle(new Cairo.RectangleInt(box));
       }
       surface.set_input_region(region);
-      this.key = key;
+      this.#key = key;
     } catch (error) {
-      if (!this.warned) {
-        this.warned = true;
+      if (!this.#warned) {
+        this.#warned = true;
         console.error('[frame] set_input_region:', error);
       }
     }
