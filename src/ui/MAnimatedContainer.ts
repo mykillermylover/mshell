@@ -108,6 +108,23 @@ export class MAnimatedContainer extends Gtk.Widget {
     this.set_overflow(Gtk.Overflow.HIDDEN);
   }
 
+  /**
+   * Gtk.Widget has no child slot, so gnim cannot replace a child in this
+   * container by itself: `append` would add a second one (the first stays
+   * parented and never gets allocated) and `remove` throws. One slot instead.
+   */
+  set_child(child: Gtk.Widget | null) {
+    const current = this.get_first_child();
+
+    if (current === child) {
+      return;
+    }
+
+    // Both queue a resize on us themselves.
+    current?.unparent();
+    child?.set_parent(this);
+  }
+
   vfunc_measure(
     orientation: Gtk.Orientation,
     forSize: number,
@@ -135,9 +152,15 @@ export class MAnimatedContainer extends Gtk.Widget {
       return;
     }
 
-    // The child keeps its natural size, so the content never squeezes. The
-    // last measure already knows it - no need to measure the subtree again.
-    child.allocate(this.#width.target, this.#height.target, baseline, null);
+    // The child keeps its natural size, so the content never squeezes, but the
+    // axis we do not animate is ours to hand out - otherwise an expanding
+    // child never gets more than its natural width.
+    child.allocate(
+      Math.max(this.#width.target, width),
+      Math.max(this.#height.target, height),
+      baseline,
+      null,
+    );
   }
 
   #axis(orientation: Gtk.Orientation) {
