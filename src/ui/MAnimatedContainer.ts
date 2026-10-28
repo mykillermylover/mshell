@@ -8,6 +8,7 @@
 // lose the whole point of this class.
 import { type Gdk, Gtk } from 'ags/gtk4';
 import Adw from 'gi://Adw';
+import type GObject from 'gi://GObject';
 import {
   getter,
   type ParamFlags,
@@ -64,7 +65,10 @@ export interface MAnimatedContainerProps extends Partial<Gtk.Widget.ConstructorP
  * when the content changes. Wraps a single child; nobody lays it out but
  * itself - the child is measured and allocated by hand, as in MRevealer.
  */
-@register({ GTypeName: 'MAnimatedContainer' })
+@register({
+  GTypeName: 'MAnimatedContainer',
+  Implements: [Gtk.Buildable],
+})
 export class MAnimatedContainer extends Gtk.Widget {
   #width = tween();
   #height = tween();
@@ -112,7 +116,32 @@ export class MAnimatedContainer extends Gtk.Widget {
    * Gtk.Widget has no child slot, so gnim cannot replace a child in this
    * container by itself: `append` would add a second one (the first stays
    * parented and never gets allocated) and `remove` throws. One slot instead.
+   *
+   * JSX adds through the Buildable vfunc, the same place
+   * gtk_revealer_buildable_add_child overrides in GTK.
    */
+  vfunc_add_child(
+    _builder: Gtk.Builder,
+    child: GObject.Object,
+    type: string | null,
+  ) {
+    if (!(child instanceof Gtk.Widget)) {
+      return super.vfunc_add_child(_builder, child, type);
+    }
+
+    // A widget belongs to one parent: a child arriving while the slot is taken
+    // is a second child in the same JSX. Keep the newcomer, as
+    // gtk_revealer_set_child does, but say so - silently loses a widget.
+    if (this.get_first_child()) {
+      console.warn(
+        'MAnimatedContainer takes one child: a second one replaces the first',
+      );
+    }
+
+    this.set_child(child);
+  }
+
+  /** Replacement path: gnim calls this to clear the slot. */
   set_child(child: Gtk.Widget | null) {
     const current = this.get_first_child();
 
