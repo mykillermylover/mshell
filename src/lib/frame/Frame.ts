@@ -5,8 +5,7 @@ import type { WindowHost } from '@lib/windows/host';
 import { Pop } from '@lib/windows/Pop';
 import type { FloatSpec, PopSpec } from '@lib/windows/spec';
 import type { Window } from '@lib/windows/window';
-import type { Gdk } from 'ags/gtk4';
-import { Astal, Gtk } from 'ags/gtk4';
+import { Astal, Gdk, Gtk } from 'ags/gtk4';
 import app from 'ags/gtk4/app';
 import GLib from 'gi://GLib';
 
@@ -197,6 +196,34 @@ export class Frame {
       this.#routeKey(false, keyval, keycode, state),
     );
     this.#surface.add_controller(keys);
+
+    // Tab is not a key handler: GtkWindow installs it as a class shortcut and
+    // GtkShortcutManager activates it outside `key-pressed`, so `true` from the
+    // controller above cannot stop it. This controller owns the same
+    // dispatcher and runs in the capture phase of the root, i.e. before the
+    // window's own tab bindings.
+    const tab = new Gtk.ShortcutController();
+    tab.set_scope(Gtk.ShortcutScope.GLOBAL);
+    tab.set_propagation_phase(Gtk.PropagationPhase.CAPTURE);
+    tab.add_shortcut(
+      new Gtk.Shortcut({
+        trigger: Gtk.ShortcutTrigger.parse_string('Tab'),
+        action: Gtk.CallbackAction.new(() =>
+          // A shortcut carries no key state of its own: read the modifier
+          // state from the seat, the press that activates it is current.
+          this.#routeKey(
+            true,
+            Gdk.KEY_Tab,
+            0,
+            Gdk.Display.get_default()
+              ?.get_default_seat()
+              ?.get_keyboard()
+              ?.get_modifier_state() ?? 0,
+          ),
+        ),
+      }),
+    );
+    this.#surface.add_controller(tab);
 
     this.#surface.connect('map', () => {
       this.#input.reset();
