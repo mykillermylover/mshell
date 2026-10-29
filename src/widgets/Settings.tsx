@@ -1,6 +1,8 @@
-import type { Field, FileField } from '@lib/config';
-import { fields } from '@lib/config';
 import { config } from '@lib/config/app';
+import { configFields } from '@lib/config/schema';
+import type { Field, FileField } from '@lib/fields';
+import { state } from '@lib/state/app';
+import { stateFields } from '@lib/state/schema';
 import { useWindowApi, type WindowApi } from '@lib/windows/host';
 import pickFile from '@ui/filePicker';
 import MDropDown from '@ui/MDropDown';
@@ -101,22 +103,21 @@ function FieldControl({ field, api }: { field: Field; api: WindowApi }) {
     }
     case 'bool': {
       return (
-        <switch
-          hexpand
-          active={field.value}
-          onNotifyActive={({ active }) => field.set(active)}
-        />
+        <box hexpand halign={Gtk.Align.END}>
+          <switch
+            active={field.value}
+            onNotifyActive={({ active }) => field.set(active)}
+          />
+        </box>
       );
     }
   }
 }
 
-export default function Settings() {
-  const fieldsList = fields(config);
-
+const getSection = (list: Field[]): Map<string, Field[]> => {
   const sectionFields = new Map<string, Field[]>();
 
-  for (const field of fieldsList) {
+  for (const field of list) {
     const { section } = field;
 
     const entry = sectionFields.get(section) ?? [];
@@ -124,6 +125,39 @@ export default function Settings() {
     entry.push(field);
     sectionFields.set(section, entry);
   }
+
+  return sectionFields;
+};
+
+function SectionSettings({ fieldsMap }: { fieldsMap: Map<string, Field[]> }) {
+  const api = useWindowApi();
+
+  return (
+    <box orientation={Gtk.Orientation.VERTICAL} spacing={2}>
+      {[...fieldsMap.entries()].map(([section, fields]) => {
+        return (
+          <box orientation={Gtk.Orientation.VERTICAL} hexpand>
+            <label label={section} />
+            {fields.map((field) => (
+              <box orientation={Gtk.Orientation.HORIZONTAL} spacing={40}>
+                <label label={field.label || field.key} />
+                <FieldControl field={field} api={api} />
+              </box>
+            ))}
+          </box>
+        );
+      })}
+    </box>
+  );
+}
+
+export default function Settings() {
+  const fieldsList = configFields(config);
+  const stateList = stateFields(state);
+
+  const sectionFields = getSection(fieldsList);
+
+  const sectionStateFields = getSection(stateList);
 
   const api = useWindowApi();
 
@@ -140,19 +174,10 @@ export default function Settings() {
           />
         </box>
       </box>
-      {[...sectionFields.entries()].map(([section, fields]) => {
-        return (
-          <box orientation={Gtk.Orientation.VERTICAL} hexpand>
-            <label label={section} />
-            {fields.map((field) => (
-              <box orientation={Gtk.Orientation.HORIZONTAL} spacing={40}>
-                <label label={field.label || field.key} />
-                <FieldControl field={field} api={api} />
-              </box>
-            ))}
-          </box>
-        );
-      })}
+      <label label={'=== THEMING ==='} />
+      <SectionSettings fieldsMap={sectionFields} />
+      <label label={'=== STATE ==='} />
+      <SectionSettings fieldsMap={sectionStateFields} />
     </box>
   );
 }

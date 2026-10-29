@@ -1,8 +1,15 @@
+import { state } from '@lib/state/app';
 import { useWindowApi } from '@lib/windows/host';
 import type { FloatSpec, PopSpec } from '@lib/windows/spec';
+import { MAnimatedContainer } from '@ui/MAnimatedContainer';
+import { MCava } from '@ui/MCava';
+import { ICONS } from '@widgets/icons';
+import Players from '@widgets/Players';
 import Settings from '@widgets/Settings';
 import Workspaces from '@widgets/Workspaces';
+import { With } from 'ags';
 import { Gtk } from 'ags/gtk4';
+import AstalCava from 'gi://AstalCava?version=0.1';
 
 // Defaults live here, not in lib/windows: a window sets no styles of its own.
 // The background is drawn by the liquid field; padding and color are ours.
@@ -38,23 +45,35 @@ function Card(props: { title: string; body: string; w: number; h: number }) {
   );
 }
 
-function Player() {
-  return (
-    <Card title="Player" body="Slides out from the top side" w={420} h={120} />
-  );
-}
-
 function PlayerHover() {
-  const win = useWindowApi();
+  const { opened } = useWindowApi();
+
+  const cava = AstalCava.get_default()!;
+
+  const { cavaMode } = state;
 
   return (
-    <box class="hover-row" spacing={8}>
-      <image iconName="media-playback-start-symbolic" />
-      <label label="Player" />
-      <button class="pin-button" onClicked={() => win.togglePin()}>
-        <label label={win.pinned((p) => (p ? 'unpin' : 'pin'))} />
-      </button>
-    </box>
+    <MAnimatedContainer class="hover-row" hexpand>
+      <With value={opened}>
+        {(opened) => (
+          <box spacing={8} heightRequest={opened ? 100 : undefined}>
+            <image
+              iconName={ICONS.media.play}
+              css={opened ? undefined : '-gtk-icon-size: 10px;'}
+            />
+            <MCava
+              cava={cava}
+              hexpand
+              minBarHeight={2}
+              sag={0.25}
+              mode={cavaMode}
+              vexpand
+              css={'color: var(--tertiary);'}
+            />
+          </box>
+        )}
+      </With>
+    </MAnimatedContainer>
   );
 }
 
@@ -96,8 +115,9 @@ export const INITIAL_POPS: PopSpec[] = [
   {
     id: 'player',
     edge: 'top',
-    hover: { content: PlayerHover, hideOnReveal: true },
-    content: Player,
+    hover: { content: PlayerHover, hideOnReveal: false },
+    content: Players,
+    keyboard: true,
   },
   {
     id: 'settings',
