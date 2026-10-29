@@ -7,6 +7,8 @@ import GLib from 'gi://GLib';
 
 import type { WindowApi, WindowHost } from './host';
 import { HoverGate } from './HoverGate';
+import type { KeyEvent } from './keyHandlers';
+import { KeyHandlers } from './keyHandlers';
 import { createWindowScope } from './scope';
 import type { WindowSpec } from './spec';
 import { wrapped } from './widgets';
@@ -52,6 +54,8 @@ export abstract class Window {
   readonly #activate: (() => void) | undefined;
   readonly #delays: WindowOptions['delays'];
   readonly #disposeContent: () => void;
+  readonly #pressed = new KeyHandlers();
+  readonly #released = new KeyHandlers();
 
   protected constructor(options: WindowOptions) {
     this.id = options.id;
@@ -107,6 +111,8 @@ export abstract class Window {
         this.#host.unfocusKeyboard(this.id);
       },
       keyboardGrabbed: this.#keyboardGrabbed,
+      onKeyPressed: (handler) => this.#pressed.add(handler),
+      onKeyReleased: (handler) => this.#released.add(handler),
     };
 
     const { content, dispose } = createWindowScope(this.api, () =>
@@ -238,6 +244,15 @@ export abstract class Window {
   dispose() {
     this.#gate?.cancel();
     this.#disposeContent();
+  }
+
+  /**
+   * A key reached the frame while this window owns the keyboard; the host
+   * routes it here. `true` - handled, the key must not go further (for
+   * presses; GTK ignores the result of a release).
+   */
+  dispatchKey(pressed: boolean, event: KeyEvent) {
+    return (pressed ? this.#pressed : this.#released).dispatch(event);
   }
 
   /**

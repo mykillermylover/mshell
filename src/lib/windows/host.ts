@@ -4,6 +4,7 @@ import type { Accessor } from 'ags';
 import { createContext } from 'ags';
 import type { Gdk } from 'ags/gtk4';
 
+import type { KeyHandler } from './keyHandlers';
 import type { FloatSpec } from './spec';
 
 /**
@@ -41,6 +42,19 @@ export interface WindowApi {
   releaseKeyboard(): void;
   /** Whether this window takes the keyboard forcefully. */
   readonly keyboardGrabbed: Accessor<boolean>;
+  /**
+   * Handle every key pressed in the frame while this window owns the keyboard
+   * (hover with the `keyboard` prop, or `grabKeyboard`). Return `true` to
+   * handle it: the key then never reaches the widgets inside the window.
+   * Keys are frame-wide, not limited to the content of the calling component.
+   * Returns the function that removes the handler.
+   */
+  onKeyPressed(handler: KeyHandler): () => void;
+  /**
+   * The same for releases. GTK ignores the result of `key-released`, so
+   * `true` here does not stop the key - it only stops the handler chain.
+   */
+  onKeyReleased(handler: KeyHandler): () => void;
 }
 
 /** Narrow host that Frame gives to the window: without a reference to Frame itself. */

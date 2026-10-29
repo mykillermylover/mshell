@@ -184,6 +184,20 @@ export class Frame {
     });
     this.#surface.add_controller(motion);
 
+    // Keys: one controller on the surface in the capture phase, so it sees a
+    // key before any widget inside - even when nothing holds focus (GTK then
+    // delivers the key to the window itself). Handlers belong to the window
+    // that owns the keyboard; no owner - the key keeps its normal way.
+    const keys = new Gtk.EventControllerKey();
+    keys.set_propagation_phase(Gtk.PropagationPhase.CAPTURE);
+    keys.connect('key-pressed', (_c, keyval, keycode, state) =>
+      this.#routeKey(true, keyval, keycode, state),
+    );
+    keys.connect('key-released', (_c, keyval, keycode, state) =>
+      this.#routeKey(false, keyval, keycode, state),
+    );
+    this.#surface.add_controller(keys);
+
     this.#surface.connect('map', () => {
       this.#input.reset();
 
@@ -199,6 +213,22 @@ export class Frame {
       this.#motion.poke();
     });
     this.#surface.present();
+  }
+
+  /**
+   * Hand a key to the window that owns the keyboard. Without an owner the
+   * surface holds no keyboard, so the key is not ours and passes through.
+   */
+  #routeKey(pressed: boolean, keyval: number, keycode: number, state: number) {
+    const owner = this.#keyboard.owner;
+    if (owner === null) {
+      return false;
+    }
+    return (
+      this.#windows
+        .get(owner)
+        ?.dispatchKey(pressed, { keyval, keycode, state }) ?? false
+    );
   }
 
   // ───────────────────────── control ─────────────────────────

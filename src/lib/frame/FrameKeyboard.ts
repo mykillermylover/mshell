@@ -26,6 +26,14 @@ export class FrameKeyboard {
     this.#deps = deps;
   }
 
+  /**
+   * The window the keyboard belongs to right now: an exclusive grab wins over
+   * hover, and `null` means the surface does not hold the keyboard at all.
+   */
+  get owner(): string | null {
+    return this.#exclusiveOwner ?? this.#hoverOwner;
+  }
+
   hover(owner: string, entering: boolean) {
     if (entering) {
       if (this.#exclusiveOwner !== null || this.#hoverOwner === owner) {

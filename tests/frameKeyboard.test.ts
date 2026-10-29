@@ -148,3 +148,30 @@ test('exclusive leave returns on-demand to the window hovered before the grab', 
 
   assert.deepEqual(env.calls, ['mode:on-demand', 'focus:b']);
 });
+
+test('owner: the hovered window while only hover holds it', () => {
+  const env = setup();
+
+  env.keyboard.hover('a', true);
+
+  assert.equal(env.keyboard.owner, 'a');
+  env.keyboard.hover('a', false);
+  assert.equal(env.keyboard.owner, null);
+});
+
+test('owner: an exclusive grab wins over the hovered window', () => {
+  const env = setup();
+
+  env.keyboard.hover('a', true);
+  env.keyboard.exclusive('modal', true);
+  assert.equal(env.keyboard.owner, 'modal');
+
+  env.keyboard.exclusive('modal', false);
+  assert.equal(env.keyboard.owner, 'a', 'hover comes back after the modal');
+});
+
+test('owner: nothing when neither hover nor exclusive holds it', () => {
+  const env = setup();
+
+  assert.equal(env.keyboard.owner, null);
+});
