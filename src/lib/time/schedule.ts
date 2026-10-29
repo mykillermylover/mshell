@@ -1,5 +1,5 @@
 // Timer primitives without GJS. The scheduler is injected, so the timing is
-// tested in node: see tests/schedule.test.ts.
+// tested in node: see tests/lib/time/schedule.test.ts.
 export interface Scheduler {
   /** Run `run` after `ms`; return the source id for cancel(). */
   after(ms: number, run: () => void): number;
