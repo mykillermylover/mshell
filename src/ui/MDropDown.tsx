@@ -1,12 +1,10 @@
-import { Accessor, For } from 'ags';
+import { asAccessor } from '@lib/reactive';
+import type { Accessor } from 'ags';
+import { For } from 'ags';
 import { createComputed, createState } from 'ags';
 import Gtk from 'gi://Gtk';
 
 import { MRevealer } from './MRevealer';
-
-/** The prop comes as a plain value or an Accessor: one shape for the body. */
-const asAccessor = <T,>(value: T | Accessor<T>): Accessor<T> =>
-  value instanceof Accessor ? value : new Accessor(() => value);
 
 export type MDropDownProps<T extends string> = JSX.IntrinsicElements['box'] & {
   options: T[] | readonly T[] | Accessor<T[]>;
