@@ -1,7 +1,7 @@
 // Accessor с записью. Чтение остаётся обычным Accessor (gnim и JSX узнают его
 // через instanceof), а set живёт на том же объекте — так запись не ломает тип
 // свойства: `Accessor<T> | T` нельзя ни вызвать, ни присвоить значение в T.
-import type { Accessor } from 'ags';
+import { Accessor } from 'ags';
 
 // Сеттер объявлен методом, а не свойством: для свойства TS проверяет
 // контравариантность параметра и `State<X>` перестаёт присваиваться в
@@ -18,3 +18,7 @@ export function settable<T>(
 ): State<T> {
   return Object.assign(read, { set });
 }
+
+/** The prop comes as a plain value or an Accessor: one shape for the body. */
+export const asAccessor = <T>(value: T | Accessor<T>): Accessor<T> =>
+  value instanceof Accessor ? value : new Accessor(() => value);

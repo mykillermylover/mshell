@@ -1,8 +1,6 @@
-// Leaf descriptors, the reactive engine, what is derived from the schema, the
-// schema itself and the form projection over it. Only fields.ts needs the file
-// filters: it is UI, the rest is data.
+// Leaf descriptors, the reactive engine, what is derived from the schema and
+// the schema itself. The form projection is in @lib/fields: it serves any store.
 export * from './derive';
-export * from './fields';
 export * from './leaf';
 export * from './schema';
 export * from './tree';

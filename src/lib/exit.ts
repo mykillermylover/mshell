@@ -18,7 +18,7 @@ let hooked = false;
  * DBus copy, is the Gtk.Application prototype. Plus session signals: Hyprland
  * logout, kill, Ctrl+C.
  *
- * Only flushes: the config is the only thing that has unsaved state.
+ * Only flushes: config and state are the only things with unsaved state.
  */
 export function hookExit(flush: () => void): void {
   if (hooked) {

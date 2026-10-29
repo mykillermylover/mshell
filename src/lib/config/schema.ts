@@ -1,5 +1,8 @@
 // The config itself: a new parameter is one line here.
 // Key order = field order in the form.
+import type { Field } from '@lib/fields';
+import { fields } from '@lib/fields';
+import type { Store, StoreMethods } from '@lib/store';
 import {
   normalizeThemeScheme,
   ThemePreference,
@@ -8,14 +11,8 @@ import {
 } from '@lib/theme/policy';
 
 import type { Values } from './derive';
-import {
-  type DeepPartial,
-  type Limits,
-  limits,
-  type LimitsOf,
-  values,
-} from './derive';
-import { choice, file, type Node, num, optionsOf, type Reactive } from './leaf';
+import { type Limits, limits, type LimitsOf, values } from './derive';
+import { choice, file, type Node, num, optionsOf } from './leaf';
 
 export const SCHEMA = {
   theme: {
@@ -132,16 +129,9 @@ export const DEFAULTS: ConfigValues = values(SCHEMA);
 export const LIMITS = limits(SCHEMA) as unknown as Limits &
   LimitsOf<typeof SCHEMA>;
 
-export type ConfigMethods = {
-  /** Point edit of section leaves. */
-  update<K extends keyof ConfigValues>(
-    section: K,
-    patch: DeepPartial<ConfigValues[K]>,
-  ): void;
-  /** Any change to any leaf. Returns an unsubscribe. */
-  subscribe(fn: () => void): () => void;
-  /** Write now (called on exit). */
-  flush(): void;
-};
+export type ConfigMethods = StoreMethods<ConfigValues>;
 
-export type Config = Reactive<ConfigValues> & ConfigMethods;
+export type Config = Store<typeof SCHEMA>;
+
+/** Config form fields in schema order. */
+export const configFields = (config: Config): Field[] => fields(config, SCHEMA);

@@ -1,22 +1,19 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import {
-  type Config,
-  type ConfigMethods,
-  DEFAULTS,
-  fields,
-  LIMITS,
-  reactive,
-  SCHEMA,
-} from '@lib/config';
+import { DEFAULTS, LIMITS, reactive, SCHEMA } from '@lib/config';
+import type { Config } from '@lib/config/app';
+import { values } from '@lib/config/derive';
 import { FILE_TYPES } from '@lib/config/fileTypes';
+import { configFields } from '@lib/config/schema';
+import { fields } from '@lib/fields';
+import type { StoreMethods } from '@lib/store';
 
 const noop = () => {};
 
 /** Config as in the app, without GJS: reactive tree + method stubs. */
 function makeConfig(): Config {
-  const methods: ConfigMethods = {
+  const methods: StoreMethods<unknown> = {
     update: noop,
     subscribe: () => noop,
     flush: noop,
@@ -31,7 +28,7 @@ function makeConfig(): Config {
 
 test('fields: covers every leaf of the schema', () => {
   const config = makeConfig();
-  const list = fields(config);
+  const list = configFields(config);
 
   const expected: string[] = [];
   for (const [section, node] of Object.entries(SCHEMA)) {
@@ -47,7 +44,7 @@ test('fields: covers every leaf of the schema', () => {
 });
 
 test('fields: kind matches the spec, metadata is in place', () => {
-  const list = fields(makeConfig());
+  const list = configFields(makeConfig());
   const border = list.find((f) => f.key === 'border');
 
   assert.ok(border);
@@ -69,7 +66,7 @@ test('fields: kind matches the spec, metadata is in place', () => {
 
 test('fields: set changes the tree, value reads it', () => {
   const config = makeConfig();
-  const border = fields(config).find((f) => f.key === 'border');
+  const border = configFields(config).find((f) => f.key === 'border');
 
   assert.ok(border && border.kind === 'number');
   assert.equal(border.value(), 4);
@@ -85,7 +82,7 @@ test('fields: set changes the tree, value reads it', () => {
 
 test('fields: choice.set writes an enum value', () => {
   const config = makeConfig();
-  const mode = fields(config).find((f) => f.key === 'mode');
+  const mode = configFields(config).find((f) => f.key === 'mode');
 
   assert.ok(mode && mode.kind === 'choice');
   mode.set('dark');
@@ -94,7 +91,7 @@ test('fields: choice.set writes an enum value', () => {
 
 test('fields: file accepts an absolute path', () => {
   const config = makeConfig();
-  const wallpaper = fields(config).find((f) => f.key === 'wallpaper');
+  const wallpaper = configFields(config).find((f) => f.key === 'wallpaper');
 
   assert.ok(wallpaper && wallpaper.kind === 'file');
   assert.equal(wallpaper.accept, FILE_TYPES.images);
@@ -103,4 +100,33 @@ test('fields: file accepts an absolute path', () => {
   wallpaper.set('/home/user/wall.png');
   assert.equal(config.theme.wallpaper(), '/home/user/wall.png');
   assert.equal(wallpaper.value(), '/home/user/wall.png');
+});
+
+test('fields: a flat schema gives one field per root leaf', () => {
+  const schema = {
+    cavaMode: {
+      kind: 'choice',
+      default: 'bars',
+      options: ['bars', 'wave'],
+    },
+    inhibit: { kind: 'bool', default: false, label: 'Inhibitor' },
+  } as const;
+
+  const store = Object.assign(
+    {},
+    reactive(values(schema), () => {}),
+    { update: noop, subscribe: () => noop, flush: noop },
+  );
+
+  const list = fields(store, schema);
+  assert.deepEqual(
+    list.map((f) => `${f.section}.${f.key}`),
+    ['cavaMode.cavaMode', 'inhibit.inhibit'],
+  );
+
+  const inhibit = list.find((f) => f.key === 'inhibit');
+  assert.ok(inhibit && inhibit.kind === 'bool');
+  assert.equal(inhibit.value(), false);
+
+  inhibit.set(true);
 });

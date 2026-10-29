@@ -1,7 +1,4 @@
 import { FILE_TYPES, type FileTypes } from '@lib/config/fileTypes';
-import type { State } from '@lib/reactive';
-import type { Accessor } from 'ags';
-
 import {
   isLeaf,
   type Leaf,
@@ -9,8 +6,10 @@ import {
   type Node,
   type ReactiveNode,
   type ReactiveSection,
-} from './leaf';
-import { type Config, SCHEMA } from './schema';
+} from '@lib/config/leaf';
+import type { State } from '@lib/reactive';
+import type { SectionNode, Store } from '@lib/store';
+import type { Accessor } from 'ags';
 
 /** Common to every field: where it lives and how it is captioned in the form. */
 type FieldBase<T> = {
@@ -144,19 +143,22 @@ function walk(
 }
 
 /**
- * Flat list of config fields in schema order. The recursion lives here:
- * the form does not know how the spec relates to the reactive tree.
+ * Flat list of form fields in schema order for any store: config, state, or a
+ * schema not yet behind a file. `section` is the top-level key, so a leaf at the
+ * root is both its own section and its own key.
+ *
+ * The recursion lives here: the form does not know how the spec relates to the
+ * reactive tree.
  */
-export function fields(config: Config): Field[] {
+export function fields<N extends SectionNode>(
+  store: Store<N>,
+  schema: N,
+): Field[] {
   const out: Field[] = [];
-  const tree = config as unknown as Record<string, ReactiveNode>;
+  const tree = store as unknown as Record<string, ReactiveNode>;
 
-  for (const [section, schema] of Object.entries(SCHEMA)) {
-    const sectionTree = tree[section] as ReactiveSection;
-
-    for (const [key, child] of Object.entries(schema)) {
-      walk(section, key, child, sectionTree[key], out);
-    }
+  for (const [name, child] of Object.entries(schema)) {
+    walk(name, name, child, tree[name], out);
   }
 
   return out;
