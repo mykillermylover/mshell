@@ -1,5 +1,5 @@
 // JSX to widget: what the JSX component returns is a Gtk.Widget in disguise.
-import type { Rect } from '@lib/field/geometry';
+import type { Rect } from '@lib/geometry';
 import { Gtk } from 'ags/gtk4';
 
 /** gnim types the JSX result as GObject.Object; in fact it is Gtk.Widget. */

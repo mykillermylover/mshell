@@ -1,16 +1,19 @@
 import { asAccessor } from '@lib/reactive';
-import type { Accessor } from 'ags';
+import { Accessor } from 'ags';
 import { For } from 'ags';
 import { createComputed, createState } from 'ags';
 import Gtk from 'gi://Gtk';
 
 import { MRevealer } from './MRevealer';
+import type { Variant } from './variant';
 
 export type MDropDownProps<T extends string> = JSX.IntrinsicElements['box'] & {
   options: T[] | readonly T[] | Accessor<T[]>;
   value?: T | Accessor<T>;
   onValueChange: (value: T) => void;
   maxRows?: number | Accessor<number>;
+  /** Which palette variant the frame uses. */
+  variant?: Variant;
 };
 
 export default function MDropDown<T extends string>({
@@ -18,6 +21,7 @@ export default function MDropDown<T extends string>({
   options,
   maxRows,
   value,
+  variant = 'primary',
   ...restProps
 }: MDropDownProps<T>) {
   const optionsAccessor = asAccessor(options);
@@ -46,12 +50,25 @@ export default function MDropDown<T extends string>({
     }
   };
 
+  // `cssClasses` adds to the widget's own list, unlike `class`, which gnim
+  // applies with set_css_classes and would wipe.
+  const { class: extraClass, ...rest } = restProps;
+  // `class` may arrive as an Accessor; peeking is enough here - the widget
+  // is rebuilt when its props change.
+  const extra =
+    extraClass instanceof Accessor ? extraClass.peek() : (extraClass ?? '');
+  const cssClasses = [
+    'dropdown',
+    ...extra.split(/\s+/).filter(Boolean),
+    ...(variant === 'primary' ? [] : [variant]),
+  ];
+
   return (
     <box
-      {...restProps}
+      {...rest}
+      cssClasses={cssClasses}
       orientation={Gtk.Orientation.VERTICAL}
       overflow={Gtk.Overflow.HIDDEN}
-      class={'dropdown'}
     >
       <button
         class={open.as(

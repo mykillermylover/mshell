@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 
-import type { Rect } from '@lib/field/geometry';
+import type { Rect } from '@lib/geometry';
 import { HoverGate } from '@lib/windows/HoverGate';
 import { popBody } from '@lib/windows/popLayout';
 

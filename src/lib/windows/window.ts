@@ -1,4 +1,4 @@
-import type { Rect } from '@lib/field/geometry';
+import type { Rect } from '@lib/geometry';
 import type { MRevealer } from '@ui/MRevealer';
 import type { Accessor, Setter } from 'ags';
 import { createBinding, createState } from 'ags';

@@ -1,22 +1,12 @@
 // Liquid geometry: bodies are rounded rectangles, the frame edge is straight
 // wall sections and inner-corner arcs. Here there is only the search for nearest points;
 // no global "anchors" and no state.
-/** A rectangle in field coordinates. */
-export interface Rect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
+import type { Point, Rect } from '@lib/geometry';
 
+/** A body in field coordinates: a rectangle plus its corner radius. */
 export interface Body extends Rect {
   /** Corner radius of the body (for windows it's `windowRadius`). */
   cornerRadius: number;
-}
-
-export interface Point {
-  x: number;
-  y: number;
 }
 
 /** Contact points: a is on the first body, b is on the second; nx, ny is the normal a→b. */

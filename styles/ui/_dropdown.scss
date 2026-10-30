@@ -1,5 +1,10 @@
+// MDropDown: the frame takes the accent, the inner buttons inherit it.
+@use "variant";
+
 .dropdown {
-  border: var(--primary) solid 1px;
+  @include variant.variants;
+
+  border: var(--accent) solid 1px;
   border-radius: 10px;
 
   button.dropdown-selected {

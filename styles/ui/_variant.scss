@@ -1,0 +1,20 @@
+// Variants for the library widgets: which palette accent a widget takes.
+//
+// Every M* widget carries one of .primary / .secondary / .tertiary; the
+// default is .primary, so a widget without a variant looks the same as before.
+// The variant only sets custom properties - how a widget uses them (a track
+// color, a border, a stroke) stays that widget's own business.
+@mixin variants {
+  --accent: var(--primary);
+  --accent-container: var(--primary_container);
+
+  &.secondary {
+    --accent: var(--secondary);
+    --accent-container: var(--secondary_container);
+  }
+
+  &.tertiary {
+    --accent: var(--tertiary);
+    --accent-container: var(--tertiary_container);
+  }
+}

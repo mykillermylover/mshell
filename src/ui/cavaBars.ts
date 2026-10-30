@@ -4,12 +4,7 @@
 // Values arrive at the framerate of the capture (60/s by default) and are the
 // hot path, so this allocates one object per visible bar and nothing else.
 
-export interface BarRect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
+import type { Rect } from '@lib/geometry';
 
 /** A bar thinner than this is not drawn: at silence it would be a hairline. */
 const MIN_BAR_PX = 1;
@@ -26,7 +21,7 @@ export function barRects(
   height: number,
   gap: number,
   minHeight = 0,
-): BarRect[] {
+): Rect[] {
   const count = values.length;
   const slot = width / count;
 
@@ -39,7 +34,7 @@ export function barRects(
   // A floor keeps silence visible instead of an empty row; never taller than
   // the stage itself.
   const floor = Math.min(minHeight, height);
-  const rects: BarRect[] = [];
+  const rects: Rect[] = [];
 
   for (const [i, value] of values.entries()) {
     // NaN is not a height: Math.min/max would keep it and GTK would get a

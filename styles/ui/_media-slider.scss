@@ -1,0 +1,32 @@
+// MMediaSlider: the widget paints its own track, so the native trough, fill
+// and handle are hidden here and drawn by the widget instead.
+//
+// The rule has to live in the global provider - a provider added with the
+// widget's own `css` prop only reaches that widget's context, never its
+// internal CSS nodes.
+@use "variant";
+
+.media-slider {
+  @include variant.variants;
+
+  // Active track, handle, and what the widget reads via get_color().
+  color: var(--accent);
+
+  highlight {
+    background: none;
+  }
+
+  trough {
+    background: none;
+    // Read back by MMediaSlider as Gtk.Widget.get_color(): the inactive part.
+    // The neutral container, not the accent one - the track that is yet to
+    // come stays quiet while the played part carries the accent.
+    color: var(--secondary_container);
+  }
+
+  slider {
+    background: none;
+    box-shadow: none;
+    border: none;
+  }
+}

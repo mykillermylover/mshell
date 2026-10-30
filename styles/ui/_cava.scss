@@ -1,0 +1,9 @@
+// MCava draws every bar in the widget's `color` (Gtk.Widget.get_color), so the
+// accent variant is just that color.
+@use "variant";
+
+.cava {
+  @include variant.variants;
+
+  color: var(--accent);
+}

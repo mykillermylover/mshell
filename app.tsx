@@ -13,6 +13,7 @@ import style from './style.scss';
 const shell = new Shell(INITIAL_POPS, INITIAL_FLOATS);
 
 app.start({
+  instanceName: 'mshell-dev',
   main() {
     applyTheme(true);
     initTheme(style);

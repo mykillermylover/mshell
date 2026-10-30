@@ -1,4 +1,4 @@
-// Theme policy: the system colour scheme and the palette request. The CSS
+// Theme policy: the system color scheme and the palette request. The CSS
 // provider lives in css.ts - its lifecycle has nothing to do with the config.
 import { config } from '@lib/config/app';
 import Adw from 'gi://Adw';
@@ -29,7 +29,7 @@ function applyThemeMode(value: string) {
   }
 }
 
-/** Run matugen if wallpaper, scheme, contrast or preferred colours changed. */
+/** Run matugen if wallpaper, scheme, contrast or preferred colors changed. */
 function syncPalette(force = false) {
   const wallpaper = config.theme.wallpaper();
   if (!wallpaper) {

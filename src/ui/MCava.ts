@@ -20,6 +20,7 @@ import {
 } from './cavaAnchor';
 import { barRects } from './cavaBars';
 import { curveSegments, polylinePoints } from './cavaCurve';
+import { applyVariant, type Variant } from './variant';
 
 /**
  * bars - a row of columns;
@@ -52,6 +53,8 @@ export interface MCavaProps extends Partial<Gtk.Widget.ConstructorProps> {
    * `right` - along y, growing left.
    */
   anchor?: CavaAnchor;
+  /** Which palette variant colors the bars. */
+  variant?: Variant;
   /**
    * Wave multiplier ('wave-cubic' only): every span bows toward zero at its
    * middle by the mean level of its two points times `sag`. `0` - a straight
@@ -65,9 +68,10 @@ const DEFAULT_GAP = 2;
 const DEFAULT_LINE_WIDTH = 2;
 
 /**
- * Visualizer of an AstalCava capture, coloured by CSS `color`:
- * `.cava { color: var(--primary); }`. Size it with widthRequest /
- * heightRequest (or hexpand/vexpand).
+ * Visualizer of an AstalCava capture, colored by CSS `color`:
+ * `.cava { color: var(--accent); }` in styles/ui/_cava.scss, with
+ * `.secondary` / `.tertiary` picking another variant. Size it with
+ * widthRequest / heightRequest (or hexpand/vexpand).
  *
  * The wave modes draw one invisible point per value, only the line moves.
  * They keep the line off the edges by half the line width, so a full level
@@ -97,9 +101,14 @@ export class MCava extends Gtk.Widget {
       lineWidth = DEFAULT_LINE_WIDTH,
       sag = 0,
       anchor = 'bottom',
+      variant = 'primary',
       ...rest
     } = props;
     super(rest);
+
+    // GTypeName does not become a CSS name; the stylesheet needs a class.
+    this.add_css_class('cava');
+    applyVariant(this, variant);
 
     this.#cava = cava;
     this.#gap = gap;

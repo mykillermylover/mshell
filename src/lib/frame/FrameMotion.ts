@@ -1,6 +1,6 @@
 import type { FieldStyle } from '@lib/config';
-import type { Rect } from '@lib/field/geometry';
 import { snapTo } from '@lib/field/snap';
+import type { Rect } from '@lib/geometry';
 import { Float } from '@lib/windows/Float';
 import type { Window } from '@lib/windows/window';
 import type { Gdk } from 'ags/gtk4';

@@ -16,3 +16,9 @@ export function easeOutBack(t: number): number {
 
   return 1 + (OVERSHOOT + 1) * p ** 3 + OVERSHOOT * p ** 2;
 }
+
+/**
+ * GtkProgressTracker's easing: the curve Gtk.Revealer animates with, and the
+ * one the slider's tween uses. Front-loaded, so motion reads as immediate.
+ */
+export const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;

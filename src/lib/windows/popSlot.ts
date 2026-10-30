@@ -1,4 +1,4 @@
-import type { Rect } from '@lib/field/geometry';
+import type { Rect } from '@lib/geometry';
 import { MRevealer } from '@ui/MRevealer';
 import { Gtk } from 'ags/gtk4';
 

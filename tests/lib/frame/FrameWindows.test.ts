@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 
-import type { Rect } from '@lib/field/geometry';
 import { FrameWindows, type Measured } from '@lib/frame/FrameWindows';
+import type { Rect } from '@lib/geometry';
 
 const noop = () => {};
 

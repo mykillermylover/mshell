@@ -5,6 +5,8 @@
 // Each span is split at its middle point, which also carries the sag - a
 // single cubic per span cannot be bowed without moving its ends.
 
+import type { Point } from '@lib/geometry';
+
 /** One cubic Bezier with absolute coordinates. */
 export interface CurveSegment {
   x1: number;
@@ -17,18 +19,13 @@ export interface CurveSegment {
   y2: number;
 }
 
-export interface PolylinePoint {
-  x: number;
-  y: number;
-}
-
 /** Straight-line counterpart of `curveSegments`: one vertex per value. */
 export function polylinePoints(
   values: readonly number[],
   width: number,
   height: number,
   pad: number,
-): PolylinePoint[] {
+): Point[] {
   const count = values.length;
   if (count === 0 || width <= 0 || height <= 0) {
     return [];
@@ -124,11 +121,6 @@ export function curveSegments(
   }
 
   return segments;
-}
-
-interface Point {
-  x: number;
-  y: number;
 }
 
 /** The whole width as one span, no neighbours: a bowed flat line. */

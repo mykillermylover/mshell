@@ -8,15 +8,11 @@
 //   top    - zero at the top,    values right to left
 //   left   - zero at the left,   values top to bottom
 //   right  - zero at the right,  values bottom to top
-import type { BarRect } from './cavaBars';
+import type { Point, Rect } from '@lib/geometry';
 
 export type CavaAnchor = 'bottom' | 'top' | 'left' | 'right';
 
-export interface Point {
-  x: number;
-  y: number;
-}
-
+/** Extent of the shape's own frame, not a widget size. */
 export interface Size {
   /** Extent of the values axis, px. */
   along: number;
@@ -74,10 +70,10 @@ export function anchorPoint(
 /** The same turn for a bar: `w` runs along the values axis, `h` across it. */
 export function anchorRect(
   anchor: CavaAnchor,
-  bar: BarRect,
+  bar: Rect,
   width: number,
   height: number,
-): BarRect {
+): Rect {
   const { along: length, across } = plotSize(anchor, width, height);
 
   switch (anchor) {

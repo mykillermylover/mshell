@@ -1,0 +1,31 @@
+// MSlider paints the whole M3 track itself (vfunc_snapshot), so every native
+// part is hidden here and the widget reads the colors back from the parts'
+// own `color` (Gtk.Widget.get_color) - the same way MMediaSlider does it.
+//
+// @define-color is not usable for this: GTK rejects var() inside it ("Expected
+// a valid color"), so a palette token cannot reach a named color, and the
+// accent variants below could not follow it either.
+@use "variant";
+
+.plain-slider {
+  @include variant.variants;
+
+  // The active track and the handle.
+  color: var(--accent);
+
+  highlight {
+    background: none;
+  }
+
+  trough {
+    background: none;
+    // Read back as the unfilled track; also the stop on that side.
+    color: var(--secondary_container);
+  }
+
+  slider {
+    background: none;
+    box-shadow: none;
+    border: none;
+  }
+}

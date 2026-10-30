@@ -3,6 +3,7 @@
 // remainder up near the ends and the sum gains a stray +1 px. Here the growing
 // side rounds to nearest and the collapsing side floors, so the remainder is
 // dropped instead of added; the child is always allocated at its natural size.
+import { easeOutCubic } from '@lib/frame/easing';
 import { type Gdk, Gtk } from 'ags/gtk4';
 import Graphene from 'gi://Graphene';
 import Gsk from 'gi://Gsk';
@@ -22,9 +23,6 @@ const {
   SWING_DOWN,
   SWING_RIGHT,
 } = Gtk.RevealerTransitionType;
-
-/** GtkProgressTracker's easing: the same curve Gtk.Revealer animates with. */
-const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
 
 const SLIDING = new Set([
   SLIDE_UP,
