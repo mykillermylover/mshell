@@ -1,15 +1,9 @@
-import { state } from '@lib/state/app';
 import { useWindowApi } from '@lib/windows/host';
 import type { FloatSpec, PopSpec } from '@lib/windows/spec';
-import { MAnimatedContainer } from '@ui/MAnimatedContainer';
-import { MCava } from '@ui/MCava';
-import { ICONS } from '@widgets/icons';
-import Players from '@widgets/Players';
+import Players, { PlayerHover } from '@widgets/Players';
 import Settings from '@widgets/Settings';
 import Workspaces from '@widgets/Workspaces';
-import { With } from 'ags';
 import { Gtk } from 'ags/gtk4';
-import AstalCava from 'gi://AstalCava?version=0.1';
 
 // Defaults live here, not in lib/windows: a window sets no styles of its own.
 // The background is drawn by the liquid field; padding and color are ours.
@@ -42,38 +36,6 @@ function Card(props: { title: string; body: string; w: number; h: number }) {
       <label class="pop-title" label={props.title} xalign={0} />
       <label label={props.body} xalign={0} wrap />
     </box>,
-  );
-}
-
-function PlayerHover() {
-  const { opened } = useWindowApi();
-
-  const cava = AstalCava.get_default()!;
-
-  const { cavaMode } = state;
-
-  return (
-    <MAnimatedContainer class="hover-row" hexpand>
-      <With value={opened}>
-        {(opened) => (
-          <box spacing={8} heightRequest={opened ? 100 : undefined}>
-            <image
-              iconName={ICONS.media.play}
-              css={opened ? undefined : '-gtk-icon-size: 10px;'}
-            />
-            <MCava
-              cava={cava}
-              hexpand
-              minBarHeight={2}
-              sag={0.25}
-              mode={cavaMode}
-              vexpand
-              css={'color: var(--tertiary);'}
-            />
-          </box>
-        )}
-      </With>
-    </MAnimatedContainer>
   );
 }
 
@@ -145,16 +107,16 @@ export const INITIAL_POPS: PopSpec[] = [
 export const INITIAL_FLOATS: FloatSpec[] = [
   // {
   //   id: 'notes',
-  //   header: () => <FloatHeader title="Notes" />,
+  //   header: () => <_FloatHeader title="Notes" />,
   //   x: 200,
   //   y: 260,
-  //   content: Notes,
+  //   content: _Notes,
   // },
   // {
   //   id: 'mixer',
-  //   header: () => <FloatHeader title="Mixer" />,
+  //   header: () => <_FloatHeader title="Mixer" />,
   //   x: 560,
   //   y: 340,
-  //   content: Mixer,
+  //   content: _Mixer,
   // },
 ];

@@ -6,7 +6,7 @@ import { stateFields } from '@lib/state/schema';
 import { useWindowApi, type WindowApi } from '@lib/windows/host';
 import pickFile from '@ui/filePicker';
 import MDropDown from '@ui/MDropDown';
-import MSlider from '@ui/MSlider';
+import MSlider from '@ui/slider/MSlider';
 import { ICONS } from '@widgets/icons';
 import { Gtk } from 'ags/gtk4';
 
@@ -76,7 +76,11 @@ function FieldControl({ field, api }: { field: Field; api: WindowApi }) {
             widthRequest={100}
           />
           <MSlider
+            mode={
+              field.min ? (field.min < 0 ? 'centered' : undefined) : undefined
+            }
             widthRequest={200}
+            stopIndicators
             min={field.min}
             max={field.max}
             step={field.step}
@@ -133,10 +137,10 @@ function SectionSettings({ fieldsMap }: { fieldsMap: Map<string, Field[]> }) {
   const api = useWindowApi();
 
   return (
-    <box orientation={Gtk.Orientation.VERTICAL} spacing={2}>
+    <box orientation={Gtk.Orientation.VERTICAL} spacing={40}>
       {[...fieldsMap.entries()].map(([section, fields]) => {
         return (
-          <box orientation={Gtk.Orientation.VERTICAL} hexpand>
+          <box orientation={Gtk.Orientation.VERTICAL} hexpand spacing={20}>
             <label label={section} />
             {fields.map((field) => (
               <box orientation={Gtk.Orientation.HORIZONTAL} spacing={40}>
