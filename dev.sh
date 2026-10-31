@@ -10,7 +10,7 @@ set -euo pipefail
 
 cd "$(dirname "$(readlink -f "$0")")"
 
-INSTANCE=ags
+INSTANCE="mshell-dev"
 
 # Sources only: recursing over the root would catch node_modules, @girs,
 # build, result and .git — the shell would restart on any service file.
