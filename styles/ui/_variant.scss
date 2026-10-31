@@ -11,26 +11,30 @@
 $variants: (
   secondary: (
     accent: c.$secondary,
-    container: c.$secondary-container,
+    on-accent: c.$on-secondary,
+    accent-container: c.$secondary-container,
+    on-accent-container: c.$on-secondary-container,
   ),
   tertiary: (
     accent: c.$tertiary,
-    container: c.$tertiary-container,
+    on-accent: c.$on-tertiary,
+    accent-container: c.$tertiary-container,
+    on-accent-container: c.$on-tertiary-container,
   ),
 );
 
 @mixin variants {
-  --container: #{c.$surface-dim};
-  --label: #{c.$primary};
-
   --accent: #{c.$primary};
+  --on-accent: #{c.$on-primary};
   --accent-container: #{c.$primary-container};
+  --on-accent-container: #{c.$on-primary-container};
 
   @each $name, $variant in $variants {
     &.#{$name} {
-      --label: #{map.get($variant, accent)};
       --accent: #{map.get($variant, accent)};
-      --accent-container: #{map.get($variant, container)};
+      --on-accent: #{map.get($variant, on-accent)};
+      --accent-container: #{map.get($variant, accent-container)};
+      --on-accent-container: #{map.get($variant, on-accent-container)};
     }
   }
 }

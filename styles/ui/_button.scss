@@ -9,8 +9,8 @@ button.mbutton {
   background: var(--accent);
 
   &.elevated {
-    background: #{c.$surface-container-low};
-    color: #{c.$primary};
+    background: c.$surface-container-low;
+    color: var(--accent);
     box-shadow: 0 2px 1px -1px c.alpha(c.$shadow, 20%),
     0px 1px 1px 0px c.alpha(c.$shadow, 14%),
     0px 1px 3px 0px c.alpha(c.$shadow, 12%);
@@ -23,13 +23,13 @@ button.mbutton {
   }
 
   &.filled {
-    color: #{c.$primary};
-    background: #{c.$on-primary};
+    color: var(--accent);
+    background: var(--on-accent);
   }
 
   &.tonal {
-    color: #{c.$on-secondary-container};
-    background: #{c.$secondary-container};
+    color: var(--on-accent-container);
+    background: var(--accent-container);
   }
 
   &.round {

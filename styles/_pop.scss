@@ -1,3 +1,5 @@
+@use 'theme' as t;
+
 .pop-title {
   font-weight: 700;
 }
@@ -5,5 +7,5 @@
 // Hover zone content: LiquidField draws the background, the content is regular widgets.
 .hover-row {
   padding: 4px 12px;
-  color: var(--fg);
+  color: t.$fg;
 }

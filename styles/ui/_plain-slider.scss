@@ -21,7 +21,7 @@
   trough {
     background: none;
     // Read back as the unfilled track; also the stop on that side.
-    color: #{c.$secondary-container};
+    color: var(--accent-container);
   }
 
   slider {
