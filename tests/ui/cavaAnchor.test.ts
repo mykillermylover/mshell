@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 
-import { anchorPoint, anchorRect, plotSize } from '@ui/cavaAnchor';
+import { anchorPoint, anchorRect, plotSize } from '@ui/cava/cavaAnchor';
 
 // Shape frame: `along` runs with the values, `y` runs from the top of the
 // shape (0 = loud, across = silence).

@@ -11,9 +11,9 @@
 
 import type { Point } from '@lib/geometry';
 import { Accessor } from 'ags';
+import { property, register } from 'ags/gobject';
 import type { Gdk } from 'ags/gtk4';
 import { Astal, Gtk } from 'ags/gtk4'; // first: pins Gtk 4 before Gsk is loaded
-import { property, register } from 'gnim/gobject';
 
 import { applyVariant, type Variant } from '../variant';
 import { DRAG_THRESHOLD, WAVE_AMPLITUDE, WAVE_SPEED } from './sliderMath';

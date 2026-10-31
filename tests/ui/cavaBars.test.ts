@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 
-import { barRects } from '@ui/cavaBars';
+import { barRects } from '@ui/cava/cavaBars';
 
 const near = (a: number, b: number, eps = 1e-6) => Math.abs(a - b) < eps;
 

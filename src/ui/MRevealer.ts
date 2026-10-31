@@ -4,10 +4,10 @@
 // side rounds to nearest and the collapsing side floors, so the remainder is
 // dropped instead of added; the child is always allocated at its natural size.
 import { easeOutCubic } from '@lib/frame/easing';
+import { register } from 'ags/gobject';
 import { type Gdk, Gtk } from 'ags/gtk4';
 import Graphene from 'gi://Graphene';
 import Gsk from 'gi://Gsk';
-import { register } from 'gnim/gobject';
 
 const {
   NONE: NO_TRANSITION,

@@ -6,12 +6,13 @@
 // path (curve) - the cheap Gsk ops LiquidField draws its windows with.
 
 import type { Accessor } from 'ags';
+import { property, register } from 'ags/gobject';
 import { Gtk } from 'ags/gtk4'; // first: pins Gtk 4 before Gsk is loaded
 import type AstalCava from 'gi://AstalCava';
 import Graphene from 'gi://Graphene';
 import Gsk from 'gi://Gsk';
-import { property, register } from 'gnim/gobject';
 
+import { applyVariant, type Variant } from '../variant';
 import {
   anchorPoint,
   anchorRect,
@@ -20,7 +21,6 @@ import {
 } from './cavaAnchor';
 import { barRects } from './cavaBars';
 import { curveSegments, polylinePoints } from './cavaCurve';
-import { applyVariant, type Variant } from './variant';
 
 /**
  * bars - a row of columns;

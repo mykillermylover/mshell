@@ -9,9 +9,9 @@
 //
 // Unlike MMediaSlider it does not inherit GTK's geometry: the M3 sizes are the
 // spec, so only the *positions* come from GtkRange.
+import { property, register } from 'ags/gobject';
 import { Gdk } from 'ags/gtk4';
 import { Astal, Gtk } from 'ags/gtk4'; // first: pins Gtk 4 before Gsk is loaded
-import { property, register } from 'gnim/gobject';
 
 import { applyVariant, type Variant } from '../variant';
 import { type SliderMode, type TrackBoxes, trackLayout } from './m3Layout';

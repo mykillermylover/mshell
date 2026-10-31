@@ -5,8 +5,8 @@ import type { ChoiceSpec, Node } from '@lib/config/leaf';
 import type { Field } from '@lib/fields';
 import { fields } from '@lib/fields';
 import type { Store } from '@lib/store';
-import type { CavaMode } from '@ui/MCava';
-import { isCavaMode } from '@ui/MCava';
+import type { CavaMode } from '@ui/cava';
+import { isCavaMode } from '@ui/cava';
 
 const CAVA_SCHEMA: ChoiceSpec<CavaMode> = {
   kind: 'choice',

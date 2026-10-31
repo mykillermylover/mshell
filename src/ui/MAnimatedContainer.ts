@@ -6,16 +6,16 @@
 // A Gtk.Widget, not a Gtk.Box: with a layout manager set, gtk_widget_measure
 // calls the manager and never the widget's own vfunc, so a Box subclass would
 // lose the whole point of this class.
-import { type Gdk, Gtk } from 'ags/gtk4';
-import Adw from 'gi://Adw';
-import type GObject from 'gi://GObject';
 import {
   getter,
   type ParamFlags,
   ParamSpec,
   register,
   setter,
-} from 'gnim/gobject';
+} from 'ags/gobject';
+import { type Gdk, Gtk } from 'ags/gtk4';
+import Adw from 'gi://Adw';
+import type GObject from 'gi://GObject';
 
 const DEFAULT_DURATION = 150;
 /** The curve Gtk.Revealer animates with: same feel as the pop revealers. */
