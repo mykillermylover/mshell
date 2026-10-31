@@ -1,0 +1,145 @@
+// Sass-фасад над рантайм-палитрой.
+//
+// Значения — var()-строки: реальный цвет приходит от matugen в рантайме и
+// подменяется без перезапуска (src/lib/theme/css.ts конкатенирует palette.css).
+// Sass при этом умеет работать с ними как с именами, а арифметику цвета
+// считает GTK по CSS Color 5 (color-mix, relative colors) — на этапе
+// computed value, уже с реальным значением.
+//
+// Соглашение: Sass-идентификатор в kebab-case, CSS-переменная в snake_case —
+// для Sass `$on-surface` и `$on_surface` одно и то же имя.
+//
+// Второй аргумент — в тех же единицах, что у CSS: mix(…, 12%), alpha(…, 20%),
+// lighten(…, 10%) (HSL-lightness в процентах).
+
+@use 'sass:map';
+
+// M3 token → $kebab-name
+@function token($name) {
+  @return var(--#{$name});
+}
+
+$background: token(background);
+$error: token(error);
+$error-container: token(error_container);
+$inverse-on-surface: token(inverse_on_surface);
+$inverse-primary: token(inverse_primary);
+$inverse-surface: token(inverse_surface);
+$on-background: token(on_background);
+$on-error: token(on_error);
+$on-error-container: token(on_error_container);
+$on-primary: token(on_primary);
+$on-primary-container: token(on_primary_container);
+$on-primary-fixed: token(on_primary_fixed);
+$on-primary-fixed-variant: token(on_primary_fixed_variant);
+$on-secondary: token(on_secondary);
+$on-secondary-container: token(on_secondary_container);
+$on-secondary-fixed: token(on_secondary_fixed);
+$on-secondary-fixed-variant: token(on_secondary_fixed_variant);
+$on-surface: token(on_surface);
+$on-surface-variant: token(on_surface_variant);
+$on-tertiary: token(on_tertiary);
+$on-tertiary-container: token(on_tertiary_container);
+$on-tertiary-fixed: token(on_tertiary_fixed);
+$on-tertiary-fixed-variant: token(on_tertiary_fixed_variant);
+$outline: token(outline);
+$outline-variant: token(outline_variant);
+$primary: token(primary);
+$primary-container: token(primary_container);
+$primary-fixed: token(primary_fixed);
+$primary-fixed-dim: token(primary_fixed_dim);
+$scrim: token(scrim);
+$secondary: token(secondary);
+$secondary-container: token(secondary_container);
+$secondary-fixed: token(secondary_fixed);
+$secondary-fixed-dim: token(secondary_fixed_dim);
+$shadow: token(shadow);
+$source-color: token(source_color);
+$surface: token(surface);
+$surface-bright: token(surface_bright);
+$surface-container: token(surface_container);
+$surface-container-high: token(surface_container_high);
+$surface-container-highest: token(surface_container_highest);
+$surface-container-low: token(surface_container_low);
+$surface-container-lowest: token(surface_container_lowest);
+$surface-dim: token(surface_dim);
+$surface-tint: token(surface_tint);
+$surface-variant: token(surface_variant);
+$tertiary: token(tertiary);
+$tertiary-container: token(tertiary_container);
+$tertiary-fixed: token(tertiary_fixed);
+$tertiary-fixed-dim: token(tertiary_fixed_dim);
+
+// Для @each по токенам. Имена — без `$`, в том же kebab-case.
+$tokens: (
+  background: $background,
+  error: $error,
+  error-container: $error-container,
+  inverse-on-surface: $inverse-on-surface,
+  inverse-primary: $inverse-primary,
+  inverse-surface: $inverse-surface,
+  on-background: $on-background,
+  on-error: $on-error,
+  on-error-container: $on-error-container,
+  on-primary: $on-primary,
+  on-primary-container: $on-primary-container,
+  on-primary-fixed: $on-primary-fixed,
+  on-primary-fixed-variant: $on-primary-fixed-variant,
+  on-secondary: $on-secondary,
+  on-secondary-container: $on-secondary-container,
+  on-secondary-fixed: $on-secondary-fixed,
+  on-secondary-fixed-variant: $on-secondary-fixed-variant,
+  on-surface: $on-surface,
+  on-surface-variant: $on-surface-variant,
+  on-tertiary: $on-tertiary,
+  on-tertiary-container: $on-tertiary-container,
+  on-tertiary-fixed: $on-tertiary-fixed,
+  on-tertiary-fixed-variant: $on-tertiary-fixed-variant,
+  outline: $outline,
+  outline-variant: $outline-variant,
+  primary: $primary,
+  primary-container: $primary-container,
+  primary-fixed: $primary-fixed,
+  primary-fixed-dim: $primary-fixed-dim,
+  scrim: $scrim,
+  secondary: $secondary,
+  secondary-container: $secondary-container,
+  secondary-fixed: $secondary-fixed,
+  secondary-fixed-dim: $secondary-fixed-dim,
+  shadow: $shadow,
+  source-color: $source-color,
+  surface: $surface,
+  surface-bright: $surface-bright,
+  surface-container: $surface-container,
+  surface-container-high: $surface-container-high,
+  surface-container-highest: $surface-container-highest,
+  surface-container-low: $surface-container-low,
+  surface-container-lowest: $surface-container-lowest,
+  surface-dim: $surface-dim,
+  surface-tint: $surface-tint,
+  surface-variant: $surface-variant,
+  tertiary: $tertiary,
+  tertiary-container: $tertiary-container,
+  tertiary-fixed: $tertiary-fixed,
+  tertiary-fixed-dim: $tertiary-fixed-dim,
+);
+
+// Заменяет color.mix($a, $b, $weight): $weight — доля $a.
+@function mix($a, $b, $weight) {
+  @return color-mix(in srgb, #{$a} #{$weight}, #{$b});
+}
+
+// Заменяет color.adjust($c, $alpha: …) для полупрозрачности: $amount — доля $color.
+@function alpha($color, $amount) {
+  @return color-mix(in srgb, #{$color} #{$amount}, transparent);
+}
+
+// Заменяет color.adjust($c, $lightness: +…): $amount — проценты HSL-lightness.
+@function lighten($color, $amount) {
+  @return hsl(from #{$color} h s calc(l + #{$amount}));
+}
+
+// Заменяет color.adjust($c, $lightness: -…).
+@function darken($color, $amount) {
+  @return hsl(from #{$color} h s calc(l - #{$amount}));
+}
