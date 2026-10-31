@@ -1,0 +1,38 @@
+@use '../colors' as c;
+@use 'variant';
+
+button.mbutton {
+  @include variant.variants;
+
+  border: none;
+  color: var(--accent-container);
+  background: var(--accent);
+
+  &.elevated {
+    background: #{c.$surface-container-low};
+    color: #{c.$primary};
+    box-shadow: 0 2px 1px -1px c.alpha(c.$shadow, 20%),
+    0px 1px 1px 0px c.alpha(c.$shadow, 14%),
+    0px 1px 3px 0px c.alpha(c.$shadow, 12%);
+
+    &:hover {
+      box-shadow: 0 1px 5px 0 c.alpha(c.$shadow, 12%),
+      0 2px 2px 0 c.alpha(c.$shadow, 14%),
+      0 3px 1px -2px c.alpha(c.$shadow, 20%);
+    }
+  }
+
+  &.filled {
+    color: #{c.$primary};
+    background: #{c.$on-primary};
+  }
+
+  &.tonal {
+    color: #{c.$on-secondary-container};
+    background: #{c.$secondary-container};
+  }
+
+  &.round {
+    border-radius: 9999px;
+  }
+}
