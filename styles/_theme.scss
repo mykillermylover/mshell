@@ -1,5 +1,6 @@
 @use 'sass:map';
 
+@use 'colors' as c;
 @use 'palettes';
 
 @mixin vars($tokens) {
@@ -12,19 +13,11 @@
   @include vars(map.get(palettes.$palettes, everforest, light));
 
   // Semantic layer: components depend only on these names.
-  --fg: var(--on_surface);
-  --fill: color-mix(in srgb, var(--surface) 96%, transparent);
-  --grip: color-mix(in srgb, var(--on_surface) 80%, transparent);
-  --hover: color-mix(
-    in srgb,
-    var(--on_surface) 12%,
-    transparent
-  );
-  --active: color-mix(
-    in srgb,
-    var(--on_surface) 20%,
-    transparent
-  );
+  --fg: #{c.$on-surface};
+  --fill: #{c.alpha(c.$surface, 96%)};
+  --grip: #{c.alpha(c.$on-surface, 80%)};
+  --hover: #{c.alpha(c.$on-surface, 12%)};
+  --active: #{c.alpha(c.$on-surface, 20%)};
 }
 
 @media (prefers-color-scheme: dark) {
