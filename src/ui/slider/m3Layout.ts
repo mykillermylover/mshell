@@ -11,11 +11,12 @@
 
 import type { Box } from '@lib/geometry';
 
+import { handleCenterFor } from './sliderStep';
+
 /** The raw boxes read from GtkRange's children. */
 export interface TrackBoxes {
   trough: Box;
-  fill: Box;
-  /** The handle widget. Unused by the layout: the fill marks its center. */
+  /** Unused by the layout: the handle's place comes from the value. */
   handle: Box;
 }
 
@@ -180,29 +181,6 @@ export function trackLayout(
     trackStart,
     trackEnd,
   };
-}
-
-/**
- * Map a value to the handle's center, between two travel ends.
- *
- * Measured, not derived: on a 1680 px trough the center runs 1..1679, on an
- * 820 px one 1..819 - so it spans the trough minus a pixel at each end, and
- * the handle's own width plays no part.
- */
-export function handleCenterFor(
-  value: number,
-  min: number,
-  max: number,
-  travelStart: number,
-  travelEnd: number,
-): number {
-  if (!(max > min)) {
-    return travelStart;
-  }
-
-  const t = Math.min(1, Math.max(0, (value - min) / (max - min)));
-
-  return travelStart + t * (travelEnd - travelStart);
 }
 
 function standardSegments(

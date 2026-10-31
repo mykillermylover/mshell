@@ -12,11 +12,21 @@
 // m3Layout.ts - it follows the spec, not the theme.
 import type { Box } from '@lib/geometry';
 
+import { handleCenterFor } from './sliderStep';
+
 /** The raw boxes read from GtkRange's children. */
 export interface TrackBoxes {
   trough: Box;
+  /** The filled part: gives the track's thickness and center line. */
   fill: Box;
   handle: Box;
+}
+
+/** The value the playhead shows, and the range it lives in. */
+export interface TrackValue {
+  value: number;
+  min: number;
+  max: number;
 }
 
 /** Everything the painter needs, derived once per frame. */
@@ -36,23 +46,30 @@ export interface TrackLayout {
 }
 
 /**
- * Derive the track layout from the boxes GTK reported.
+ * Derive the track layout from the trough and the current value.
  *
- * All three children share the trough's center line and thickness; the fill
- * is the only one whose x range moves.
+ * The fill's right edge is computed from the value, not read from GTK's
+ * `highlight`: `compute_bounds` returns whole pixels, so a playhead would step
+ * a pixel at a time (about a second on a long track) however smoothly the
+ * value changed. Drawn from the value it moves continuously, and GSK renders
+ * the fraction.
  *
- * A degenerate range (a stream with no length yet) leaves the fill pinned to
- * the start instead of dividing the fill box by a nonsense range.
+ * Everything else still comes from GTK: `trough` gives the span, and `fill`
+ * gives the track's thickness and center line - it is the thin highlight, not
+ * the handle, which would be far too thick.
  */
-export function trackLayout({ trough, fill, handle }: TrackBoxes): TrackLayout {
-  const width = Math.max(0, fill.width);
+export function trackLayout(
+  { trough, fill, handle }: TrackBoxes,
+  { value, min, max }: TrackValue,
+): TrackLayout {
+  const trackEnd = trough.x + trough.width;
 
   return {
     centerY: fill.y + fill.height / 2,
     thickness: fill.height,
     activeStart: fill.x,
-    activeEnd: fill.x + width,
-    trackEnd: trough.x + trough.width,
+    activeEnd: handleCenterFor(value, min, max, trough.x, trackEnd),
+    trackEnd,
     handleHeight: handle.height,
   };
 }

@@ -7,29 +7,46 @@ import { WaveStage } from '@ui/slider/waveStage';
 const boxes: TrackBoxes = {
   // Trough from x=12 to 1692, 2 px tall, centered at y=689.
   trough: { x: 12, y: 688, width: 1680, height: 2 },
-  // Fill covers 40% of it.
+  // The thin highlight: it gives the track's thickness, not its length.
   fill: { x: 12, y: 688, width: 672, height: 2 },
   handle: { x: 676, y: 681, width: 16, height: 16 },
 };
 
+/** The track layout for a value on a 0..100 scale. */
+const layoutAt = (value: number) =>
+  trackLayout(boxes, { value, min: 0, max: 100 });
+
 describe('trackLayout', () => {
-  test('trackLayout: the fill and the trough share a center line', () => {
-    const layout = trackLayout(boxes);
+  test('trackLayout: the track runs along the trough', () => {
+    const layout = layoutAt(0);
 
     assert.equal(layout.centerY, 689);
-    assert.equal(layout.thickness, 2);
-  });
-
-  test('trackLayout: the active part runs from the fill edges', () => {
-    const layout = trackLayout(boxes);
-
     assert.equal(layout.activeStart, 12);
-    assert.equal(layout.activeEnd, 684);
     assert.equal(layout.trackEnd, 1692);
   });
 
-  test('trackLayout: the handle height comes from the handle, not the track', () => {
-    assert.equal(trackLayout(boxes).handleHeight, 16);
+  test('trackLayout: the fill comes from the value, not from GTK', () => {
+    // Whole pixels would quantize; the fraction survives.
+    assert.equal(layoutAt(40).activeEnd, 12 + 1680 * 0.4);
+    assert.equal(layoutAt(12.5).activeEnd, 12 + 1680 * 0.125);
+  });
+
+  test('trackLayout: the value is clamped to the track', () => {
+    assert.equal(layoutAt(-10).activeEnd, 12);
+    assert.equal(layoutAt(150).activeEnd, 1692);
+  });
+
+  test('trackLayout: a degenerate range parks the fill at the start', () => {
+    const layout = trackLayout(boxes, { value: 5, min: 0, max: 0 });
+
+    assert.equal(layout.activeEnd, 12);
+  });
+
+  test('trackLayout: the thickness comes from the fill, the handle is taller', () => {
+    const layout = layoutAt(0);
+
+    assert.equal(layout.thickness, 2);
+    assert.equal(layout.handleHeight, 16);
   });
 });
 

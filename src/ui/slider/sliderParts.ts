@@ -68,7 +68,13 @@ export function currentParts(
   return findParts(slider);
 }
 
-/** The parts' real boxes in the slider's coordinates, or `null` before layout. */
+/**
+ * The parts' real boxes in the slider's coordinates, or `null` before layout.
+ *
+ * `fill` is still measured for the track's thickness and center line - but
+ * NOT for its position: GTK reports whole pixels, so both layouts place the
+ * fill from the value and use `highlight` only for its shape.
+ */
 export function partsBoxes(
   slider: Gtk.Widget,
   parts: SliderParts,

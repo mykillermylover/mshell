@@ -119,7 +119,11 @@ export default class MMediaSlider extends AstalSlider {
     paintTrack(
       snapshot,
       {
-        layout: trackLayout(boxes),
+        layout: trackLayout(boxes, {
+          value: this.get_value(),
+          min: this.get_min(),
+          max: this.get_max(),
+        }),
         amplitude: this.#stage.amplitude * this.#level,
         phase: this.#phase,
         active: this.get_color(),

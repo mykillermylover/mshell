@@ -20,6 +20,32 @@ export function snapStep(value: number, min: number, step: number): number {
 }
 
 /**
+ * Map a value onto a span of pixels: where the playhead sits for that value.
+ *
+ * The caller gives the span, because it differs between the sliders: the M3
+ * one stays a pixel inside the trough at each end so its handle never hangs
+ * off, while the media one fills the trough completely.
+ *
+ * A degenerate range (a stream with no length yet) parks the result at the
+ * start instead of dividing by zero.
+ */
+export function handleCenterFor(
+  value: number,
+  min: number,
+  max: number,
+  start: number,
+  end: number,
+): number {
+  if (!(max > min)) {
+    return start;
+  }
+
+  const t = Math.min(1, Math.max(0, (value - min) / (max - min)));
+
+  return start + t * (end - start);
+}
+
+/**
  * A numeric prop that may arrive as a plain value or as an Accessor, read
  * once at construction time (gnim subscribes the Accessor itself afterwards).
  */
