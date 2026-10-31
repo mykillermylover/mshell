@@ -5,6 +5,7 @@ import { state } from '@lib/state/app';
 import { stateFields } from '@lib/state/schema';
 import { useWindowApi, type WindowApi } from '@lib/windows/host';
 import pickFile from '@ui/filePicker';
+import MButton from '@ui/MButton';
 import MDropDown from '@ui/MDropDown';
 import MSlider from '@ui/slider/MSlider';
 import { ICONS } from '@widgets/icons';
@@ -43,9 +44,9 @@ function FileControl({ field, api }: { field: FileField; api: WindowApi }) {
         text={field.value}
         onEditingDone={({ text }) => field.set(text)}
       />
-      <button onClicked={() => void browse()}>
+      <MButton color={'elevated'} onClicked={() => void browse()}>
         <label label="Browse" />
-      </button>
+      </MButton>
     </box>
   );
 }
