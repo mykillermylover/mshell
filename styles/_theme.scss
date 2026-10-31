@@ -11,6 +11,16 @@ $grip: c.alpha(c.$on-surface, 80%);
 $hover: c.alpha(c.$on-surface, 12%);
 $active: c.alpha(c.$on-surface, 20%);
 
+// Material 3 focus ring: geometry from md-comp-focus-ring, motion from
+// md-sys-motion. The colour comes from the palette, not from a widget variant:
+// the ring must not blend into the widget's own accent fill.
+$focus-ring: c.$secondary;
+$focus-ring-width: 3px;
+$focus-ring-active-width: 8px;
+$focus-ring-offset: 2px;
+$focus-duration: 600ms;
+$focus-easing: cubic-bezier(0.2, 0, 0, 1);
+
 @mixin vars($tokens) {
   @each $name, $value in $tokens {
     --#{$name}: #{$value};

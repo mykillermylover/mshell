@@ -22,3 +22,55 @@ window {
   padding: 18px 24px;
   color: t.$fg;
 }
+
+// Focus ring: only on widgets a keyboard user can actually operate. A bare
+// `:focus-visible` is wrong here - the window's content root is focusable too
+// (lib/windows/window.ts:241 sets can_focus on it for tab isolation), so the
+// rule would draw a ring around the whole window and around pass-through nodes.
+//
+// Our provider sits at PRIORITY_USER (800) against the theme's 200, so these
+// selectors win over Adwaita's `button:focus:focus-visible` whatever the
+// specificity. `scale` is not listed: Adwaita draws its focus on `trough`,
+// which is switched off below, and our sliders paint themselves.
+$focusable: 'button', 'entry', 'switch', 'checkbutton', 'menuitem', 'link';
+
+#{$focusable} {
+  &:focus-visible {
+    outline: t.$focus-ring-width solid t.$focus-ring;
+    outline-offset: t.$focus-ring-offset;
+
+    // The ring jumps to its active width, then settles back to the resting one.
+    // Two names, two delays: grow first, settle takes over once grow is done.
+    animation-name: fd-grow, fd-settle;
+    animation-delay: 0s, calc(#{t.$focus-duration} * 0.25);
+    animation-duration:
+      calc(#{t.$focus-duration} * 0.25),
+      calc(#{t.$focus-duration} * 0.75);
+    animation-timing-function: #{t.$focus-easing};
+  }
+}
+
+// Adwaita draws the slider's focus on its `trough` node, which
+// _plain-slider.scss makes invisible: nothing is left to see there.
+scale trough {
+  outline-style: none;
+}
+
+@keyframes fd-grow {
+  from { outline-width: 0; }
+  to { outline-width: t.$focus-ring-active-width; }
+}
+
+@keyframes fd-settle {
+  from { outline-width: t.$focus-ring-active-width; }
+}
+
+// The form with a value is the one GTK parses: `(prefers-reduced-motion)`
+// without it is rejected with "Expected ':' after @media feature name".
+@media (prefers-reduced-motion: reduce) {
+  #{$focusable} {
+    &:focus-visible {
+      animation: none;
+    }
+  }
+}

@@ -7,6 +7,15 @@
   border: var(--accent) solid 1px;
   border-radius: 10px;
 
+  // The box clips its children to the rounded corners (MDropDown.tsx sets
+  // overflow: HIDDEN so the open list does not spill past the radius), and GTK
+  // clips against the radius too - an outward ring would lose its sides. M3 has
+  // the inward variant for exactly this case: draw the ring inside instead.
+  button:focus-visible {
+    outline-width: 2px;
+    outline-offset: -3px;
+  }
+
   button.dropdown-selected {
     transition: border-radius 400ms ease;
     border: none;
