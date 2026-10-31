@@ -22,7 +22,7 @@
     // Read back by MMediaSlider as Gtk.Widget.get_color(): the inactive part.
     // The neutral container, not the accent one - the track that is yet to
     // come stays quiet while the played part carries the accent.
-    color: #{c.$secondary-container};
+    color: var(--accent-container);
   }
 
   slider {

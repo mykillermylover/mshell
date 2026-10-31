@@ -1,7 +1,8 @@
 @use '../colors' as c;
+@use '../theme' as t;
 
 .workspaces {
-  color: var(--fg);
+  color: t.$fg;
   padding: 4px;
 
   .workspaces-btn {
@@ -10,23 +11,23 @@
     min-height: 0;
     min-width: 0;
 
-    background-color: #{c.$on-secondary};
-    color: #{c.$secondary};
-    border: #{c.$secondary} 1px solid;
+    background-color: c.$on-secondary;
+    color: c.$secondary;
+    border: c.$secondary 1px solid;
 
     transition: 150ms ease-in-out;
     transition-property: background-color, color, border, padding;
 
     &:hover {
-      background-color: #{c.alpha(c.$inverse-primary, 30%)};
-      color: var(--fg);
+      background-color: c.alpha(c.$inverse-primary, 30%);
+      color: t.$fg;
     }
 
     &.focused {
       padding: 2px 12px;
       border: unset;
-      background-color: #{c.$primary};
-      color: #{c.$on-primary};
+      background-color: c.$primary;
+      color: c.$on-primary;
     }
   }
 }

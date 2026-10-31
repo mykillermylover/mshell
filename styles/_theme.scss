@@ -3,6 +3,14 @@
 @use 'colors' as c;
 @use 'palettes';
 
+// Semantic layer: components depend only on these names. Each is a compile-time
+// constant that expands to var()/color-mix() over the runtime palette.
+$fg: c.$on-surface;
+$fill: c.alpha(c.$surface, 96%);
+$grip: c.alpha(c.$on-surface, 80%);
+$hover: c.alpha(c.$on-surface, 12%);
+$active: c.alpha(c.$on-surface, 20%);
+
 @mixin vars($tokens) {
   @each $name, $value in $tokens {
     --#{$name}: #{$value};
@@ -11,13 +19,6 @@
 
 :root {
   @include vars(map.get(palettes.$palettes, everforest, light));
-
-  // Semantic layer: components depend only on these names.
-  --fg: #{c.$on-surface};
-  --fill: #{c.alpha(c.$surface, 96%)};
-  --grip: #{c.alpha(c.$on-surface, 80%)};
-  --hover: #{c.alpha(c.$on-surface, 12%)};
-  --active: #{c.alpha(c.$on-surface, 20%)};
 }
 
 @media (prefers-color-scheme: dark) {
