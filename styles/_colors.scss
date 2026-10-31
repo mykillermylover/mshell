@@ -1,18 +1,16 @@
-// Sass-фасад над рантайм-палитрой.
+// Sass facade over the runtime palette.
 //
-// Значения — var()-строки: реальный цвет приходит от matugen в рантайме и
-// подменяется без перезапуска (src/lib/theme/css.ts конкатенирует palette.css).
-// Sass при этом умеет работать с ними как с именами, а арифметику цвета
-// считает GTK по CSS Color 5 (color-mix, relative colors) — на этапе
-// computed value, уже с реальным значением.
+// Values are var() strings: the real colour comes from matugen at runtime and
+// is swapped without a restart (src/lib/theme/css.ts concatenates palette.css).
+// Sass can still work with them as names, while colour arithmetic is
+// computed by GTK via CSS Color 5 (color-mix, relative colors) — at the
+// computed-value stage, already with the real value.
 //
-// Соглашение: Sass-идентификатор в kebab-case, CSS-переменная в snake_case —
-// для Sass `$on-surface` и `$on_surface` одно и то же имя.
+// Convention: Sass identifier in kebab-case, CSS variable in snake_case —
+// for Sass `$on-surface` and `$on_surface` are the same name.
 //
-// Второй аргумент — в тех же единицах, что у CSS: mix(…, 12%), alpha(…, 20%),
-// lighten(…, 10%) (HSL-lightness в процентах).
-
-@use 'sass:map';
+// The second argument uses the same units as CSS: mix(…, 12%), alpha(…, 20%),
+// lighten(…, 10%) (HSL lightness in percent).
 
 // M3 token → $kebab-name
 @function token($name) {
@@ -70,7 +68,7 @@ $tertiary-container: token(tertiary_container);
 $tertiary-fixed: token(tertiary_fixed);
 $tertiary-fixed-dim: token(tertiary_fixed_dim);
 
-// Для @each по токенам. Имена — без `$`, в том же kebab-case.
+// For @each over the tokens. Names are without `$`, in the same kebab-case.
 $tokens: (
   background: $background,
   error: $error,
@@ -124,22 +122,22 @@ $tokens: (
   tertiary-fixed-dim: $tertiary-fixed-dim,
 );
 
-// Заменяет color.mix($a, $b, $weight): $weight — доля $a.
+// Replaces color.mix($a, $b, $weight): $weight is the share of $a.
 @function mix($a, $b, $weight) {
   @return color-mix(in srgb, #{$a} #{$weight}, #{$b});
 }
 
-// Заменяет color.adjust($c, $alpha: …) для полупрозрачности: $amount — доля $color.
+// Replaces color.adjust($c, $alpha: …) for transparency: $amount is the share of $color.
 @function alpha($color, $amount) {
   @return color-mix(in srgb, #{$color} #{$amount}, transparent);
 }
 
-// Заменяет color.adjust($c, $lightness: +…): $amount — проценты HSL-lightness.
+// Replaces color.adjust($c, $lightness: +…): $amount is HSL lightness percent.
 @function lighten($color, $amount) {
   @return hsl(from #{$color} h s calc(l + #{$amount}));
 }
 
-// Заменяет color.adjust($c, $lightness: -…).
+// Replaces color.adjust($c, $lightness: -…).
 @function darken($color, $amount) {
   @return hsl(from #{$color} h s calc(l - #{$amount}));
 }
