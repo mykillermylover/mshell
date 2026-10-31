@@ -1,4 +1,6 @@
+@use '../colors' as c;
+
 .player {
   padding: 4px 8px 8px 8px;
-  color: var(--on_surface);
+  color: #{c.$on-surface};
 }
