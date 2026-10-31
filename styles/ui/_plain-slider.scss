@@ -6,6 +6,7 @@
 // a valid color"), so a palette token cannot reach a named color, and the
 // accent variants below could not follow it either.
 @use "variant";
+@use '../colors' as c;
 
 .plain-slider {
   @include variant.variants;
@@ -20,7 +21,7 @@
   trough {
     background: none;
     // Read back as the unfilled track; also the stop on that side.
-    color: var(--secondary_container);
+    color: #{c.$secondary-container};
   }
 
   slider {
