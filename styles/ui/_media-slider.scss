@@ -5,6 +5,7 @@
 // widget's own `css` prop only reaches that widget's context, never its
 // internal CSS nodes.
 @use "variant";
+@use '../colors' as c;
 
 .media-slider {
   @include variant.variants;
@@ -21,7 +22,7 @@
     // Read back by MMediaSlider as Gtk.Widget.get_color(): the inactive part.
     // The neutral container, not the accent one - the track that is yet to
     // come stays quiet while the played part carries the accent.
-    color: var(--secondary_container);
+    color: #{c.$secondary-container};
   }
 
   slider {
