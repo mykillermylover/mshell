@@ -9,6 +9,8 @@ export type Content = () => JSX.Element;
 export interface HoverSpec {
   content?: Content; // component inside the zone
   hideOnReveal?: boolean; // hide the zone while the popover is revealed
+  /** Keep the lip's strip clear in the compositor; popups never change it. */
+  reserve?: boolean;
 }
 
 /** Common to all windows: content and keyboard. */

@@ -71,6 +71,8 @@ export interface PopSlot {
   readonly revealed: boolean;
   /** Revealer of the hover zone; null if there is no zone. */
   readonly zoneRevealer: MRevealer | null;
+  /** Natural thickness of the hover zone across the edge; 0 without a zone. */
+  lipDepth(): number;
   bounds(relativeTo: Gtk.Widget): Rect | null;
   apply(duration: number, layout: PopLayout): void;
   cleanup(): void;
@@ -83,6 +85,7 @@ export interface PopSlot {
  */
 export function buildPopSlot(options: PopSlotOptions): PopSlot {
   const { edge, layout, revealer, content, hover } = options;
+  const horizontal = edge === 'top' || edge === 'bottom';
   const widget = new Gtk.Box();
   let spacer: Gtk.Box | null = null;
   let zone: Gtk.Box | null = null;
@@ -175,6 +178,16 @@ export function buildPopSlot(options: PopSlotOptions): PopSlot {
       return revealer.child_revealed;
     },
     zoneRevealer,
+    lipDepth: () => {
+      if (!zone) {
+        return 0;
+      }
+      const [, natural] = zone.get_preferred_size();
+      if (!natural) {
+        return 0;
+      }
+      return horizontal ? natural.height : natural.width;
+    },
     bounds: (relativeTo) => boundsOf(widget, relativeTo),
     apply,
     cleanup: () => {

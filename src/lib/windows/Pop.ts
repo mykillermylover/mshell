@@ -125,6 +125,17 @@ export class Pop extends Window {
     this.#slot.apply(style.revealDuration, this.#layout(style));
   }
 
+  /**
+   * Thickness this window asks the compositor to keep clear: the frame strip
+   * plus the always-visible hover lip. Zero without `hover.reserve`.
+   */
+  reserveDepth(): number {
+    if (!this.#hover?.reserve) {
+      return 0;
+    }
+    return this.#style().border + this.#slot.lipDepth();
+  }
+
   protected watchedRevealers(): MRevealer[] {
     const zone = this.#slot.zoneRevealer;
     return zone ? [this.revealer, zone] : [this.revealer];

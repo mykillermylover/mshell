@@ -3,6 +3,7 @@ import { LiquidField } from '@lib/liquid/LiquidField';
 import { Float } from '@lib/windows/Float';
 import type { WindowHost } from '@lib/windows/host';
 import { Pop } from '@lib/windows/Pop';
+import { type Edge, reserveBands } from '@lib/windows/popLayout';
 import type { FloatSpec, PopSpec } from '@lib/windows/spec';
 import type { Window } from '@lib/windows/window';
 import { Astal, Gdk, Gtk } from 'ags/gtk4';
@@ -13,6 +14,7 @@ import { FrameInput } from './FrameInput';
 import { FrameKeyboard, type KeyboardMode } from './FrameKeyboard';
 import { FrameMotion } from './FrameMotion';
 import { FrameWindows } from './FrameWindows';
+import { Reserve } from './Reserve';
 
 /** The arbitration speaks in its own words; Astal names the same three states. */
 const KEYMODE: Record<KeyboardMode, Astal.Keymode> = {
@@ -33,6 +35,8 @@ const KEYMODE: Record<KeyboardMode, Astal.Keymode> = {
  */
 export class Frame {
   readonly #surface: Astal.Window;
+  readonly #monitor: Gdk.Monitor;
+  readonly #reserve = new Map<Edge, Reserve>();
   readonly connector: string | null;
   #field = new LiquidField();
   #fixed = new Gtk.Fixed();
@@ -88,6 +92,7 @@ export class Frame {
   ) {
     this.#style = style;
 
+    this.#monitor = monitor;
     this.connector = monitor.get_connector();
     this.#host = {
       monitor,
@@ -227,6 +232,8 @@ export class Frame {
 
     this.#surface.connect('map', () => {
       this.#input.reset();
+      // Content-based lips can only be measured after realize.
+      this.#syncReserve();
 
       GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
         for (const body of this.#windows.bodies()) {
@@ -289,11 +296,16 @@ export class Frame {
   /** Apply the current config: durations and paddings, poke() will update the shape. */
   refresh() {
     this.#windows.apply();
+    this.#syncReserve();
     this.#motion.poke();
   }
 
   destroy() {
     this.#windows.dispose();
+    for (const reserve of this.#reserve.values()) {
+      reserve.destroy();
+    }
+    this.#reserve.clear();
     this.#surface.destroy();
   }
 
@@ -312,6 +324,7 @@ export class Frame {
         ),
       (pop) => this.#overlay.add_overlay(pop.widget),
     );
+    this.#syncReserve();
   }
 
   /** Add a Float; can be called after the frame is initialized. */
@@ -338,6 +351,7 @@ export class Frame {
       this.#fixed.remove(body.revealer);
     }
     this.#motion.poke();
+    this.#syncReserve();
   }
 
   /** Whether this frame has a window with this id. */
@@ -360,6 +374,37 @@ export class Frame {
     this.#windows.add(body, () => this.#motion.poke());
     mount(body);
     this.#motion.poke();
+  }
+
+  /** Tell the compositor which edge strips are permanently occupied. */
+  #syncReserve() {
+    const bands = reserveBands(
+      this.#windows
+        .bodies()
+        .flatMap((body) =>
+          body instanceof Pop
+            ? [{ edge: body.spec.edge, depth: body.reserveDepth() }]
+            : [],
+        ),
+    );
+
+    for (const [edge, thickness] of bands) {
+      let reserve = this.#reserve.get(edge);
+      if (!reserve) {
+        reserve = new Reserve(this.#monitor, edge, thickness);
+        this.#reserve.set(edge, reserve);
+        continue;
+      }
+      reserve.setThickness(thickness);
+    }
+
+    for (const [edge, reserve] of this.#reserve) {
+      if (bands.has(edge)) {
+        continue;
+      }
+      reserve.destroy();
+      this.#reserve.delete(edge);
+    }
   }
 
   // ───────────────────────── field ─────────────────────────

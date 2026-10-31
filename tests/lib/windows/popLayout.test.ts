@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 
-import { popLayout } from '@lib/windows/popLayout';
+import { popLayout, reserveBands } from '@lib/windows/popLayout';
 
 const style = { border: 4, screenRadius: 10 };
 
@@ -252,5 +252,29 @@ describe('popLayout', () => {
         40,
       );
     });
+  });
+});
+
+describe('reserveBands', () => {
+  test('keeps the deepest positive depth per edge', () => {
+    const bands = reserveBands([
+      { edge: 'top', depth: 10 },
+      { edge: 'top', depth: 6 },
+      { edge: 'left', depth: 0 },
+      { edge: 'bottom', depth: 8 },
+      { edge: 'bottom', depth: -4 },
+    ]);
+
+    assert.deepEqual(
+      [...bands],
+      [
+        ['top', 10],
+        ['bottom', 8],
+      ],
+    );
+  });
+
+  test('no sources - no bands', () => {
+    assert.equal(reserveBands([]).size, 0);
   });
 });

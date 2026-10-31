@@ -84,7 +84,7 @@ export const INITIAL_POPS: PopSpec[] = [
   {
     id: 'settings',
     edge: 'right',
-    hover: true,
+    hover: { reserve: true },
     keyboard: true,
     content: () => Body(<Settings />),
   },
@@ -98,7 +98,7 @@ export const INITIAL_POPS: PopSpec[] = [
       hideOnReveal: true,
       content: () => <box heightRequest={2} />,
     },
-    offsetX: 45,
+    offsetX: 60,
     content: () => <Workspaces />,
   },
 ];

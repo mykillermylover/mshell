@@ -1,10 +1,12 @@
 // The layer is fully transparent: anything visible as a "background" is drawn by lib/liquid/LiquidField.ts.
 // The class is mshell-frame, not frame: the name .frame is taken by GTK theme rules.
 
-window.mshell-frame {
-  background: transparent;
-  box-shadow: none;
-  border: none;
+window {
+  &.mshell-frame, &.frame-reserve {
+    background: transparent;
+    box-shadow: none;
+    border: none;
+  }
 }
 
 // Fill of the frame and ALL windows: LiquidField reads it as a color (get_color),

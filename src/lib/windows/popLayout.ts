@@ -196,3 +196,25 @@ export function popBody(rect: Rect, edge: Edge, border: number): Rect {
     }
   }
 }
+
+export interface BandSource {
+  edge: Edge;
+  depth: number;
+}
+
+/**
+ * Reserved strip per edge: the deepest source wins and non-positive depths are
+ * ignored, so windows on the same edge share one band.
+ */
+export function reserveBands(sources: Iterable<BandSource>): Map<Edge, number> {
+  const bands = new Map<Edge, number>();
+
+  for (const { edge, depth } of sources) {
+    if (depth <= 0) {
+      continue;
+    }
+    bands.set(edge, Math.max(bands.get(edge) ?? 0, depth));
+  }
+
+  return bands;
+}
