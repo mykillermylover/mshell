@@ -8,6 +8,8 @@ import { Accessor } from 'ags';
 // `State<Leaf>` — на этом ломается дерево конфига.
 export type State<T> = Accessor<T> & { set(value: T): void };
 
+export type MaybeAccessor<T> = Accessor<T> | T;
+
 /**
  * Навесить сеттер на Accessor. Вызывать один раз на Accessor: повторный вызов
  * перезапишет set, поэтому кэширующие потребители зовут его при создании.
@@ -20,5 +22,5 @@ export function settable<T>(
 }
 
 /** The prop comes as a plain value or an Accessor: one shape for the body. */
-export const asAccessor = <T>(value: T | Accessor<T>): Accessor<T> =>
+export const asAccessor = <T>(value: MaybeAccessor<T>): Accessor<T> =>
   value instanceof Accessor ? value : new Accessor(() => value);

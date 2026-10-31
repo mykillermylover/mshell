@@ -1,3 +1,4 @@
+import type { MaybeAccessor } from '@lib/reactive';
 import { asAccessor } from '@lib/reactive';
 import { Accessor } from 'ags';
 import { For } from 'ags';
@@ -9,7 +10,7 @@ import type { Variant } from './variant';
 
 export type MDropDownProps<T extends string> = JSX.IntrinsicElements['box'] & {
   options: T[] | readonly T[] | Accessor<T[]>;
-  value?: T | Accessor<T>;
+  value?: MaybeAccessor<T>;
   onValueChange: (value: T) => void;
   maxRows?: number | Accessor<number>;
   /** Which palette variant the frame uses. */

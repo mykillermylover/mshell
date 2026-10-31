@@ -42,42 +42,52 @@ export const SCHEMA = {
       default: 0,
       min: -1,
       max: 1,
-      step: 0.5,
+      step: 0.1,
       label: 'Contrast',
     }),
   },
   style: {
-    border: num({ default: 4, min: 0, max: 32, label: 'Border', unit: 'px' }),
+    border: num({
+      default: 4,
+      min: 0,
+      max: 32,
+      label: 'Border',
+      unit: 'px',
+      step: 1,
+    }),
     screenRadius: num({
       // screen corners (= rounding in Hyprland)
       default: 10,
       min: 0,
-      max: 64,
+      max: 50,
       label: 'Screen corners',
       unit: 'px',
+      step: 1,
     }),
     windowRadius: num({
       default: 12,
       min: 0,
-      max: 64,
+      max: 50,
       label: 'Window corners',
       unit: 'px',
+      step: 1,
     }),
     // Blur radius: σ = blurRadius / 1.35.
-    blurRadius: num({ default: 10, min: 1, max: 64, label: 'Blur' }),
+    blurRadius: num({ default: 10, min: 1, max: 50, label: 'Blur', step: 1 }),
     // Magnet reach: at what gap the window snaps, px.
     snapReach: num({
       default: 44,
       min: 0,
-      max: 200,
+      max: 100,
       label: 'Magnet',
       unit: 'px',
+      step: 1,
     }),
     // Alpha threshold steepness: the higher, the sharper the edge (≈1.5px at 2.2).
     sharp: num({
       default: 2.2,
-      min: 0.1,
-      max: 20,
+      min: 1,
+      max: 4,
       step: 0.1,
       label: 'Steepness',
     }),
@@ -87,6 +97,7 @@ export const SCHEMA = {
       min: 0,
       max: 2000,
       label: 'Magnet, ms',
+      step: 10,
     }),
     // Pop and Float reveal/hide duration, ms.
     revealDuration: num({
@@ -94,21 +105,31 @@ export const SCHEMA = {
       min: 0,
       max: 2000,
       label: 'Reveal, ms',
+      step: 10,
     }),
     // Lip and input hover-zone thickness (see lib/windows/popLayout.ts).
-    hoverDepth: num({ default: 6, min: 1, max: 64, label: 'Lip', unit: 'px' }),
+    hoverDepth: num({
+      default: 6,
+      min: 1,
+      max: 50,
+      label: 'Lip',
+      unit: 'px',
+      step: 1,
+    }),
     hoverDelay: num({
       // 0 - instant, as if there were no delays
       default: 120,
       min: 0,
       max: 2000,
       label: 'Hover delay, ms',
+      step: 10,
     }),
     hideDelay: num({
       default: 300,
       min: 0,
       max: 2000,
       label: 'Hide delay, ms',
+      step: 10,
     }),
   },
 } satisfies Node;
