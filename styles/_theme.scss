@@ -8,8 +8,9 @@
 $fg: c.$on-surface;
 $fill: c.alpha(c.$surface, 96%);
 $grip: c.alpha(c.$on-surface, 80%);
-$hover: c.alpha(c.$on-surface, 12%);
-$active: c.alpha(c.$on-surface, 20%);
+// State-layer opacities from md-sys-state (v0_192): hover 8%, pressed 12%.
+$hover: c.alpha(c.$on-surface, 8%);
+$active: c.alpha(c.$on-surface, 12%);
 
 // Material 3 focus ring: geometry from md-comp-focus-ring, motion from
 // md-sys-motion. The colour comes from the palette, not from a widget variant:

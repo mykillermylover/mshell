@@ -28,13 +28,20 @@ window {
 // (lib/windows/window.ts:241 sets can_focus on it for tab isolation), so the
 // rule would draw a ring around the whole window and around pass-through nodes.
 //
-// Our provider sits at PRIORITY_USER (800) against the theme's 200, so these
-// selectors win over Adwaita's `button:focus:focus-visible` whatever the
-// specificity. `scale` is not listed: Adwaita draws its focus on `trough`,
-// which is switched off below, and our sliders paint themselves.
+// Adwaita's `button:focus:focus-visible` is more specific than ours and does
+// win, so its ring is switched off by hand below rather than outranked.
+// `scale` is not listed: Adwaita draws the slider's focus on `trough`, which is
+// switched off at the bottom, and our sliders paint themselves anyway.
 $focusable: 'button', 'entry', 'switch', 'checkbutton', 'menuitem', 'link';
 
 #{$focusable} {
+  // Adwaita paints a ring on any focused widget, mouse clicks included, and
+  // keeps it after the pointer leaves. That is not keyboard focus: M3 shows
+  // the ring for keyboard navigation only, which is exactly `:focus-visible`.
+  &:focus:not(:focus-visible) {
+    outline-style: none;
+  }
+
   &:focus-visible {
     outline: t.$focus-ring-width solid t.$focus-ring;
     outline-offset: t.$focus-ring-offset;
@@ -57,12 +64,18 @@ scale trough {
 }
 
 @keyframes fd-grow {
-  from { outline-width: 0; }
-  to { outline-width: t.$focus-ring-active-width; }
+  from {
+    outline-width: 0;
+  }
+  to {
+    outline-width: t.$focus-ring-active-width;
+  }
 }
 
 @keyframes fd-settle {
-  from { outline-width: t.$focus-ring-active-width; }
+  from {
+    outline-width: t.$focus-ring-active-width;
+  }
 }
 
 // The form with a value is the one GTK parses: `(prefers-reduced-motion)`
