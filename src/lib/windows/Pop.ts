@@ -154,7 +154,7 @@ export class Pop extends Window {
     return popLayout(
       this.spec.edge,
       this.spec.align ?? 'center',
-      { border: style.border, screenRadius: style.screenRadius },
+      { border: style.border },
       this.#depth(style),
       Boolean(this.#hover),
       offset,

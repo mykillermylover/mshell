@@ -7,11 +7,10 @@ import type { Rect } from '@lib/geometry';
 export type HorizontalEdge = 'top' | 'bottom';
 export type VerticalEdge = 'left' | 'right';
 export type Edge = HorizontalEdge | VerticalEdge;
-export type EdgeAlign = 'start' | 'center' | 'end';
+export type EdgeAlign = 'start' | 'center' | 'end' | 'fill';
 
 export interface LayoutStyle {
   border: number;
-  screenRadius: number;
 }
 
 export interface PopLayout {
@@ -50,6 +49,11 @@ const shiftAlong = (
   align: EdgeAlign,
   distance: number,
 ): void => {
+  if (align === 'fill') {
+    // A filled box spans the whole edge: there is nothing to shift it from.
+    return;
+  }
+
   if (align === 'center') {
     // The center shifts by (marginStart - marginEnd) / 2.
     if (distance > 0) {
@@ -68,8 +72,9 @@ const shiftAlong = (
 };
 
 /**
- * Along the edge - align; for start/end an offset from the corner is added:
- * border + screenRadius. Across it - pinning to the frame edge.
+ * Along the edge - align (start/end sit flush with the frame corner, fill spans
+ * the edge). Across it - pinning to the frame edge; `fill` is only meaningful
+ * across the other axis.
  *
  * `depth` is the lip thickness of a hover zone without its own content.
  * `null` - size the zone by that content, so a small widget is not clipped
@@ -89,7 +94,6 @@ export function popLayout(
   hover: boolean,
   offset = 0,
 ): PopLayout {
-  const corner = style.border + style.screenRadius;
   const horizontal = edge === 'top' || edge === 'bottom';
 
   const margins = {
@@ -116,22 +120,6 @@ export function popLayout(
       default: {
         margins.marginEnd = style.border;
       }
-    }
-  }
-
-  if (horizontal) {
-    if (align === 'start') {
-      margins.marginStart = corner;
-    }
-    if (align === 'end') {
-      margins.marginEnd = corner;
-    }
-  } else {
-    if (align === 'start') {
-      margins.marginTop = corner;
-    }
-    if (align === 'end') {
-      margins.marginBottom = corner;
     }
   }
 

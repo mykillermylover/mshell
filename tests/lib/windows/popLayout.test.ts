@@ -75,39 +75,51 @@ describe('popLayout', () => {
   });
 
   describe('align', () => {
-    test('popLayout: start/end add an offset from the corner, without hover', () => {
+    test('popLayout: start/end sit flush with the corner, no inset', () => {
       assert.equal(
         popLayout('top', 'start', style, 6, false).anchor.marginStart,
-        14,
+        0,
       );
       assert.equal(
         popLayout('top', 'end', style, 6, false).anchor.marginEnd,
-        14,
+        0,
       );
       assert.equal(
         popLayout('left', 'start', style, 6, false).anchor.marginTop,
-        14,
+        0,
       );
       assert.equal(
         popLayout('left', 'end', style, 6, false).anchor.marginBottom,
-        14,
+        0,
       );
       assert.equal(
         popLayout('bottom', 'start', style, 6, false).anchor.marginStart,
-        14,
+        0,
       );
       assert.equal(
         popLayout('bottom', 'end', style, 6, false).anchor.marginEnd,
-        14,
+        0,
       );
       assert.equal(
         popLayout('right', 'start', style, 6, false).anchor.marginTop,
-        14,
+        0,
       );
       assert.equal(
         popLayout('right', 'end', style, 6, false).anchor.marginBottom,
-        14,
+        0,
       );
+    });
+
+    test('popLayout: fill aligns along the edge and ignores the offset', () => {
+      const top = popLayout('top', 'fill', style, 6, false, 40);
+      assert.equal(top.anchor.halign, 'fill');
+      assert.equal(top.anchor.marginStart, 0);
+      assert.equal(top.anchor.marginEnd, 0);
+
+      const left = popLayout('left', 'fill', style, 6, false, -40);
+      assert.equal(left.anchor.valign, 'fill');
+      assert.equal(left.anchor.marginTop, 0);
+      assert.equal(left.anchor.marginBottom, 0);
     });
   });
 
@@ -176,7 +188,7 @@ describe('popLayout', () => {
 
     test('popLayout: hover, align start/end does not touch the frame-side margin', () => {
       const top = popLayout('top', 'start', style, 6, true);
-      assert.equal(top.anchor.marginStart, 14);
+      assert.equal(top.anchor.marginStart, 0);
       assert.equal(top.anchor.marginTop, 0);
     });
   });
@@ -217,7 +229,7 @@ describe('popLayout', () => {
     test('popLayout: offset at start/end shifts inward and hits the edge', () => {
       assert.equal(
         popLayout('top', 'start', style, 6, false, 40).anchor.marginStart,
-        54,
+        40,
       );
       assert.equal(
         popLayout('top', 'start', style, 6, false, -40).anchor.marginStart,
@@ -225,7 +237,7 @@ describe('popLayout', () => {
       );
       assert.equal(
         popLayout('top', 'end', style, 6, false, -40).anchor.marginEnd,
-        54,
+        40,
       );
       assert.equal(
         popLayout('top', 'end', style, 6, false, 40).anchor.marginEnd,
@@ -233,11 +245,11 @@ describe('popLayout', () => {
       );
       assert.equal(
         popLayout('left', 'start', style, 6, false, 40).anchor.marginTop,
-        54,
+        40,
       );
       assert.equal(
         popLayout('right', 'end', style, 6, false, -40).anchor.marginBottom,
-        54,
+        40,
       );
     });
   });

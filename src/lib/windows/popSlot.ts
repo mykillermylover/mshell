@@ -29,6 +29,7 @@ const ALIGN = {
   start: Gtk.Align.START,
   center: Gtk.Align.CENTER,
   end: Gtk.Align.END,
+  fill: Gtk.Align.FILL,
 };
 
 const ORIENTATION = {
