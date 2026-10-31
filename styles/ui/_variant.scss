@@ -4,17 +4,33 @@
 // default is .primary, so a widget without a variant looks the same as before.
 // The variant only sets custom properties - how a widget uses them (a track
 // color, a border, a stroke) stays that widget's own business.
+@use 'sass:map';
+
+@use '../colors' as c;
+
+$variants: (
+  secondary: (
+    accent: c.$secondary,
+    container: c.$secondary-container,
+  ),
+  tertiary: (
+    accent: c.$tertiary,
+    container: c.$tertiary-container,
+  ),
+);
+
 @mixin variants {
-  --accent: var(--primary);
-  --accent-container: var(--primary_container);
+  --container: #{c.$surface-dim};
+  --label: #{c.$primary};
 
-  &.secondary {
-    --accent: var(--secondary);
-    --accent-container: var(--secondary_container);
-  }
+  --accent: #{c.$primary};
+  --accent-container: #{c.$primary-container};
 
-  &.tertiary {
-    --accent: var(--tertiary);
-    --accent-container: var(--tertiary_container);
+  @each $name, $variant in $variants {
+    &.#{$name} {
+      --label: #{map.get($variant, accent)};
+      --accent: #{map.get($variant, accent)};
+      --accent-container: #{map.get($variant, container)};
+    }
   }
 }
