@@ -12,7 +12,6 @@ import type AstalCava from 'gi://AstalCava';
 import Graphene from 'gi://Graphene';
 import Gsk from 'gi://Gsk';
 
-import { applyVariant, type Variant } from '../variant';
 import {
   anchorPoint,
   anchorRect,
@@ -53,8 +52,6 @@ export interface MCavaProps extends Partial<Gtk.Widget.ConstructorProps> {
    * `right` - along y, growing left.
    */
   anchor?: CavaAnchor;
-  /** Which palette variant colors the bars. */
-  variant?: Variant;
   /**
    * Wave multiplier ('wave-cubic' only): every span bows toward zero at its
    * middle by the mean level of its two points times `sag`. `0` - a straight
@@ -69,8 +66,7 @@ const DEFAULT_LINE_WIDTH = 2;
 
 /**
  * Visualizer of an AstalCava capture, colored by CSS `color`:
- * `.cava { color: var(--accent); }` in styles/ui/_cava.scss, with
- * `.secondary` / `.tertiary` picking another variant. Size it with
+ * `.cava { color: …; }` in styles/ui/_cava.scss. Size it with
  * widthRequest / heightRequest (or hexpand/vexpand).
  *
  * The wave modes draw one invisible point per value, only the line moves.
@@ -101,14 +97,12 @@ export class MCava extends Gtk.Widget {
       lineWidth = DEFAULT_LINE_WIDTH,
       sag = 0,
       anchor = 'bottom',
-      variant = 'primary',
       ...rest
     } = props;
     super(rest);
 
     // GTypeName does not become a CSS name; the stylesheet needs a class.
     this.add_css_class('cava');
-    applyVariant(this, variant);
 
     this.#cava = cava;
     this.#gap = gap;

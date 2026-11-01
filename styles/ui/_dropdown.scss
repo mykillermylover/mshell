@@ -1,12 +1,11 @@
-// MDropDown: the frame takes the accent, the inner buttons inherit it.
+// MDropDown: a custom frame, not an M3 menu yet - the roles here are picked to
+// look neutral, and a proper version is a separate task.
+@use '../colors' as c;
 @use '../motion';
 @use '../shape';
-@use "variant";
 
 .dropdown {
-  @include variant.variants;
-
-  border: var(--accent) solid 1px;
+  border: c.$outline solid 1px;
   border-radius: shape.$corner-medium;
 
   // The box clips its children to the rounded corners (MDropDown.tsx sets

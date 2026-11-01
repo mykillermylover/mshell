@@ -6,15 +6,12 @@ import { createComputed, createState } from 'ags';
 import Gtk from 'gi://Gtk';
 
 import { MRevealer } from './MRevealer';
-import type { Variant } from './variant';
 
 export type MDropDownProps<T extends string> = JSX.IntrinsicElements['box'] & {
   options: T[] | readonly T[] | Accessor<T[]>;
   value?: MaybeAccessor<T>;
   onValueChange: (value: T) => void;
   maxRows?: number | Accessor<number>;
-  /** Which palette variant the frame uses. */
-  variant?: Variant;
 };
 
 export default function MDropDown<T extends string>({
@@ -22,7 +19,6 @@ export default function MDropDown<T extends string>({
   options,
   maxRows,
   value,
-  variant = 'primary',
   ...restProps
 }: MDropDownProps<T>) {
   const optionsAccessor = asAccessor(options);
@@ -58,11 +54,7 @@ export default function MDropDown<T extends string>({
   // is rebuilt when its props change.
   const extra =
     extraClass instanceof Accessor ? extraClass.peek() : (extraClass ?? '');
-  const cssClasses = [
-    'dropdown',
-    ...extra.split(/\s+/).filter(Boolean),
-    ...(variant === 'primary' ? [] : [variant]),
-  ];
+  const cssClasses = ['dropdown', ...extra.split(/\s+/).filter(Boolean)];
 
   return (
     <box

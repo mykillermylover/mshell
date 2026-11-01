@@ -4,14 +4,12 @@
 // The rule has to live in the global provider - a provider added with the
 // widget's own `css` prop only reaches that widget's context, never its
 // internal CSS nodes.
-@use "variant";
 @use '../colors' as c;
 
 .media-slider {
-  @include variant.variants;
-
-  // Active track, handle, and what the widget reads via get_color().
-  color: var(--accent);
+  // Active track, handle, and what the widget reads via get_color():
+  // md-comp-slider says `primary`.
+  color: c.$primary;
 
   highlight {
     background: none;
@@ -20,9 +18,10 @@
   trough {
     background: none;
     // Read back by MMediaSlider as Gtk.Widget.get_color(): the inactive part.
-    // The neutral container, not the accent one - the track that is yet to
-    // come stays quiet while the played part carries the accent.
-    color: var(--accent-container);
+    // md-comp-slider inactive-track-color is surface-container-highest - the
+    // neutral one, so the track yet to come stays quiet while the played part
+    // carries the accent.
+    color: c.$surface-container-highest;
   }
 
   slider {

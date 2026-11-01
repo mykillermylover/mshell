@@ -3,16 +3,12 @@
 // own `color` (Gtk.Widget.get_color) - the same way MMediaSlider does it.
 //
 // @define-color is not usable for this: GTK rejects var() inside it ("Expected
-// a valid color"), so a palette token cannot reach a named color, and the
-// accent variants below could not follow it either.
-@use "variant";
+// a valid color"), so a palette token cannot reach a named color.
 @use '../colors' as c;
 
 .plain-slider {
-  @include variant.variants;
-
-  // The active track and the handle.
-  color: var(--accent);
+  // md-comp-slider: active-track-color and handle-color are `primary`.
+  color: c.$primary;
 
   highlight {
     background: none;
@@ -20,8 +16,9 @@
 
   trough {
     background: none;
-    // Read back as the unfilled track; also the stop on that side.
-    color: var(--accent-container);
+    // md-comp-slider inactive-track-color: surface-container-highest. Read
+    // back as the unfilled track; also the stop on that side.
+    color: c.$surface-container-highest;
   }
 
   slider {

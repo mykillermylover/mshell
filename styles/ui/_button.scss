@@ -1,17 +1,16 @@
 @use '../colors' as c;
 @use '../shape';
-@use 'variant';
 
+// Roles are fixed per variant, as Material 3 has them: a widget does not pick
+// its accent colour from a class any more.
 button.mbutton {
-  @include variant.variants;
-
   border: none;
-  color: var(--accent-container);
-  background: var(--accent);
+  color: c.$primary-container;
+  background: c.$primary;
 
   &.elevated {
     background: c.$surface-container-low;
-    color: var(--accent);
+    color: c.$primary;
     box-shadow: 0 2px 1px -1px c.alpha(c.$shadow, 20%),
     0px 1px 1px 0px c.alpha(c.$shadow, 14%),
     0px 1px 3px 0px c.alpha(c.$shadow, 12%);
@@ -24,13 +23,13 @@ button.mbutton {
   }
 
   &.filled {
-    color: var(--accent);
-    background: var(--on-accent);
+    color: c.$primary;
+    background: c.$on-primary;
   }
 
   &.tonal {
-    color: var(--on-accent-container);
-    background: var(--accent-container);
+    color: c.$on-primary-container;
+    background: c.$primary-container;
   }
 
   &.round {
