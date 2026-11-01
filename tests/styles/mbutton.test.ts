@@ -120,15 +120,47 @@ describe('MButton', { skip }, () => {
     }
   });
 
-  test('hover переходит за 15ms, как hover-слой material-web', () => {
+  test('active — слой 12% поверх hover, как в material-web', () => {
+    // material-web keeps hover and press as two independent layers and lets
+    // them stack, so a press under the pointer reads 8% + 12%, not 12%.
+    // The layer colour is the content role in every variant, which is exactly
+    // what `--_label` already holds - filled on-primary, tonal
+    // on-secondary-container, the rest primary.
+    for (const variant of ['filled', 'tonal', 'elevated', 'outlined', 'text']) {
+      assert.match(
+        rule(`button.mbutton.${variant}`),
+        /--_label: var\(--/,
+        variant,
+      );
+    }
+
+    // No per-variant pressed colour: it would be the same token as `--_label`.
+    assert.doesNotMatch(css!, /--_bg-active/);
+
+    const active = rule('button.mbutton:active');
+
+    // A translucent 12% layer, not an opaque pre-mixed colour: translucency is
+    // what lets it stack on the hover layer the way material-web does.
+    assert.match(
+      active,
+      /radial-gradient\(circle, color-mix\(in srgb, var\(--_label\) 12%, transparent\)/,
+    );
+    // The hover layer stays under the press rather than being blanked.
+    assert.match(
+      rule('button.mbutton:active:hover'),
+      /background-color: var\(--_bg-hover\)/,
+    );
+  });
+
+  test('hover переходит за 75ms, как у Colloid', () => {
     assert.match(
       rule('button.mbutton'),
-      /transition: background-color 15ms linear/,
+      /transition: background-color 75ms cubic-bezier\(0, 0, 0\.2, 1\)/,
     );
+    // `:active` is not in this list: the pressed layer is the ripple gradient,
+    // and a flat `--_bg-hover` under it would stack a second 12%.
     assert.match(
-      rule(
-        'button.mbutton:hover, button.mbutton:active, button.mbutton:checked',
-      ),
+      rule('button.mbutton:hover, button.mbutton:checked'),
       /background-color: var\(--_bg-hover\)/,
     );
   });
@@ -161,20 +193,54 @@ describe('MButton', { skip }, () => {
   });
 
   test('фон Adwaita перебит: её градиент лежал поверх нашего цвета', () => {
-    // The theme paints an opaque gradient on buttons in every state; without
-    // the reset it covers the container colour.
-    assert.match(rule('button.mbutton'), /background-image: none/);
-    assert.match(
-      rule(
-        'button.mbutton:hover, button.mbutton:active, button.mbutton:checked',
-      ),
-      /background-image: none/,
-    );
+    // The theme paints an opaque gradient on buttons in every state; ours has
+    // to replace it outright or the container colour is never seen.
+    assert.match(rule('button.mbutton'), /background-image: radial-gradient\(/);
   });
 
-  test('анимации нажатия в CSS нет — ею владеет ripple-виджет', () => {
-    assert.doesNotMatch(css!, /mbutton-ripple/);
-    assert.doesNotMatch(css!, /background-size:/);
+  test('ripple перенесён из Colloid один в один', () => {
+    // The whole recipe, numbers included: the resting background is a fully
+    // transparent gradient sized 1000%, and `:active` restarts it from 0% and
+    // runs the keyframes to 1000%.
+    const rest = rule('button.mbutton');
+
+    assert.match(
+      rest,
+      /background-image: radial-gradient\(circle, transparent 10%, transparent 0%\)/,
+    );
+    assert.match(rest, /background-position: center/);
+    assert.match(rest, /background-size: 1000% 1000%/);
+    // These two transitions are what make the circle finish and fade after the
+    // pointer is released: the animation itself is gone the moment `:active`
+    // ends, so the end state has to be reached by transition instead.
+    assert.match(rest, /background-size 300ms/);
+    assert.match(rest, /background-image 1200ms/);
+
+    const active = rule('button.mbutton:active');
+
+    // The circle paints a translucent 12% layer of the content role where it
+    // has reached, so it stacks on the hover layer rather than replacing it.
+    assert.match(
+      active,
+      /background-image: radial-gradient\(circle, color-mix\(in srgb, var\(--_label\) 12%, transparent\) 10%, transparent 0%\)/,
+    );
+    assert.match(active, /background-size: 0% 0%/);
+    // Colloid flattens the background on press because its buttons have no
+    // fill. Ours do, and the circle needs the resting colour underneath to
+    // spread over - so only the gradient carries the pressed colour.
+    assert.match(active, /background-color: var\(--_bg\)/);
+    assert.match(
+      active,
+      /animation: mripple 225ms cubic-bezier\(0, 0, 0.2, 1\) forwards/,
+    );
+    // The press must not be eased into: the animation owns the motion.
+    assert.match(active, /background-size 0ms/);
+    assert.match(active, /background-image 0ms/);
+
+    const keyframes = css!
+      .slice(css!.indexOf('@keyframes mripple'))
+      .replaceAll(/\s+/g, ' ');
+    assert.match(keyframes, /to \{ background-size: 1000% 1000%;/);
   });
 
   test('disabled: текст 38%, состояния погашены', () => {

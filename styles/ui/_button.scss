@@ -7,12 +7,12 @@
 //
 // The M3 state layer is an overlay of the content colour at 8% (hover) and 12%
 // (pressed). The hover layer is folded into the container colour up front:
-// `background-color` is the one property GTK animates, and a gradient in
-// `background-image` cannot be transitioned.
+// `background-color` is the one property GTK animates smoothly.
 //
-// The pressed layer is not painted here. It belongs to the ripple widget,
-// which will draw it from the press point; painting it a second time as a flat
-// colour would give one state two treatments.
+// The pressed layer is the ripple: a radial-gradient whose `background-size`
+// grows from nothing to covering the button. It stays translucent and sits on
+// top of the hover layer, the way material-web keeps hover and press as two
+// independent pseudo-elements.
 @use '../colors' as c;
 @use '../elevation';
 @use '../motion';
@@ -32,22 +32,81 @@ button.mbutton {
 
   // Adwaita paints an opaque `background-image` on buttons in every state
   // (a gradient at rest, a flat image while pressed) and it sits on top of
-  // `background-color`. Without this the container colour is never seen.
-  // The ripple is drawn by a child widget, not by a background layer: GTK
-  // does not interpolate `background-size`, so a gradient cannot grow.
-  background-image: none;
+  // `background-color`. This replaces it outright.
+  //
+  // The ripple is Colloid's, taken as it is. At rest the gradient is fully
+  // transparent and the box is already 1000%; `:active` shrinks it to 0% and
+  // the keyframes grow it back, so the circle spreads from the centre.
+  // `background-position: center` is what keeps that centre fixed.
+  background-image: radial-gradient(circle, transparent 10%, transparent 0%);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 1000% 1000%;
 
-  // The hover layer fades in over 15ms, as material-web's ripple does for its
-  // own hover overlay.
+  // The two slow transitions are load-bearing: `:active` ends when the pointer
+  // goes up, which removes the animation at once, so the circle could only
+  // reach its end state by transition. `background-size` carries the growth
+  // to completion, `background-image` fades the colour out afterwards.
   transition:
-    background-color 15ms linear,
-    box-shadow motion.$duration-short4 motion.$easing-standard;
+    background-color 75ms cubic-bezier(0, 0, 0.2, 1),
+    background-size 300ms cubic-bezier(0, 0, 0.2, 1),
+    background-image 1200ms cubic-bezier(0, 0, 0.2, 1);
 
+  // `color` is restated in every state: Adwaita sets it on `:active`
+  // (`color: #eeeeec`) and that would recolour the label.
   &:hover,
-  &:active,
   &:checked {
-    background-image: none;
+    color: var(--_label);
     background-color: var(--_bg-hover);
+  }
+
+  // md-sys-state pressed-state-layer-opacity: a 12% content-colour layer, and
+  // it stays translucent so it stacks on whatever is already there.
+  //
+  // That is how material-web does it: hover and press are two independent
+  // pseudo-elements, both visible at once, so a press under the pointer reads
+  // 8% + 12% rather than 12%. Pre-mixing the layer into an opaque container
+  // colour would erase the hover underneath instead of stacking on it.
+  //
+  // The layer colour is the content role in every variant, and `--_label` is
+  // already exactly that: on-primary, on-secondary-container, or primary.
+  &:active {
+    color: var(--_label);
+    background-color: var(--_bg);
+    background-image: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--_label) 12%, transparent) 10%,
+      transparent 0%
+    );
+    background-size: 0% 0%;
+    animation: mripple 225ms cubic-bezier(0, 0, 0.2, 1) forwards;
+
+    // Zeroed so the press itself is not eased: the animation owns the motion,
+    // and a transition on top of it would fight the keyframes.
+    transition:
+      background-color 75ms cubic-bezier(0, 0, 0.2, 1),
+      background-size 0ms,
+      background-image 0ms;
+
+    // A press is almost always also a hover, so the hover layer has to stay
+    // rather than be blanked back to the container.
+    &:hover {
+      background-color: var(--_bg-hover);
+    }
+  }
+}
+
+@keyframes mripple {
+  to {
+    background-size: 1000% 1000%;
+  }
+}
+
+// Reduced motion: keep the press layer, drop the growth.
+@media (prefers-reduced-motion: reduce) {
+  button.mbutton:active {
+    animation: none;
+    background-size: 1000% 1000%;
   }
 }
 
@@ -141,8 +200,6 @@ button.mbutton.elevated:disabled {
 //
 // M3 sizes the square corner by button size: XS/S 12dp, M 16dp, L 28dp, XL
 // 28dp. Our container is 40dp, which is the S size, so the corner is 12dp.
-// The pressed state has its own radius as well (S: 8dp); that belongs to the
-// ripple widget, which owns the pressed shape.
 button.mbutton.squared {
   border-radius: shape.$corner-medium;
 }
