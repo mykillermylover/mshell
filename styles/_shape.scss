@@ -1,0 +1,21 @@
+// Material 3 shape tokens, md-sys-shape (v0_192).
+//
+// Data only. Physical corners throughout: GTK rejects the logical properties
+// (`border-start-start-radius` and friends) with "No property named".
+//
+// The `-top` / `-start` / `-end` tokens are Sass lists written the way
+// `border-radius` takes them, so they are dropped in as a single value.
+
+$corner-none: 0;
+$corner-extra-small: 4px;
+$corner-small: 8px;
+$corner-medium: 12px;
+$corner-large: 16px;
+$corner-extra-large: 28px;
+$corner-full: 9999px;
+
+$corner-extra-small-top: 4px 4px 0 0;
+$corner-large-top: 16px 16px 0 0;
+$corner-extra-large-top: 28px 28px 0 0;
+$corner-large-start: 16px 0 0 16px;
+$corner-large-end: 0 16px 16px 0;

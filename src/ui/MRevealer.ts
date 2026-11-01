@@ -3,7 +3,12 @@
 // remainder up near the ends and the sum gains a stray +1 px. Here the growing
 // side rounds to nearest and the collapsing side floors, so the remainder is
 // dropped instead of added; the child is always allocated at its natural size.
-import { easeOutCubic } from '@lib/frame/easing';
+import {
+  type Easing,
+  easingOf,
+  type MotionProps,
+  splitMotionProps,
+} from '@lib/motion';
 import { register } from 'ags/gobject';
 import { type Gdk, Gtk } from 'ags/gtk4';
 import Graphene from 'gi://Graphene';
@@ -50,10 +55,9 @@ const RIGHT = new Set([SLIDE_RIGHT, FADE_SLIDE_RIGHT, SWING_RIGHT]);
 /** These transitions keep their size, so there is nothing for us to animate. */
 const INSTANT = new Set([NO_TRANSITION, Gtk.RevealerTransitionType.CROSSFADE]);
 
-export interface MRevealerProps {
+export interface MRevealerProps extends MotionProps {
   transitionType?: Gtk.RevealerTransitionType;
   revealChild?: boolean;
-  transitionDuration?: number;
 }
 
 /**
@@ -74,8 +78,16 @@ export class MRevealer extends Gtk.Revealer {
   #startedAt: number | null = null;
   #tickId = 0;
 
+  /** Curve chosen by the caller; `null` means the directional default. */
+  readonly #easing: Easing | null;
+
   constructor(props: MRevealerProps = {}) {
-    super(props);
+    const { gtkProps, easing } = splitMotionProps(props);
+
+    super(gtkProps);
+
+    this.#easing = easing;
+
     // A revealer built already revealed starts there: no animation to play.
     this.#position = props.revealChild ? 1 : 0;
     this.#from = this.#position;
@@ -209,8 +221,12 @@ export class MRevealer extends Gtk.Revealer {
         const duration = this.transitionDuration;
         const elapsed = (now - this.#startedAt) / 1000;
         const progress = duration > 0 ? Math.min(1, elapsed / duration) : 1;
+        // The default is resolved per frame, not once: #from/#to can change
+        // mid-flight when reveal-child is toggled back, and the curve has to
+        // follow the new direction.
+        const easing = easingOf(this.#easing, this.#from, this.#to);
         this.#position =
-          this.#from + (this.#to - this.#from) * easeOutCubic(progress);
+          this.#from + (this.#to - this.#from) * easing(progress);
         this.queue_resize();
 
         if (progress < 1) {

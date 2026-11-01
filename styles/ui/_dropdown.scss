@@ -1,11 +1,13 @@
 // MDropDown: the frame takes the accent, the inner buttons inherit it.
+@use '../motion';
+@use '../shape';
 @use "variant";
 
 .dropdown {
   @include variant.variants;
 
   border: var(--accent) solid 1px;
-  border-radius: 10px;
+  border-radius: shape.$corner-medium;
 
   // The box clips its children to the rounded corners (MDropDown.tsx sets
   // overflow: HIDDEN so the open list does not spill past the radius), and GTK
@@ -17,16 +19,20 @@
   }
 
   button.dropdown-selected {
-    transition: border-radius 400ms ease;
+    // Exit: closing accelerates.
+    transition: border-radius motion.$duration-medium4 motion.$easing-emphasized-accelerate;
     border: none;
-    border-radius: 10px;
+    border-radius: shape.$corner-medium;
 
     &.opened {
-      border-radius: 10px 10px 0 0;
+      // Enter: opening decelerates.
+      transition-timing-function: motion.$easing-emphasized-decelerate;
+      // M3 has no corner-medium-top: only the top corners keep the radius.
+      border-radius: shape.$corner-medium shape.$corner-medium 0 0;
     }
   }
 
   button.dropdown-option {
-    border-radius: 0;
+    border-radius: shape.$corner-none;
   }
 }

@@ -1,4 +1,5 @@
 @use '../colors' as c;
+@use '../shape';
 @use 'variant';
 
 button.mbutton {
@@ -33,6 +34,6 @@ button.mbutton {
   }
 
   &.round {
-    border-radius: 9999px;
+    border-radius: shape.$corner-full;
   }
 }
