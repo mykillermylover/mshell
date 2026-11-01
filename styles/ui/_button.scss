@@ -1,38 +1,148 @@
+// Material 3 button, from md-comp-filled-button, -filled-tonal-button,
+// -elevated-button, -outlined-button and -text-button.
+//
+// A variant sets only the custom properties the shared rule reads, so size,
+// shape, motion and the disabled treatment cannot drift between variants.
+// Colours are roles, not accents: M3 fixes them per variant.
+//
+// The M3 state layer is an overlay of the content colour at 8% (hover) and 12%
+// (pressed). The hover layer is folded into the container colour up front:
+// `background-color` is the one property GTK animates, and a gradient in
+// `background-image` cannot be transitioned.
+//
+// The pressed layer is not painted here. It belongs to the ripple widget,
+// which will draw it from the press point; painting it a second time as a flat
+// colour would give one state two treatments.
 @use '../colors' as c;
+@use '../elevation';
+@use '../motion';
 @use '../shape';
 
-// Roles are fixed per variant, as Material 3 has them: a widget does not pick
-// its accent colour from a class any more.
 button.mbutton {
+  // md-comp-*-button: container-height 40px, leading/trailing space 24px,
+  // container-shape corner-full (md-sys-shape).
+  min-height: 40px;
+  padding: 0 24px;
   border: none;
-  color: c.$primary-container;
-  background: c.$primary;
+  border-radius: shape.$corner-full;
+  font-weight: 500;
 
-  &.elevated {
-    background: c.$surface-container-low;
-    color: c.$primary;
-    box-shadow: 0 2px 1px -1px c.alpha(c.$shadow, 20%),
-    0px 1px 1px 0px c.alpha(c.$shadow, 14%),
-    0px 1px 3px 0px c.alpha(c.$shadow, 12%);
+  color: var(--_label);
+  background-color: var(--_bg);
 
-    &:hover {
-      box-shadow: 0 1px 5px 0 c.alpha(c.$shadow, 12%),
-      0 2px 2px 0 c.alpha(c.$shadow, 14%),
-      0 3px 1px -2px c.alpha(c.$shadow, 20%);
-    }
+  // Adwaita paints an opaque `background-image` on buttons in every state
+  // (a gradient at rest, a flat image while pressed) and it sits on top of
+  // `background-color`. Without this the container colour is never seen.
+  // The ripple is drawn by a child widget, not by a background layer: GTK
+  // does not interpolate `background-size`, so a gradient cannot grow.
+  background-image: none;
+
+  // The hover layer fades in over 15ms, as material-web's ripple does for its
+  // own hover overlay.
+  transition:
+    background-color 15ms linear,
+    box-shadow motion.$duration-short4 motion.$easing-standard;
+
+  &:hover,
+  &:active,
+  &:checked {
+    background-image: none;
+    background-color: var(--_bg-hover);
   }
+}
 
-  &.filled {
-    color: c.$primary;
-    background: c.$on-primary;
-  }
+// md-comp-filled-button: primary container, on-primary label, elevation
+// level0 -> level1 on hover.
+button.mbutton.filled {
+  --_bg: #{c.$primary};
+  --_bg-hover: #{c.mix(c.$on-primary, c.$primary, 8%)};
+  --_label: #{c.$on-primary};
 
-  &.tonal {
-    color: c.$on-primary-container;
-    background: c.$primary-container;
-  }
+  @include elevation.elevation(0);
 
-  &.round {
-    border-radius: shape.$corner-full;
+  &:hover {
+    @include elevation.elevation(1);
   }
+}
+
+// md-comp-filled-tonal-button: secondary-container, on-secondary-container.
+button.mbutton.tonal {
+  --_bg: #{c.$secondary-container};
+  --_bg-hover: #{c.mix(c.$on-secondary-container, c.$secondary-container, 8%)};
+  --_label: #{c.$on-secondary-container};
+
+  @include elevation.elevation(0);
+
+  &:hover {
+    @include elevation.elevation(1);
+  }
+}
+
+// md-comp-elevated-button: surface-container-low, primary label, and the one
+// variant that starts with an elevation - level1, level2 on hover.
+button.mbutton.elevated {
+  --_bg: #{c.$surface-container-low};
+  --_bg-hover: #{c.mix(c.$primary, c.$surface-container-low, 8%)};
+  --_label: #{c.$primary};
+
+  @include elevation.elevation(1);
+
+  &:hover {
+    @include elevation.elevation(2);
+  }
+}
+
+// md-comp-outlined-button: no container, 1px outline, primary label. With
+// nothing underneath, the state layer is the content colour on its own.
+button.mbutton.outlined {
+  --_bg: transparent;
+  --_bg-hover: #{c.alpha(c.$primary, 8%)};
+  --_label: #{c.$primary};
+
+  border: 1px solid c.$outline;
+}
+
+// md-comp-text-button: no container, no outline, primary label.
+button.mbutton.text {
+  --_bg: transparent;
+  --_bg-hover: #{c.alpha(c.$primary, 8%)};
+  --_label: #{c.$primary};
+
+  padding: 0 12px;
+}
+
+// md-comp-*-button: disabled-container-opacity 0.12, disabled-label-text-opacity
+// 0.38. Opacity on the widget would scale the label too, so both are colours.
+// Outlined and text have no container to dim.
+button.mbutton:disabled {
+  color: c.alpha(c.$on-surface, 38%);
+  background-color: transparent;
+  border-color: c.alpha(c.$on-surface, 12%);
+
+  &:hover,
+  &:active {
+    background-color: transparent;
+  }
+}
+
+button.mbutton.filled:disabled,
+button.mbutton.tonal:disabled,
+button.mbutton.elevated:disabled {
+  background-color: c.alpha(c.$on-surface, 12%);
+
+  &:hover,
+  &:active {
+    background-color: c.alpha(c.$on-surface, 12%);
+  }
+}
+
+// Shapes. `round` is the M3 default and sits on the base rule, so only the
+// other one needs a rule.
+//
+// M3 sizes the square corner by button size: XS/S 12dp, M 16dp, L 28dp, XL
+// 28dp. Our container is 40dp, which is the S size, so the corner is 12dp.
+// The pressed state has its own radius as well (S: 8dp); that belongs to the
+// ripple widget, which owns the pressed shape.
+button.mbutton.squared {
+  border-radius: shape.$corner-medium;
 }

@@ -34,7 +34,9 @@ describe('shape tokens', { skip }, () => {
   });
 
   test('corner-full — 9999px', () => {
-    assert.match(css!, /button\.mbutton\.round \{[^}]*border-radius:\s*9999px/);
+    // `round` is the M3 default, so the radius sits on the base rule and only
+    // `.squared` overrides it.
+    assert.match(css!, /button\.mbutton \{[^}]*border-radius:\s*9999px/);
   });
 
   test('составное скругление dropdown из шкалы', () => {

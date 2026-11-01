@@ -1,5 +1,6 @@
 import { useWindowApi } from '@lib/windows/host';
 import type { FloatSpec, PopSpec } from '@lib/windows/spec';
+import MButton from '@ui/MButton';
 import Players, { PlayerHover } from '@widgets/Players';
 import Settings from '@widgets/Settings';
 import Workspaces from '@widgets/Workspaces';
@@ -119,4 +120,31 @@ export const INITIAL_FLOATS: FloatSpec[] = [
   //   y: 340,
   //   content: _Mixer,
   // },
+  // TEMPORARY: MButton review. Remove once the variants are accepted.
+  {
+    id: 'buttons-review',
+    header: () => <_FloatHeader title="MButton" />,
+    x: 1000,
+    y: 40,
+    content: ButtonsReview,
+  },
 ];
+
+/** TEMPORARY: every MButton variant and both shapes, side by side. */
+function ButtonsReview() {
+  return Body(
+    <box orientation={Gtk.Orientation.VERTICAL} spacing={8} widthRequest={220}>
+      <MButton color="filled">Filled</MButton>
+      <MButton color="tonal">Tonal</MButton>
+      <MButton color="elevated">Elevated</MButton>
+      <MButton color="outlined">Outlined</MButton>
+      <MButton color="text">Text</MButton>
+      <MButton color="filled" shape="squared">
+        Squared
+      </MButton>
+      <MButton color="filled" sensitive={false}>
+        Disabled
+      </MButton>
+    </box>,
+  );
+}
