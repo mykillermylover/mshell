@@ -7,6 +7,7 @@ import { useWindowApi } from '@lib/windows/host';
 import { describeKey } from '@lib/windows/keyEvent';
 import { MCava } from '@ui/cava';
 import { MAnimatedContainer } from '@ui/MAnimatedContainer';
+import MButton from '@ui/MButton';
 import MMediaSlider from '@ui/slider/MMediaSlider';
 import { ICONS } from '@widgets/icons';
 import { createComputed, createEffect, With } from 'ags';
@@ -27,27 +28,31 @@ function PlayerControlButtons({ player }: PlayerProps) {
 
   return (
     <box orientation={Gtk.Orientation.HORIZONTAL} halign={Gtk.Align.CENTER}>
-      <button onClicked={() => previous()}>
-        <image iconName={ICONS.media.backward} />
-      </button>
-      <button onClicked={() => play_pause()}>
-        <image
-          iconName={playbackStatus((status) => {
-            switch (status) {
-              case AstalMpris.PlaybackStatus.STOPPED:
-              case AstalMpris.PlaybackStatus.PAUSED: {
-                return ICONS.media.play;
-              }
-              case AstalMpris.PlaybackStatus.PLAYING: {
-                return ICONS.media.pause;
-              }
+      <MButton
+        iconName={ICONS.media.backward}
+        color={'text'}
+        onClicked={() => previous()}
+      />
+      <MButton
+        iconName={playbackStatus((status) => {
+          switch (status) {
+            case AstalMpris.PlaybackStatus.STOPPED:
+            case AstalMpris.PlaybackStatus.PAUSED: {
+              return ICONS.media.play;
             }
-          })}
-        />
-      </button>
-      <button onClicked={() => next()}>
-        <image iconName={ICONS.media.forward} />
-      </button>
+            case AstalMpris.PlaybackStatus.PLAYING: {
+              return ICONS.media.pause;
+            }
+          }
+        })}
+        color={'text'}
+        onClicked={() => play_pause()}
+      />
+      <MButton
+        iconName={ICONS.media.forward}
+        color={'text'}
+        onClicked={() => next()}
+      />
     </box>
   );
 }

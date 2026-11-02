@@ -11,11 +11,12 @@
 
 import type { Point } from '@lib/geometry';
 import { Accessor } from 'ags';
-import { property, register } from 'ags/gobject';
-import type { Gdk } from 'ags/gtk4';
-import { Astal, Gtk } from 'ags/gtk4'; // first: pins Gtk 4 before Gsk is loaded
+import { property, register, signal } from 'ags/gobject';
+import type { Gdk, Gtk } from 'ags/gtk4';
+import { Astal } from 'ags/gtk4'; // first: pins Gtk 4 before Gsk is loaded
 
-import { DRAG_THRESHOLD, WAVE_AMPLITUDE, WAVE_SPEED } from './sliderMath';
+import { type SliderSignals, wireDrag } from './dragGesture';
+import { WAVE_AMPLITUDE, WAVE_SPEED } from './sliderMath';
 import { currentParts, partsBoxes, type SliderParts } from './sliderParts';
 import { applyChangeValue, enforceStepGrid } from './stepGrid';
 import { trackLayout } from './trackLayout';
@@ -44,6 +45,9 @@ export interface MMediaSliderProps extends Partial<Astal.Slider.ConstructorProps
  */
 @register({ GTypeName: 'MMediaSlider' })
 export default class MMediaSlider extends AstalSlider {
+  /** Drag hooks; `declare` keeps the inherited signal types visible in JSX. */
+  declare $signals: SliderSignals;
+
   // Not `declare`: gnim's @property keeps the value in private storage and
   // the initializer runs right after super(); the constructor then stores the
   // real one. `declare` would trip TS1206 on the decorator.
@@ -53,8 +57,6 @@ export default class MMediaSlider extends AstalSlider {
   readonly #stage: WaveStage;
   #parts: SliderParts | null = null;
   #dragging = false;
-  /** Cached drag gesture; `undefined` means "not looked up yet". */
-  #drag: Gtk.GestureDrag | null | undefined = undefined;
   #tickId = 0;
   /** Teardown callbacks: signal ids and subscription disposers. */
   readonly #cleanups: (() => void)[] = [];
@@ -81,7 +83,7 @@ export default class MMediaSlider extends AstalSlider {
       onValueChanged: () => this.queue_draw(),
       onCleanup: (dispose) => this.#cleanups.push(dispose),
     });
-    this.#wireDrag();
+    this.#watchDrag();
 
     this.connect('destroy', () => this.#teardown());
 
@@ -154,67 +156,35 @@ export default class MMediaSlider extends AstalSlider {
   }
 
   /**
-   * The scale's own GtkGestureDrag, not a copy of its logic: GtkRange installs
-   * one and claims the sequence on it, so nothing of ours would ever see the
-   * events.
+   * A drag began: the pointer left the tap zone.
    *
-   * The start comes from drag-update, not drag-begin: GTK has no drag
-   * threshold, so drag-begin fires on the press itself - a plain tap that only
-   * rewinds must not flatten the wave. The first offset past the threshold is
-   * what tells a drag from a tap.
+   * Emitted after GTK has already applied the first step of the drag, so a
+   * listener cannot prevent that step - it observes the interaction, it does
+   * not own it. A plain tap never fires this, only a real drag.
    */
-  #wireDrag() {
-    const drag = this.#dragGesture;
+  @signal()
+  dragStart(): void {}
 
-    if (!drag) {
-      return;
-    }
+  /** A drag ended or was cancelled. Always paired with a `drag-start`. */
+  @signal()
+  dragEnd(): void {}
 
-    let started = false;
-
-    drag.connect(
-      'drag-update',
-      (_gesture: Gtk.GestureDrag, x: number, y: number) => {
-        if (started || Math.hypot(x, y) <= DRAG_THRESHOLD) {
-          return;
-        }
-
-        started = true;
-        this.#dragging = true;
-        this.#requestFrame();
-      },
+  /** The drag flattens the wave and tells anyone listening, in that order. */
+  #watchDrag() {
+    this.#cleanups.push(
+      wireDrag(this, {
+        onStart: () => {
+          this.#dragging = true;
+          this.#requestFrame();
+          this.dragStart();
+        },
+        onEnd: () => {
+          this.#dragging = false;
+          this.#requestFrame();
+          this.dragEnd();
+        },
+      }),
     );
-
-    drag.connect('drag-end', () => {
-      if (!started) {
-        return;
-      }
-
-      started = false;
-      this.#dragging = false;
-      this.#requestFrame();
-    });
-  }
-
-  /** The scale's own drag gesture. Resolved once: it lives as long as the widget. */
-  get #dragGesture(): Gtk.GestureDrag | null {
-    if (this.#drag !== undefined) {
-      return this.#drag;
-    }
-
-    const controllers = this.observe_controllers();
-
-    this.#drag = null;
-    for (let i = 0; i < controllers.get_n_items(); i++) {
-      const controller = controllers.get_item(i);
-
-      if (controller instanceof Gtk.GestureDrag) {
-        this.#drag = controller;
-        break;
-      }
-    }
-
-    return this.#drag;
   }
 
   // --- animation ---------------------------------------------------------

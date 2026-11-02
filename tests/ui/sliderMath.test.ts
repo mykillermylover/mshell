@@ -2,7 +2,12 @@ import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 
 import { easeOutCubic } from '@lib/frame/easing';
-import { type WavePoint, wavePoints } from '@ui/slider/sliderMath';
+import {
+  DRAG_THRESHOLD,
+  exceedsDragThreshold,
+  type WavePoint,
+  wavePoints,
+} from '@ui/slider/sliderMath';
 import { snapStep } from '@ui/slider/sliderStep';
 
 describe('snapStep', () => {
@@ -52,6 +57,21 @@ describe('wavePoints', () => {
     assert.ok(Math.abs((out[0]?.y ?? 0) - 20) < 1e-9);
     assert.ok(Math.abs((out[1]?.y ?? 0) - 22) < 1e-9);
     assert.equal(out[n - 1]?.x, 15);
+  });
+});
+
+describe('exceedsDragThreshold', () => {
+  test('exceedsDragThreshold: a still press is a tap', () => {
+    assert.equal(exceedsDragThreshold(0, 0), false);
+    assert.equal(exceedsDragThreshold(DRAG_THRESHOLD, 0), false);
+    assert.equal(exceedsDragThreshold(0, DRAG_THRESHOLD), false);
+  });
+
+  test('exceedsDragThreshold: distance, not either axis alone', () => {
+    // 3 px on each axis is 4.24 px away, past the 3 px threshold.
+    assert.equal(exceedsDragThreshold(DRAG_THRESHOLD, DRAG_THRESHOLD), true);
+    assert.equal(exceedsDragThreshold(DRAG_THRESHOLD + 0.5, 0), true);
+    assert.equal(exceedsDragThreshold(-DRAG_THRESHOLD - 0.5, 0), true);
   });
 });
 

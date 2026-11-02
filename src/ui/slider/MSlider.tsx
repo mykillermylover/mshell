@@ -9,10 +9,11 @@
 //
 // Unlike MMediaSlider it does not inherit GTK's geometry: the M3 sizes are the
 // spec, so only the *positions* come from GtkRange.
-import { property, register } from 'ags/gobject';
+import { property, register, signal } from 'ags/gobject';
 import { Gdk } from 'ags/gtk4';
 import { Astal, Gtk } from 'ags/gtk4'; // first: pins Gtk 4 before Gsk is loaded
 
+import { type SliderSignals, wireDrag } from './dragGesture';
 import { type SliderMode, type TrackBoxes, trackLayout } from './m3Layout';
 import { type M3Paint, paintM3 } from './m3Painter';
 import { currentParts, partsBoxes, type SliderParts } from './sliderParts';
@@ -39,6 +40,9 @@ export interface MSliderProps extends Partial<Astal.Slider.ConstructorProps> {
  */
 @register({ GTypeName: 'MSlider' })
 export default class MSlider extends AstalSlider {
+  /** Drag hooks; `declare` keeps the inherited signal types visible in JSX. */
+  declare $signals: SliderSignals;
+
   @property(String)
   mode: SliderMode = 'standard';
 
@@ -50,7 +54,7 @@ export default class MSlider extends AstalSlider {
   #parts: SliderParts | null = null;
   #pressed = false;
   /** The value as drawn: eases between notches, the stored one does not. */
-  #tween: ValueTween | null = null;
+  readonly #tween: ValueTween | null = null;
   #tickId = 0;
 
   constructor(props: MSliderProps = {}) {
@@ -76,7 +80,7 @@ export default class MSlider extends AstalSlider {
       onValueChanged: () => this.#followValue(),
       onCleanup: (dispose) => this.#cleanups.push(dispose),
     });
-    this.#watchPress();
+    this.#watchDrag();
 
     this.connect('destroy', () => {
       if (this.#tickId !== 0) {
@@ -89,6 +93,24 @@ export default class MSlider extends AstalSlider {
       }
     });
   }
+
+  // --- drag hooks --------------------------------------------------------
+
+  /**
+   * A drag began: the pointer left the tap zone.
+   *
+   * Emitted after GTK has already applied the first step of the drag, so a
+   * listener cannot prevent that step - it observes the interaction, it does
+   * not own it. A plain tap never fires this, only a real drag.
+   */
+  @signal()
+  dragStart(): void {}
+
+  /** A drag ended or was cancelled. Always paired with a `drag-start`. */
+  @signal()
+  dragEnd(): void {}
+
+  // --- GTK hooks ---------------------------------------------------------
 
   /** Every selection - drag, wheel, keys - arrives here; see applyChangeValue. */
   vfunc_change_value(_scroll: Gtk.ScrollType, value: number): boolean {
@@ -179,34 +201,23 @@ export default class MSlider extends AstalSlider {
   }
 
   /**
-   * GTK's own click gesture tells us when the handle is held, which the spec
-   * turns into a 2 px handle. A press that never moves still counts as
-   * pressed - the token is about the finger, not about motion.
+   * The spec thickens the handle to 2 px while it is held. "Held" means a real
+   * drag: a tap only rewinds, and firing drag-start for it would make the
+   * thickening look random. The threshold lives in wireDrag.
    */
-  #watchPress() {
-    const controllers = this.observe_controllers();
-
-    for (let i = 0; i < controllers.get_n_items(); i++) {
-      const controller = controllers.get_item(i);
-
-      if (!(controller instanceof Gtk.GestureClick)) {
-        continue;
-      }
-
-      const pressed = controller.connect('pressed', () =>
-        this.#setPressed(true),
-      );
-      const released = controller.connect('released', () =>
-        this.#setPressed(false),
-      );
-
-      this.#cleanups.push(() => {
-        controller.disconnect(pressed);
-        controller.disconnect(released);
-      });
-
-      return;
-    }
+  #watchDrag() {
+    this.#cleanups.push(
+      wireDrag(this, {
+        onStart: () => {
+          this.#setPressed(true);
+          this.dragStart();
+        },
+        onEnd: () => {
+          this.#setPressed(false);
+          this.dragEnd();
+        },
+      }),
+    );
   }
 
   #setPressed(pressed: boolean) {

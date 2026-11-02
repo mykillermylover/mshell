@@ -80,3 +80,14 @@ export const FLATTEN_DURATION = 150;
  * tap-vs-drag line has to be drawn here.
  */
 export const DRAG_THRESHOLD = 3;
+
+/**
+ * Whether a drag offset from the press point has left the tap zone.
+ *
+ * Distance, not either axis alone: a press that wanders 3 px sideways and 3 px
+ * down is 4.2 px away and counts as a drag, while 3 px on one axis alone does
+ * not.
+ */
+export function exceedsDragThreshold(x: number, y: number): boolean {
+  return Math.hypot(x, y) > DRAG_THRESHOLD;
+}
