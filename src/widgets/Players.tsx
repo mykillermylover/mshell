@@ -165,17 +165,13 @@ export default function Players() {
   const keyHolds = new Set<number>();
 
   onKeyPressed((event) => {
-    const { space, tab } = describeKey(event);
+    const { space } = describeKey(event);
 
     if (space && !keyHolds.has(event.keyval)) {
       primaryPlayer?.peek()?.play_pause();
     }
 
     keyHolds.add(event.keyval);
-
-    if (tab) {
-      return true;
-    }
   });
 
   onKeyReleased((event) => {

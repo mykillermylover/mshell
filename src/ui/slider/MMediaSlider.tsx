@@ -16,11 +16,13 @@ import type { Gdk, Gtk } from 'ags/gtk4';
 import { Astal } from 'ags/gtk4'; // first: pins Gtk 4 before Gsk is loaded
 
 import { type SliderSignals, wireDrag } from './dragGesture';
+import { FocusRing } from './focusRing';
+import { paintFocusRing, wireFocusRing } from './focusRingPainter';
 import { WAVE_AMPLITUDE, WAVE_SPEED } from './sliderMath';
 import { currentParts, partsBoxes, type SliderParts } from './sliderParts';
 import { applyChangeValue, enforceStepGrid } from './stepGrid';
 import { trackLayout } from './trackLayout';
-import { paintTrack } from './trackPainter';
+import { paintTrack, PILL_WIDTH } from './trackPainter';
 import { WaveStage } from './waveStage';
 
 /** The native slider this one extends; a value, so it has to come at runtime. */
@@ -55,6 +57,7 @@ export default class MMediaSlider extends AstalSlider {
   playing = false;
 
   readonly #stage: WaveStage;
+  readonly #ring = new FocusRing();
   #parts: SliderParts | null = null;
   #dragging = false;
   #tickId = 0;
@@ -84,6 +87,9 @@ export default class MMediaSlider extends AstalSlider {
       onCleanup: (dispose) => this.#cleanups.push(dispose),
     });
     this.#watchDrag();
+    this.#cleanups.push(
+      wireFocusRing(this, this.#ring, () => this.queue_draw()),
+    );
 
     this.connect('destroy', () => this.#teardown());
 
@@ -113,20 +119,36 @@ export default class MMediaSlider extends AstalSlider {
       return;
     }
 
+    const layout = trackLayout(boxes, {
+      value: this.get_value(),
+      min: this.get_min(),
+      max: this.get_max(),
+    });
+
     paintTrack(
       snapshot,
       {
-        layout: trackLayout(boxes, {
-          value: this.get_value(),
-          min: this.get_min(),
-          max: this.get_max(),
-        }),
+        layout,
         amplitude: this.#stage.amplitude * this.#level,
         phase: this.#phase,
         active: this.get_color(),
         inactive: parts.trough.get_color(),
       },
       this.#buffer,
+    );
+
+    // Over the track, like the handle it wraps. The wave stops at the pill's
+    // left edge, so the ring only ever crosses it as a thin vertical line.
+    paintFocusRing(
+      snapshot,
+      {
+        x: layout.activeEnd,
+        centerY: layout.centerY,
+        handleWidth: PILL_WIDTH,
+        handleHeight: layout.handleHeight,
+      },
+      this.#ring.width,
+      parts.handle.get_color(),
     );
   }
 

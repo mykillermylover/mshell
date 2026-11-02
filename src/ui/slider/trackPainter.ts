@@ -13,7 +13,7 @@ import type { TrackLayout } from './trackLayout';
 /** Below ~2 px per sample the crests turn into a zigzag. */
 const SAMPLE_STEP = 2;
 /** The M3 handle: a pill, 4 dp wide whatever the track height. */
-const PILL_WIDTH = 4;
+export const PILL_WIDTH = 4;
 
 export interface TrackPaint {
   layout: TrackLayout;

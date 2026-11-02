@@ -15,7 +15,7 @@ const estimate = (
   value: number,
   rate: number,
   at = 0,
-  horizon = 1_000,
+  horizon = 1000,
 ): Extrapolation => ({ value, rate, at, horizon });
 
 describe('extrapolate', () => {
@@ -100,19 +100,19 @@ describe('applyReading', () => {
   });
 
   test('the horizon becomes the observed interval', () => {
-    const next = applyReading(estimate(10, 1, 0), { value: 11 }, 1_000);
+    const next = applyReading(estimate(10, 1, 0), { value: 11 }, 1000);
 
-    assert.deepEqual(next, { value: 11, rate: 1, at: 1_000, horizon: 1_000 });
+    assert.deepEqual(next, { value: 11, rate: 1, at: 1000, horizon: 1000 });
   });
 
   test('a long gap does not become the horizon', () => {
     // Reports resumed after a long silence: the gap is not the cadence.
     const next = applyReading(
-      estimate(10, 1, 0, 1_000),
+      estimate(10, 1, 0, 1000),
       { value: 30 },
       MAX_INFER_GAP_MS + 1,
     );
 
-    assert.equal(next.horizon, 1_000);
+    assert.equal(next.horizon, 1000);
   });
 });

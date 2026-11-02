@@ -10,10 +10,13 @@
 // Unlike MMediaSlider it does not inherit GTK's geometry: the M3 sizes are the
 // spec, so only the *positions* come from GtkRange.
 import { property, register, signal } from 'ags/gobject';
+import type { Gtk } from 'ags/gtk4';
 import { Gdk } from 'ags/gtk4';
-import { Astal, Gtk } from 'ags/gtk4'; // first: pins Gtk 4 before Gsk is loaded
+import { Astal } from 'ags/gtk4';
 
 import { type SliderSignals, wireDrag } from './dragGesture';
+import { FocusRing } from './focusRing';
+import { paintFocusRing, wireFocusRing } from './focusRingPainter';
 import { type SliderMode, type TrackBoxes, trackLayout } from './m3Layout';
 import { type M3Paint, paintM3 } from './m3Painter';
 import { currentParts, partsBoxes, type SliderParts } from './sliderParts';
@@ -53,6 +56,7 @@ export default class MSlider extends AstalSlider {
 
   #parts: SliderParts | null = null;
   #pressed = false;
+  readonly #ring = new FocusRing();
   /** The value as drawn: eases between notches, the stored one does not. */
   readonly #tween: ValueTween | null = null;
   #tickId = 0;
@@ -81,6 +85,9 @@ export default class MSlider extends AstalSlider {
       onCleanup: (dispose) => this.#cleanups.push(dispose),
     });
     this.#watchDrag();
+    this.#cleanups.push(
+      wireFocusRing(this, this.#ring, () => this.queue_draw()),
+    );
 
     this.connect('destroy', () => {
       if (this.#tickId !== 0) {
@@ -140,12 +147,28 @@ export default class MSlider extends AstalSlider {
     // that side needs a contrasting color instead - see #stopColor.
     const inactive = this.#parts?.trough.get_color() ?? this.get_color();
 
+    const layout = this.#layout(boxes);
+
     paintM3(snapshot, {
-      layout: this.#layout(boxes),
+      layout,
       active: this.get_color(),
       inactive,
       inactiveStop: this.#stopColor(inactive),
     } satisfies M3Paint);
+
+    // The ring is drawn last, over the track: it wraps the handle, and the
+    // handle is the topmost thing the slider paints.
+    paintFocusRing(
+      snapshot,
+      {
+        x: layout.handleX,
+        centerY: layout.centerY,
+        handleWidth: layout.handleWidth,
+        handleHeight: layout.handleHeight,
+      },
+      this.#ring.width,
+      this.#parts?.handle.get_color() ?? this.get_color(),
+    );
   }
 
   /**

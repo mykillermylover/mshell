@@ -30,3 +30,12 @@
     border: none;
   }
 }
+
+// `scale` is spelled out: Adwaita's own `scale > trough > slider` rule is more
+// specific than a bare `.media-slider slider`, and it wins the `color` even
+// from a higher-priority provider. The element name is what outranks it.
+scale.media-slider slider {
+  // Read back by MMediaSlider as Gtk.Widget.get_color(): the focus ring.
+  // md-comp-focus-ring color is `secondary`, not the widget's accent.
+  color: c.$secondary;
+}
