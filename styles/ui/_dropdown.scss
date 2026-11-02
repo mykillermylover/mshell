@@ -1,23 +1,37 @@
-// MDropDown: the frame takes the accent, the inner buttons inherit it.
-@use "variant";
+// MDropDown: a custom frame, not an M3 menu yet - the roles here are picked to
+// look neutral, and a proper version is a separate task.
+@use '../colors' as c;
+@use '../motion';
+@use '../shape';
 
 .dropdown {
-  @include variant.variants;
+  border: c.$outline solid 1px;
+  border-radius: shape.$corner-medium;
 
-  border: var(--accent) solid 1px;
-  border-radius: 10px;
+  // The box clips its children to the rounded corners (MDropDown.tsx sets
+  // overflow: HIDDEN so the open list does not spill past the radius), and GTK
+  // clips against the radius too - an outward ring would lose its sides. M3 has
+  // the inward variant for exactly this case: draw the ring inside instead.
+  button:focus-visible {
+    outline-width: 2px;
+    outline-offset: -3px;
+  }
 
   button.dropdown-selected {
-    transition: border-radius 400ms ease;
+    // Exit: closing accelerates.
+    transition: border-radius motion.$duration-medium4 motion.$easing-emphasized-accelerate;
     border: none;
-    border-radius: 10px;
+    border-radius: shape.$corner-medium;
 
     &.opened {
-      border-radius: 10px 10px 0 0;
+      // Enter: opening decelerates.
+      transition-timing-function: motion.$easing-emphasized-decelerate;
+      // M3 has no corner-medium-top: only the top corners keep the radius.
+      border-radius: shape.$corner-medium shape.$corner-medium 0 0;
     }
   }
 
   button.dropdown-option {
-    border-radius: 0;
+    border-radius: shape.$corner-none;
   }
 }

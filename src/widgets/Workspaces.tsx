@@ -3,7 +3,6 @@ import { MAnimatedContainer } from '@ui/MAnimatedContainer';
 import { createBinding, For } from 'ags';
 import type { Timer } from 'ags/time';
 import { timeout } from 'ags/time';
-import Adw from 'gi://Adw';
 import AstalHyprland from 'gi://AstalHyprland';
 
 function focusWorkspace(id: number) {
@@ -89,10 +88,7 @@ export default function Workspaces() {
   createBinding(hyprland, 'focusedWorkspace').subscribe(showWindow);
 
   return (
-    <MAnimatedContainer
-      transitionDuration={150}
-      transitionType={Adw.Easing.EASE_IN_OUT}
-    >
+    <MAnimatedContainer transitionDuration={'medium2'}>
       <box spacing={4} class="workspaces">
         <For each={currWorkspaces}>{(item) => <Workspace id={item.id} />}</For>
       </box>

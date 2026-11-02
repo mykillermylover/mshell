@@ -18,7 +18,12 @@ export function easeOutBack(t: number): number {
 }
 
 /**
- * GtkProgressTracker's easing: the curve Gtk.Revealer animates with, and the
- * one the slider's tween uses. Front-loaded, so motion reads as immediate.
+ * GtkProgressTracker's easing (`gtk_progress_tracker_get_ease_out_cubic`).
+ * Front-loaded, so motion reads as immediate.
+ *
+ * Only the slider's tween uses it now: the revealer and the size container
+ * animate on Material 3 curves from `@lib/motion`. It is still the curve GTK
+ * animates with, so it comes back if a revealer is ever put into CROSSFADE -
+ * that is the one mode where Gtk.Revealer animates itself.
  */
 export const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;

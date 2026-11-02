@@ -1,3 +1,4 @@
+@use 'shape';
 @use 'theme' as t;
 
 // Pin buttons: ours at rest; we pin hover/active ourselves, otherwise the theme draws them.
@@ -6,7 +7,7 @@
   background: none;
   box-shadow: none;
   border: 1px solid currentColor;
-  border-radius: 6px;
+  border-radius: shape.$corner-small;
 
   &:hover {
     background: t.$hover;

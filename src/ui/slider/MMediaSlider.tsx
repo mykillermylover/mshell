@@ -15,7 +15,6 @@ import { property, register } from 'ags/gobject';
 import type { Gdk } from 'ags/gtk4';
 import { Astal, Gtk } from 'ags/gtk4'; // first: pins Gtk 4 before Gsk is loaded
 
-import { applyVariant, type Variant } from '../variant';
 import { DRAG_THRESHOLD, WAVE_AMPLITUDE, WAVE_SPEED } from './sliderMath';
 import { currentParts, partsBoxes, type SliderParts } from './sliderParts';
 import { applyChangeValue, enforceStepGrid } from './stepGrid';
@@ -33,8 +32,6 @@ export interface MMediaSliderProps extends Partial<Astal.Slider.ConstructorProps
   waveSpeed?: number;
   /** Peak displacement of the crests, px. */
   waveAmplitude?: number;
-  /** Which palette variant the track uses. */
-  variant?: Variant;
 }
 
 /**
@@ -69,7 +66,6 @@ export default class MMediaSlider extends AstalSlider {
       playing,
       waveSpeed = WAVE_SPEED,
       waveAmplitude = WAVE_AMPLITUDE,
-      variant = 'primary',
       ...rest
     } = props;
 
@@ -77,7 +73,6 @@ export default class MMediaSlider extends AstalSlider {
 
     // CSS names the slider's own parts; see styles/ui/_media-slider.scss.
     this.add_css_class('media-slider');
-    applyVariant(this, variant);
 
     this.#stage = new WaveStage(waveSpeed, waveAmplitude);
 

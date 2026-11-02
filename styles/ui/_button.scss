@@ -1,38 +1,240 @@
+// Material 3 button, from md-comp-filled-button, -filled-tonal-button,
+// -elevated-button, -outlined-button and -text-button.
+//
+// A variant sets only the custom properties the shared rule reads, so size,
+// shape, motion and the disabled treatment cannot drift between variants.
+// Colours are roles, not accents: M3 fixes them per variant.
+//
+// The M3 state layer is an overlay of the content colour at 8% (hover) and 12%
+// (pressed). The hover layer is folded into the container colour up front:
+// `background-color` is the one property GTK animates smoothly.
+//
+// The pressed layer is the ripple: a radial-gradient whose `background-size`
+// grows from nothing to covering the button. It stays translucent and sits on
+// top of the hover layer, the way material-web keeps hover and press as two
+// independent pseudo-elements.
 @use '../colors' as c;
-@use 'variant';
+@use '../elevation';
+@use '../motion';
+@use '../shape';
 
 button.mbutton {
-  @include variant.variants;
-
+  // md-comp-*-button: container-height 40px, leading/trailing space 24px,
+  // container-shape corner-full (md-sys-shape).
+  min-height: 40px;
+  padding: 0 24px;
   border: none;
-  color: var(--accent-container);
-  background: var(--accent);
+  border-radius: shape.$corner-full;
+  font-weight: 500;
 
-  &.elevated {
-    background: c.$surface-container-low;
-    color: var(--accent);
-    box-shadow: 0 2px 1px -1px c.alpha(c.$shadow, 20%),
-    0px 1px 1px 0px c.alpha(c.$shadow, 14%),
-    0px 1px 3px 0px c.alpha(c.$shadow, 12%);
+  color: var(--_label);
+  background-color: var(--_bg);
 
+  // Adwaita paints an opaque `background-image` on buttons in every state
+  // (a gradient at rest, a flat image while pressed) and it sits on top of
+  // `background-color`. This replaces it outright.
+  //
+  // The ripple is Colloid's recipe with its centre moved to the press point.
+  //
+  // The gradient box is the button itself, so `at var(--_rx) var(--_ry)` is
+  // the press point in button coordinates and it stays there for the whole
+  // growth - the box never changes size. What grows is the colour stop:
+  // `circle` sizes against the farthest corner of that box, so a 100% stop is
+  // exactly the distance that reaches the far corner from the press point.
+  //
+  // At rest every stop is transparent, so nothing shows; the keyframes raise
+  // the colour, not the geometry. The stops sit where the animated ones end -
+  // solid to 65%, fading to 100% - so that the fade-out moves only the colour.
+  background-image: radial-gradient(
+    circle at var(--_rx, 50%) var(--_ry, 50%),
+    transparent 65%,
+    transparent 100%
+  );
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-size: 100% 100%;
+
+  // Load-bearing: `:active` ends when the pointer goes up, which removes the
+  // animation at once, so the colour can only fade out by transition. The
+  // 375ms is material-web's ripple fade-out, linear like theirs.
+  transition:
+    background-color 75ms cubic-bezier(0, 0, 0.2, 1),
+    background-image 375ms linear;
+
+  // `color` is restated in every state: Adwaita sets it on `:active`
+  // (`color: #eeeeec`) and that would recolour the label.
+  &:hover,
+  &:checked {
+    color: var(--_label);
+    background-color: var(--_bg-hover);
+  }
+
+  // md-sys-state pressed-state-layer-opacity: a 12% content-colour layer, and
+  // it stays translucent so it stacks on whatever is already there.
+  //
+  // That is how material-web does it: hover and press are two independent
+  // pseudo-elements, both visible at once, so a press under the pointer reads
+  // 8% + 12% rather than 12%. Pre-mixing the layer into an opaque container
+  // colour would erase the hover underneath instead of stacking on it.
+  //
+  // The layer colour is the content role in every variant, and `--_label` is
+  // already exactly that: on-primary, on-secondary-container, or primary.
+  &:active {
+    color: var(--_label);
+    background-color: var(--_bg);
+
+    // A press is almost always also a hover, so the hover layer has to stay
+    // rather than be blanked back to the container.
     &:hover {
-      box-shadow: 0 1px 5px 0 c.alpha(c.$shadow, 12%),
-      0 2px 2px 0 c.alpha(c.$shadow, 14%),
-      0 3px 1px -2px c.alpha(c.$shadow, 20%);
+      background-color: var(--_bg-hover);
     }
   }
 
-  &.filled {
-    color: var(--accent);
-    background: var(--on-accent);
-  }
+  // The growth. `:active` covers keyboard activation; `.ripple` is what MButton
+  // holds, because GTK drops `:active` the moment the pointer goes up and the
+  // animation would die with it - a mouse click is shorter than the minimum
+  // press time, so the ripple would never be seen past the start.
+  //
+  // `--_r0`/`--_r1` are the start radius and its soft edge, as fractions of the
+  // distance to the far corner. MButton computes them from the button size and
+  // the press point; the `0%` fallback keeps a press with no point growing from
+  // the centre as a plain point.
+  &:active,
+  &.ripple {
+    background-image: radial-gradient(
+      circle at var(--_rx, 50%) var(--_ry, 50%),
+      color-mix(in srgb, var(--_label) 12%, transparent) var(--_r0, 0%),
+      transparent var(--_r1, 0%)
+    );
+    // 450ms and the standard curve: material-web's PRESS_GROW_MS and
+    // EASING.STANDARD. Colloid's 225ms decelerate read as a flick, not a
+    // spread.
+    animation: mripple motion.$duration-long1 motion.$easing-standard forwards;
 
-  &.tonal {
-    color: var(--on-accent-container);
-    background: var(--accent-container);
+    // Zeroed so the press itself is not eased: the animation owns the motion,
+    // and a transition on top of it would fight the keyframes.
+    transition: background-image 0ms;
   }
+}
 
-  &.round {
-    border-radius: 9999px;
+// The solid stop ends at 65% and the colour fades out to 100%: material-web's
+// soft edge (`pressed-color max(calc(100% - 70px), 65%), transparent 100%`).
+// Both stops interpolate together, so the edge stays a proportional 35% of the
+// radius at every stage of the growth, not only at the end.
+@keyframes mripple {
+  to {
+    background-image: radial-gradient(
+      circle at var(--_rx, 50%) var(--_ry, 50%),
+      color-mix(in srgb, var(--_label) 12%, transparent) 65%,
+      transparent 100%
+    );
   }
+}
+
+// Reduced motion: keep the press layer, drop the growth. The layer is the
+// finished state of the animation - covered, with the same soft edge.
+@media (prefers-reduced-motion: reduce) {
+  button.mbutton:active,
+  button.mbutton.ripple {
+    animation: none;
+    background-image: radial-gradient(
+      circle at var(--_rx, 50%) var(--_ry, 50%),
+      color-mix(in srgb, var(--_label) 12%, transparent) 65%,
+      transparent 100%
+    );
+  }
+}
+
+// md-comp-filled-button: primary container, on-primary label, elevation
+// level0 -> level1 on hover.
+button.mbutton.filled {
+  --_bg: #{c.$primary};
+  --_bg-hover: #{c.mix(c.$on-primary, c.$primary, 8%)};
+  --_label: #{c.$on-primary};
+
+  @include elevation.elevation(0);
+
+  &:hover {
+    @include elevation.elevation(1);
+  }
+}
+
+// md-comp-filled-tonal-button: secondary-container, on-secondary-container.
+button.mbutton.tonal {
+  --_bg: #{c.$secondary-container};
+  --_bg-hover: #{c.mix(c.$on-secondary-container, c.$secondary-container, 8%)};
+  --_label: #{c.$on-secondary-container};
+
+  @include elevation.elevation(0);
+
+  &:hover {
+    @include elevation.elevation(1);
+  }
+}
+
+// md-comp-elevated-button: surface-container-low, primary label, and the one
+// variant that starts with an elevation - level1, level2 on hover.
+button.mbutton.elevated {
+  --_bg: #{c.$surface-container-low};
+  --_bg-hover: #{c.mix(c.$primary, c.$surface-container-low, 8%)};
+  --_label: #{c.$primary};
+
+  @include elevation.elevation(1);
+
+  &:hover {
+    @include elevation.elevation(2);
+  }
+}
+
+// md-comp-outlined-button: no container, 1px outline, primary label. With
+// nothing underneath, the state layer is the content colour on its own.
+button.mbutton.outlined {
+  --_bg: transparent;
+  --_bg-hover: #{c.alpha(c.$primary, 8%)};
+  --_label: #{c.$primary};
+
+  border: 1px solid c.$outline;
+}
+
+// md-comp-text-button: no container, no outline, primary label.
+button.mbutton.text {
+  --_bg: transparent;
+  --_bg-hover: #{c.alpha(c.$primary, 8%)};
+  --_label: #{c.$primary};
+
+  padding: 0 12px;
+}
+
+// md-comp-*-button: disabled-container-opacity 0.12, disabled-label-text-opacity
+// 0.38. Opacity on the widget would scale the label too, so both are colours.
+// Outlined and text have no container to dim.
+button.mbutton:disabled {
+  color: c.alpha(c.$on-surface, 38%);
+  background-color: transparent;
+  border-color: c.alpha(c.$on-surface, 12%);
+
+  &:hover,
+  &:active {
+    background-color: transparent;
+  }
+}
+
+button.mbutton.filled:disabled,
+button.mbutton.tonal:disabled,
+button.mbutton.elevated:disabled {
+  background-color: c.alpha(c.$on-surface, 12%);
+
+  &:hover,
+  &:active {
+    background-color: c.alpha(c.$on-surface, 12%);
+  }
+}
+
+// Shapes. `round` is the M3 default and sits on the base rule, so only the
+// other one needs a rule.
+//
+// M3 sizes the square corner by button size: XS/S 12dp, M 16dp, L 28dp, XL
+// 28dp. Our container is 40dp, which is the S size, so the corner is 12dp.
+button.mbutton.squared {
+  border-radius: shape.$corner-medium;
 }

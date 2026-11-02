@@ -13,7 +13,6 @@ import { property, register } from 'ags/gobject';
 import { Gdk } from 'ags/gtk4';
 import { Astal, Gtk } from 'ags/gtk4'; // first: pins Gtk 4 before Gsk is loaded
 
-import { applyVariant, type Variant } from '../variant';
 import { type SliderMode, type TrackBoxes, trackLayout } from './m3Layout';
 import { type M3Paint, paintM3 } from './m3Painter';
 import { currentParts, partsBoxes, type SliderParts } from './sliderParts';
@@ -28,8 +27,6 @@ export interface MSliderProps extends Partial<Astal.Slider.ConstructorProps> {
   mode?: SliderMode;
   /** Paint the 4 dp stop indicator at the trailing end. Off by default. */
   stopIndicators?: boolean;
-  /** Which palette variant the filled track and the handle use. */
-  variant?: Variant;
 }
 
 /**
@@ -57,12 +54,7 @@ export default class MSlider extends AstalSlider {
   #tickId = 0;
 
   constructor(props: MSliderProps = {}) {
-    const {
-      mode = 'standard',
-      stopIndicators,
-      variant = 'primary',
-      ...rest
-    } = props;
+    const { mode = 'standard', stopIndicators, ...rest } = props;
 
     super(rest);
 
@@ -73,7 +65,6 @@ export default class MSlider extends AstalSlider {
     this.set_increments(this.get_step(), this.get_step());
 
     this.add_css_class('plain-slider');
-    applyVariant(this, variant);
     this.mode = mode;
     this.stopIndicators = stopIndicators ?? false;
 

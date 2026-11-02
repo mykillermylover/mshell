@@ -215,7 +215,6 @@ export function PlayerHover() {
               sag={0.25}
               mode={cavaMode}
               vexpand
-              css={'color: var(--tertiary);'}
             />
           </box>
         )}

@@ -1,9 +1,9 @@
-// MCava draws every bar in the widget's `color` (Gtk.Widget.get_color), so the
-// accent variant is just that color.
-@use "variant";
+// MCava draws every bar in the widget's `color` (Gtk.Widget.get_color), so this
+// one declaration is the whole colour. Cava is not a Material component: the
+// bar colour is ours to pick, and the palette's primary is the accent the
+// widget used to default to.
+@use '../colors' as c;
 
 .cava {
-  @include variant.variants;
-
-  color: var(--accent);
+  color: c.$primary;
 }

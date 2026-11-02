@@ -118,6 +118,8 @@
             claude-code
             # For src/lib/theme/generate.ts in the dev shell; it reaches the build via extraPackages.
             matugen
+
+            dart-sass
           ];
 
           shellHook = ''

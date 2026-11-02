@@ -7,6 +7,13 @@
 // calls the manager and never the widget's own vfunc, so a Box subclass would
 // lose the whole point of this class.
 import {
+  DURATION,
+  type Easing,
+  easingOf,
+  type MotionProps,
+  splitMotionProps,
+} from '@lib/motion';
+import {
   getter,
   type ParamFlags,
   ParamSpec,
@@ -14,12 +21,9 @@ import {
   setter,
 } from 'ags/gobject';
 import { type Gdk, Gtk } from 'ags/gtk4';
-import Adw from 'gi://Adw';
 import type GObject from 'gi://GObject';
 
-const DEFAULT_DURATION = 150;
-/** The curve Gtk.Revealer animates with: same feel as the pop revealers. */
-const DEFAULT_EASING = Adw.Easing.EASE_OUT_CUBIC;
+const DEFAULT_DURATION = DURATION.short3;
 
 const durationSpec = (name: string, flags: ParamFlags) =>
   ParamSpec.uint(
@@ -43,21 +47,9 @@ interface Tween {
 
 const tween = (): Tween => ({ current: 0, target: 0, from: 0, started: false });
 
-const easingSpec = (name: string, flags: ParamFlags) =>
-  ParamSpec.enum(
-    name,
-    'transition-type',
-    'Size transition easing (Adw.Easing)',
-    flags,
-    Adw.Easing.$gtype,
-    DEFAULT_EASING,
-  );
-
-export interface MAnimatedContainerProps extends Partial<Gtk.Widget.ConstructorProps> {
-  transitionDuration?: number;
+export interface MAnimatedContainerProps
+  extends Partial<Gtk.Widget.ConstructorProps>, MotionProps {
   transition_duration?: number;
-  transitionType?: Adw.Easing;
-  transition_type?: Adw.Easing;
 }
 
 /**
@@ -81,7 +73,6 @@ export class MAnimatedContainer extends Gtk.Widget {
   // `declare`: a real field would be initialized after GObject has applied the
   // constructor properties and would overwrite the value passed in.
   declare private ms: number | undefined;
-  declare private easing: Adw.Easing | undefined;
 
   @getter(durationSpec)
   get transitionDuration() {
@@ -93,19 +84,15 @@ export class MAnimatedContainer extends Gtk.Widget {
     this.ms = ms;
   }
 
-  /** Any Adw.Easing: EASE_OUT/IN_OUT mirror the CSS keywords, EASE_OUT_BACK overshoots. */
-  @getter(easingSpec)
-  get transitionType() {
-    return this.easing ?? DEFAULT_EASING;
-  }
-
-  @setter(easingSpec)
-  set transitionType(type: Adw.Easing) {
-    this.easing = type;
-  }
+  /** Curve chosen by the caller; `null` means the directional default. */
+  readonly #easing: Easing | null;
 
   constructor(props: MAnimatedContainerProps = {}) {
-    super(props);
+    const { gtkProps, easing } = splitMotionProps(props);
+
+    super(gtkProps);
+
+    this.#easing = easing;
 
     // The child is allocated at its natural size: while the container
     // collapses that is larger than the box we were given.
@@ -231,10 +218,12 @@ export class MAnimatedContainer extends Gtk.Widget {
    * Keep the current size while aiming elsewhere: solve `from` so that
    * `from + (target - from) * eased(progress)` stays where the axis is now.
    * Near the end of the curve the remainder is negligible - restart instead.
-   * `abs`: overshooting easings (EASE_OUT_BACK) cross 1 in the middle.
+   * The curve is resolved from the same pair the loop will use, otherwise the
+   * re-aim and the motion that follows it would not agree.
    */
   #reaim(tween: Tween, target: number) {
-    const eased = Adw.easing_ease(this.transitionType, this.#progress);
+    const easing = easingOf(this.#easing, tween.from, target);
+    const eased = easing(this.#progress);
     const left = 1 - eased;
 
     tween.from =
@@ -274,14 +263,16 @@ export class MAnimatedContainer extends Gtk.Widget {
 
         const elapsed = (now - this.#startedAt) / 1000;
         const progress = Math.min(1, elapsed / this.transitionDuration);
-        const eased = Adw.easing_ease(this.transitionType, progress);
         this.#progress = progress;
 
         for (const tween of [this.#width, this.#height]) {
+          // Per axis: the two can move in opposite directions, and M3 gives
+          // growth and shrink different curves.
+          const easing = easingOf(this.#easing, tween.from, tween.target);
           tween.current =
             progress === 1
               ? tween.target
-              : tween.from + (tween.target - tween.from) * eased;
+              : tween.from + (tween.target - tween.from) * easing(progress);
         }
 
         this.queue_resize();
