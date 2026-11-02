@@ -139,11 +139,13 @@ describe('MButton', { skip }, () => {
 
     const active = rule('button.mbutton:active');
 
+    assert.match(active, /background-color: var\(--_bg\)/);
+
     // A translucent 12% layer, not an opaque pre-mixed colour: translucency is
     // what lets it stack on the hover layer the way material-web does.
     assert.match(
       active,
-      /radial-gradient\(circle, color-mix\(in srgb, var\(--_label\) 12%, transparent\)/,
+      /radial-gradient\(circle at var\(--_rx, 50%\) var\(--_ry, 50%\), color-mix\(in srgb, var\(--_label\) 12%, transparent\)/,
     );
     // The hover layer stays under the press rather than being blanked.
     assert.match(
@@ -198,49 +200,56 @@ describe('MButton', { skip }, () => {
     assert.match(rule('button.mbutton'), /background-image: radial-gradient\(/);
   });
 
-  test('ripple перенесён из Colloid один в один', () => {
-    // The whole recipe, numbers included: the resting background is a fully
-    // transparent gradient sized 1000%, and `:active` restarts it from 0% and
-    // runs the keyframes to 1000%.
+  test('ripple растёт от точки нажатия', () => {
+    // The gradient box is the button, so `at <press point>` is in button
+    // coordinates and stays put for the whole growth. `circle` sizes against
+    // the farthest corner of that box, so a 100% stop is exactly what reaches
+    // the far corner from the press point, wherever it landed.
     const rest = rule('button.mbutton');
 
+    // At rest the gradient is transparent everywhere. The stops have to match
+    // the animated ones so that the fade-out only moves the colour, not the
+    // geometry - otherwise the circle would grow while it fades.
     assert.match(
       rest,
-      /background-image: radial-gradient\(circle, transparent 10%, transparent 0%\)/,
+      /background-image: radial-gradient\(circle at var\(--_rx, 50%\) var\(--_ry, 50%\), transparent 65%, transparent 100%\)/,
     );
-    assert.match(rest, /background-position: center/);
-    assert.match(rest, /background-size: 1000% 1000%/);
-    // These two transitions are what make the circle finish and fade after the
-    // pointer is released: the animation itself is gone the moment `:active`
-    // ends, so the end state has to be reached by transition instead.
-    assert.match(rest, /background-size 300ms/);
-    assert.match(rest, /background-image 1200ms/);
+    assert.match(rest, /background-position: 0 0/);
+    assert.match(rest, /background-size: 100% 100%/);
+    // Load-bearing: `:active` ends when the pointer goes up, which removes the
+    // animation at once, so the colour can only fade out by transition.
+    // 375ms is material-web's ripple fade-out.
+    assert.match(rest, /background-image 375ms linear/);
 
     const active = rule('button.mbutton:active');
 
-    // The circle paints a translucent 12% layer of the content role where it
-    // has reached, so it stacks on the hover layer rather than replacing it.
+    // A translucent 12% layer of the content role, so it stacks on the hover
+    // layer rather than replacing it.
     assert.match(
       active,
-      /background-image: radial-gradient\(circle, color-mix\(in srgb, var\(--_label\) 12%, transparent\) 10%, transparent 0%\)/,
+      /background-image: radial-gradient\(circle at var\(--_rx, 50%\) var\(--_ry, 50%\), color-mix\(in srgb, var\(--_label\) 12%, transparent\) 0%, transparent 0%\)/,
     );
-    assert.match(active, /background-size: 0% 0%/);
-    // Colloid flattens the background on press because its buttons have no
-    // fill. Ours do, and the circle needs the resting colour underneath to
-    // spread over - so only the gradient carries the pressed colour.
-    assert.match(active, /background-color: var\(--_bg\)/);
+    // 450ms and the standard curve, as material-web's ripple.
     assert.match(
       active,
-      /animation: mripple 225ms cubic-bezier\(0, 0, 0.2, 1\) forwards/,
+      /animation: mripple 450ms cubic-bezier\(0\.2, 0, 0, 1\) forwards/,
     );
     // The press must not be eased into: the animation owns the motion.
-    assert.match(active, /background-size 0ms/);
     assert.match(active, /background-image 0ms/);
 
+    // What grows is the colour stop, not the box - that is what keeps the
+    // centre on the press point.
+    //
+    // The solid stop ends at 65% and fades to 100%: material-web's soft edge.
+    // Both stops interpolate together, so the edge stays a proportional 35% of
+    // the radius at every stage, not just at the end.
     const keyframes = css!
       .slice(css!.indexOf('@keyframes mripple'))
       .replaceAll(/\s+/g, ' ');
-    assert.match(keyframes, /to \{ background-size: 1000% 1000%;/);
+    assert.match(
+      keyframes,
+      /to \{ background-image: radial-gradient\(circle at var\(--_rx, 50%\) var\(--_ry, 50%\), color-mix\(in srgb, var\(--_label\) 12%, transparent\) 65%, transparent 100%\);/,
+    );
   });
 
   test('disabled: текст 38%, состояния погашены', () => {

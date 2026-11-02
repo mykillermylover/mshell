@@ -34,23 +34,32 @@ button.mbutton {
   // (a gradient at rest, a flat image while pressed) and it sits on top of
   // `background-color`. This replaces it outright.
   //
-  // The ripple is Colloid's, taken as it is. At rest the gradient is fully
-  // transparent and the box is already 1000%; `:active` shrinks it to 0% and
-  // the keyframes grow it back, so the circle spreads from the centre.
-  // `background-position: center` is what keeps that centre fixed.
-  background-image: radial-gradient(circle, transparent 10%, transparent 0%);
+  // The ripple is Colloid's recipe with its centre moved to the press point.
+  //
+  // The gradient box is the button itself, so `at var(--_rx) var(--_ry)` is
+  // the press point in button coordinates and it stays there for the whole
+  // growth - the box never changes size. What grows is the colour stop:
+  // `circle` sizes against the farthest corner of that box, so a 100% stop is
+  // exactly the distance that reaches the far corner from the press point.
+  //
+  // At rest every stop is transparent, so nothing shows; the keyframes raise
+  // the colour, not the geometry. The stops sit where the animated ones end -
+  // solid to 65%, fading to 100% - so that the fade-out moves only the colour.
+  background-image: radial-gradient(
+    circle at var(--_rx, 50%) var(--_ry, 50%),
+    transparent 65%,
+    transparent 100%
+  );
   background-repeat: no-repeat;
-  background-position: center;
-  background-size: 1000% 1000%;
+  background-position: 0 0;
+  background-size: 100% 100%;
 
-  // The two slow transitions are load-bearing: `:active` ends when the pointer
-  // goes up, which removes the animation at once, so the circle could only
-  // reach its end state by transition. `background-size` carries the growth
-  // to completion, `background-image` fades the colour out afterwards.
+  // Load-bearing: `:active` ends when the pointer goes up, which removes the
+  // animation at once, so the colour can only fade out by transition. The
+  // 375ms is material-web's ripple fade-out, linear like theirs.
   transition:
     background-color 75ms cubic-bezier(0, 0, 0.2, 1),
-    background-size 300ms cubic-bezier(0, 0, 0.2, 1),
-    background-image 1200ms cubic-bezier(0, 0, 0.2, 1);
+    background-image 375ms linear;
 
   // `color` is restated in every state: Adwaita sets it on `:active`
   // (`color: #eeeeec`) and that would recolour the label.
@@ -74,19 +83,18 @@ button.mbutton {
     color: var(--_label);
     background-color: var(--_bg);
     background-image: radial-gradient(
-      circle,
-      color-mix(in srgb, var(--_label) 12%, transparent) 10%,
+      circle at var(--_rx, 50%) var(--_ry, 50%),
+      color-mix(in srgb, var(--_label) 12%, transparent) 0%,
       transparent 0%
     );
-    background-size: 0% 0%;
-    animation: mripple 225ms cubic-bezier(0, 0, 0.2, 1) forwards;
+    // 450ms and the standard curve: material-web's PRESS_GROW_MS and
+    // EASING.STANDARD. Colloid's 225ms decelerate read as a flick, not a
+    // spread.
+    animation: mripple motion.$duration-long1 motion.$easing-standard forwards;
 
     // Zeroed so the press itself is not eased: the animation owns the motion,
     // and a transition on top of it would fight the keyframes.
-    transition:
-      background-color 75ms cubic-bezier(0, 0, 0.2, 1),
-      background-size 0ms,
-      background-image 0ms;
+    transition: background-image 0ms;
 
     // A press is almost always also a hover, so the hover layer has to stay
     // rather than be blanked back to the container.
@@ -96,17 +104,30 @@ button.mbutton {
   }
 }
 
+// The solid stop ends at 65% and the colour fades out to 100%: material-web's
+// soft edge (`pressed-color max(calc(100% - 70px), 65%), transparent 100%`).
+// Both stops interpolate together, so the edge stays a proportional 35% of the
+// radius at every stage of the growth, not only at the end.
 @keyframes mripple {
   to {
-    background-size: 1000% 1000%;
+    background-image: radial-gradient(
+      circle at var(--_rx, 50%) var(--_ry, 50%),
+      color-mix(in srgb, var(--_label) 12%, transparent) 65%,
+      transparent 100%
+    );
   }
 }
 
-// Reduced motion: keep the press layer, drop the growth.
+// Reduced motion: keep the press layer, drop the growth. The layer is the
+// finished state of the animation - covered, with the same soft edge.
 @media (prefers-reduced-motion: reduce) {
   button.mbutton:active {
     animation: none;
-    background-size: 1000% 1000%;
+    background-image: radial-gradient(
+      circle at var(--_rx, 50%) var(--_ry, 50%),
+      color-mix(in srgb, var(--_label) 12%, transparent) 65%,
+      transparent 100%
+    );
   }
 }
 
