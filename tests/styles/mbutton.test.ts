@@ -137,14 +137,15 @@ describe('MButton', { skip }, () => {
     // No per-variant pressed colour: it would be the same token as `--_label`.
     assert.doesNotMatch(css!, /--_bg-active/);
 
-    const active = rule('button.mbutton:active');
-
-    assert.match(active, /background-color: var\(--_bg\)/);
+    assert.match(
+      rule('button.mbutton:active'),
+      /background-color: var\(--_bg\)/,
+    );
 
     // A translucent 12% layer, not an opaque pre-mixed colour: translucency is
     // what lets it stack on the hover layer the way material-web does.
     assert.match(
-      active,
+      rule('button.mbutton:active, button.mbutton.ripple'),
       /radial-gradient\(circle at var\(--_rx, 50%\) var\(--_ry, 50%\), color-mix\(in srgb, var\(--_label\) 12%, transparent\)/,
     );
     // The hover layer stays under the press rather than being blanked.
@@ -221,21 +222,25 @@ describe('MButton', { skip }, () => {
     // 375ms is material-web's ripple fade-out.
     assert.match(rest, /background-image 375ms linear/);
 
-    const active = rule('button.mbutton:active');
+    // The growth hangs off `:active` (keyboard) and `.ripple` (what MButton
+    // holds for the minimum press time, since `:active` dies with the pointer).
+    const grow = rule('button.mbutton:active, button.mbutton.ripple');
 
     // A translucent 12% layer of the content role, so it stacks on the hover
-    // layer rather than replacing it.
+    // layer rather than replacing it. The two stops come from MButton: the
+    // ripple starts at a disc, not at a point, so it needs a start radius
+    // measured against the distance to the far corner.
     assert.match(
-      active,
-      /background-image: radial-gradient\(circle at var\(--_rx, 50%\) var\(--_ry, 50%\), color-mix\(in srgb, var\(--_label\) 12%, transparent\) 0%, transparent 0%\)/,
+      grow,
+      /background-image: radial-gradient\(circle at var\(--_rx, 50%\) var\(--_ry, 50%\), color-mix\(in srgb, var\(--_label\) 12%, transparent\) var\(--_r0, 0%\), transparent var\(--_r1, 0%\)\)/,
     );
     // 450ms and the standard curve, as material-web's ripple.
     assert.match(
-      active,
+      grow,
       /animation: mripple 450ms cubic-bezier\(0\.2, 0, 0, 1\) forwards/,
     );
     // The press must not be eased into: the animation owns the motion.
-    assert.match(active, /background-image 0ms/);
+    assert.match(grow, /background-image 0ms/);
 
     // What grows is the colour stop, not the box - that is what keeps the
     // centre on the press point.

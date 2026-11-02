@@ -82,10 +82,29 @@ button.mbutton {
   &:active {
     color: var(--_label);
     background-color: var(--_bg);
+
+    // A press is almost always also a hover, so the hover layer has to stay
+    // rather than be blanked back to the container.
+    &:hover {
+      background-color: var(--_bg-hover);
+    }
+  }
+
+  // The growth. `:active` covers keyboard activation; `.ripple` is what MButton
+  // holds, because GTK drops `:active` the moment the pointer goes up and the
+  // animation would die with it - a mouse click is shorter than the minimum
+  // press time, so the ripple would never be seen past the start.
+  //
+  // `--_r0`/`--_r1` are the start radius and its soft edge, as fractions of the
+  // distance to the far corner. MButton computes them from the button size and
+  // the press point; the `0%` fallback keeps a press with no point growing from
+  // the centre as a plain point.
+  &:active,
+  &.ripple {
     background-image: radial-gradient(
       circle at var(--_rx, 50%) var(--_ry, 50%),
-      color-mix(in srgb, var(--_label) 12%, transparent) 0%,
-      transparent 0%
+      color-mix(in srgb, var(--_label) 12%, transparent) var(--_r0, 0%),
+      transparent var(--_r1, 0%)
     );
     // 450ms and the standard curve: material-web's PRESS_GROW_MS and
     // EASING.STANDARD. Colloid's 225ms decelerate read as a flick, not a
@@ -95,12 +114,6 @@ button.mbutton {
     // Zeroed so the press itself is not eased: the animation owns the motion,
     // and a transition on top of it would fight the keyframes.
     transition: background-image 0ms;
-
-    // A press is almost always also a hover, so the hover layer has to stay
-    // rather than be blanked back to the container.
-    &:hover {
-      background-color: var(--_bg-hover);
-    }
   }
 }
 
@@ -121,7 +134,8 @@ button.mbutton {
 // Reduced motion: keep the press layer, drop the growth. The layer is the
 // finished state of the animation - covered, with the same soft edge.
 @media (prefers-reduced-motion: reduce) {
-  button.mbutton:active {
+  button.mbutton:active,
+  button.mbutton.ripple {
     animation: none;
     background-image: radial-gradient(
       circle at var(--_rx, 50%) var(--_ry, 50%),
