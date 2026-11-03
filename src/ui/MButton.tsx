@@ -1,4 +1,5 @@
 import type { MaybeAccessor } from '@lib/reactive';
+import { findController } from '@lib/reactive';
 import { asAccessor } from '@lib/reactive';
 import { createComputed } from 'ags';
 import { Gtk } from 'ags/gtk4';
@@ -112,31 +113,25 @@ const attachRipple = (self: Gtk.Widget) => {
     hideTimer = setTimeout(hide, remaining);
   };
 
-  const controllers = self.observe_controllers();
+  const controller = findController(self, Gtk.GestureClick);
 
-  for (let i = 0; i < controllers.get_n_items(); i++) {
-    const controller = controllers.get_item(i);
-
-    if (!(controller instanceof Gtk.GestureClick)) {
-      continue;
-    }
-
-    controller.connect('pressed', (_gesture, _nPress, x, y) => {
-      // A press while the previous ripple is still being held open starts a
-      // new one, so the pending hide belongs to the old press and must go.
-      cancelHide();
-      shownAt = Date.now();
-      setPoint(x, y);
-      self.add_css_class('ripple');
-    });
-
-    controller.connect('released', release);
-    // The gesture stops when the press is taken away - dragging off the button,
-    // a second pointer - and the ripple has to end the same way.
-    controller.connect('stopped', release);
-
+  if (!controller) {
     return;
   }
+
+  controller.connect('pressed', (_gesture, _nPress, x, y) => {
+    // A press while the previous ripple is still being held open starts a
+    // new one, so the pending hide belongs to the old press and must go.
+    cancelHide();
+    shownAt = Date.now();
+    setPoint(x, y);
+    self.add_css_class('ripple');
+  });
+
+  controller.connect('released', release);
+  // The gesture stops when the press is taken away - dragging off the button,
+  // a second pointer - and the ripple has to end the same way.
+  controller.connect('stopped', release);
 };
 
 export default function MButton(props: MButtonProps) {

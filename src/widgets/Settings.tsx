@@ -7,6 +7,7 @@ import { useWindowApi, type WindowApi } from '@lib/windows/host';
 import pickFile from '@ui/filePicker';
 import MButton from '@ui/MButton';
 import MDropDown from '@ui/MDropDown';
+import MSwitch from '@ui/MSwitch';
 import MSlider from '@ui/slider/MSlider';
 import { ICONS } from '@widgets/icons';
 import { Gtk } from 'ags/gtk4';
@@ -109,7 +110,7 @@ function FieldControl({ field, api }: { field: Field; api: WindowApi }) {
     case 'bool': {
       return (
         <box hexpand halign={Gtk.Align.END}>
-          <switch
+          <MSwitch
             active={field.value}
             onNotifyActive={({ active }) => field.set(active)}
           />
