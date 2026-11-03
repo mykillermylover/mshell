@@ -171,7 +171,7 @@ export default function Settings() {
     <box
       orientation={Gtk.Orientation.VERTICAL}
       spacing={6}
-      css={'padding: 12px 24px'}
+      css={'padding: 12px 24px;'}
     >
       <box orientation={Gtk.Orientation.HORIZONTAL}>
         <label class="pop-title primary" label="Settings" xalign={0} />

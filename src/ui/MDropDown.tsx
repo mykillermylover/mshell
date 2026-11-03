@@ -1,6 +1,6 @@
 import type { MaybeAccessor } from '@lib/reactive';
 import { asAccessor } from '@lib/reactive';
-import { Accessor } from 'ags';
+import { Accessor, onCleanup } from 'ags';
 import { For } from 'ags';
 import { createComputed, createState } from 'ags';
 import Gtk from 'gi://Gtk';
@@ -32,7 +32,7 @@ export default function MDropDown<T extends string>({
   const [current, setCurrent] = createState(initialValue);
   const [rowHeight, setRowHeight] = createState(0);
 
-  current.subscribe(() => onValueChange(current.peek()));
+  const currentUnsub = current.subscribe(() => onValueChange(current.peek()));
 
   const filteredOptions = createComputed(() =>
     optionsAccessor().filter((option) => option !== current()),
@@ -55,6 +55,10 @@ export default function MDropDown<T extends string>({
   const extra =
     extraClass instanceof Accessor ? extraClass.peek() : (extraClass ?? '');
   const cssClasses = ['dropdown', ...extra.split(/\s+/).filter(Boolean)];
+
+  onCleanup(() => {
+    currentUnsub();
+  });
 
   return (
     <box

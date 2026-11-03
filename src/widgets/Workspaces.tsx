@@ -1,6 +1,6 @@
 import { useWindowApi } from '@lib/windows/host';
 import { MAnimatedContainer } from '@ui/MAnimatedContainer';
-import { createBinding, For } from 'ags';
+import { createBinding, For, onCleanup } from 'ags';
 import type { Timer } from 'ags/time';
 import { timeout } from 'ags/time';
 import AstalHyprland from 'gi://AstalHyprland';
@@ -57,7 +57,7 @@ export default function Workspaces() {
 
   let timer: Timer;
 
-  hovered.subscribe(() => {
+  const hoverUnsub = hovered.subscribe(() => {
     if (hovered.peek() && timer) {
       timer.cancel();
     }
@@ -83,9 +83,22 @@ export default function Workspaces() {
     timer = timeout(1000, () => close());
   };
 
-  hyprland.connect('workspace-added', showWindow);
-  hyprland.connect('workspace-removed', showWindow);
-  createBinding(hyprland, 'focusedWorkspace').subscribe(showWindow);
+  const wsAddDisconnectId = hyprland.connect('workspace-added', showWindow);
+  const wsRemoveDisconnectId = hyprland.connect(
+    'workspace-removed',
+    showWindow,
+  );
+  const focusedWorkspaceUnsub = createBinding(
+    hyprland,
+    'focusedWorkspace',
+  ).subscribe(showWindow);
+
+  onCleanup(() => {
+    hoverUnsub();
+    focusedWorkspaceUnsub();
+    hyprland.disconnect(wsAddDisconnectId);
+    hyprland.disconnect(wsRemoveDisconnectId);
+  });
 
   return (
     <MAnimatedContainer transitionDuration={'medium2'}>

@@ -10,7 +10,13 @@ import { MAnimatedContainer } from '@ui/MAnimatedContainer';
 import MButton from '@ui/MButton';
 import MMediaSlider from '@ui/slider/MMediaSlider';
 import { ICONS } from '@widgets/icons';
-import { createComputed, createEffect, With } from 'ags';
+import {
+  createComputed,
+  createEffect,
+  createState,
+  onCleanup,
+  With,
+} from 'ags';
 import AstalCava from 'gi://AstalCava';
 import AstalMpris from 'gi://AstalMpris';
 import Gdk from 'gi://Gdk';
@@ -112,11 +118,21 @@ function Player({ player }: PlayerProps) {
     rate: 1,
   });
 
-  position.subscribe(() => {
+  const positionUnsub = position.subscribe(() => {
+    if (dragging.peek()) {
+      return;
+    }
+
     updatePosition(position.peek());
   });
 
   const positionDebouncer = new Debounce(300, glibScheduler);
+
+  const [dragging, setDragging] = createState(false);
+
+  onCleanup(() => {
+    positionUnsub();
+  });
 
   return (
     <box orientation={Gtk.Orientation.VERTICAL} widthRequest={300}>
@@ -130,11 +146,16 @@ function Player({ player }: PlayerProps) {
             `background-image: url(${cover}); background-size: cover; border-radius: 8px;`,
         )}
       />
-      <label label={label} css={'color: var(--primary);'} />
+      <label label={label} class={'primary'} />
       <PlayerControlButtons player={player} />
       <box>
         <label label={'00:00'} />
         <MMediaSlider
+          onDragStart={() => setDragging(true)}
+          onDragEnd={(self) => {
+            setDragging(false);
+            position.set(self.value);
+          }}
           tooltipText={timePassed}
           hexpand
           playing={playing}
@@ -144,6 +165,11 @@ function Player({ player }: PlayerProps) {
             Math.min(Math.max(p, 0), player.length.peek()),
           )}
           onChangeValue={({ value }) => {
+            if (dragging.peek()) {
+              updatePosition(value);
+              return;
+            }
+
             positionDebouncer.schedule(() => {
               position.set(value);
             });
@@ -199,6 +225,19 @@ export function PlayerHover() {
   const cava = AstalCava.get_default()!;
 
   const { cavaMode } = state;
+
+  const syncCavaMode = () => {
+    cava.bars = cavaMode.peek() === 'wave-line-to' ? 100 : 20;
+  };
+
+  const cavaUnsub = cavaMode.subscribe(() => {
+    syncCavaMode();
+  });
+  syncCavaMode();
+
+  onCleanup(() => {
+    cavaUnsub();
+  });
 
   return (
     <MAnimatedContainer class="hover-row" hexpand>
