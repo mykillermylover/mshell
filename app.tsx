@@ -4,6 +4,7 @@ import { Shell } from '@lib/shell';
 import { state } from '@lib/state/app';
 import { applyTheme, initTheme } from '@lib/theme/apply';
 import { createBinding } from 'ags';
+import { Gtk } from 'ags/gtk4';
 import app from 'ags/gtk4/app';
 
 import { INITIAL_FLOATS, INITIAL_POPS } from './src/windows';
@@ -11,6 +12,26 @@ import style from './style.scss';
 
 // Shell is just window specs: GJS resources are created in main() and Frame.
 const shell = new Shell(INITIAL_POPS, INITIAL_FLOATS);
+
+function applyInhibit() {
+  // GTK goes through org.freedesktop.portal.Inhibit; a missing backend gives cookie 0,
+  // and uninhibit(0) must not be called. Inhibitors are dropped by GTK on exit.
+  let cookie = 0;
+  const syncInhibit = () => {
+    if (state.inhibit.peek() && !cookie) {
+      cookie = app.inhibit(
+        null,
+        Gtk.ApplicationInhibitFlags.IDLE,
+        'Idle inhibitor',
+      );
+    } else if (!state.inhibit.peek() && cookie) {
+      app.uninhibit(cookie);
+      cookie = 0;
+    }
+  };
+  syncInhibit();
+  state.inhibit.subscribe(syncInhibit);
+}
 
 app.start({
   instanceName: 'mshell-dev',
@@ -31,6 +52,8 @@ app.start({
       applyTheme();
       shell.refresh();
     });
+
+    applyInhibit();
   },
   // ags request <domain> <action> [args...] [--monitor <connector>]
   // Domains are wired in lib/shell.ts; `debug` exists only with MSHELL_DEBUG=1.
