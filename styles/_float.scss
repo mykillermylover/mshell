@@ -1,4 +1,5 @@
 @use 'theme' as t;
+@use 'colors' as c;
 
 // Floating windows: the header is a 'grip', we drag by it.
 .float-grip {
@@ -7,6 +8,6 @@
   color: t.$grip;
 
   &:hover {
-    color: t.$fg;
+    color: c.$on-surface;
   }
 }

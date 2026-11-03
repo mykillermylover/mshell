@@ -168,17 +168,22 @@ export default function Settings() {
   const api = useWindowApi();
 
   return (
-    <box orientation={Gtk.Orientation.VERTICAL} spacing={6}>
+    <box
+      orientation={Gtk.Orientation.VERTICAL}
+      spacing={6}
+      css={'padding: 12px 24px'}
+    >
       <box orientation={Gtk.Orientation.HORIZONTAL}>
-        <label class="pop-title" label="Settings" xalign={0} />
-        <box halign={Gtk.Align.END} hexpand>
-          <Gtk.GestureClick onPressed={() => api.togglePin()} />
-          <image
-            iconName={api.pinned((pinned) =>
-              pinned ? ICONS.windowUnpin : ICONS.windowPin,
-            )}
-          />
-        </box>
+        <label class="pop-title primary" label="Settings" xalign={0} />
+        <MButton
+          color={'text'}
+          hexpand
+          halign={Gtk.Align.END}
+          onClicked={() => api.togglePin()}
+          iconName={api.pinned((pinned) =>
+            pinned ? ICONS.windowUnpin : ICONS.windowPin,
+          )}
+        />
       </box>
       <label label={'=== THEMING ==='} />
       <SectionSettings fieldsMap={sectionFields} />

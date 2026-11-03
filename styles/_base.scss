@@ -1,4 +1,5 @@
 @use 'theme' as t;
+@use 'colors' as c;
 
 // The layer is fully transparent: anything visible as a 'background' is drawn by lib/liquid/LiquidField.ts.
 // The class is mshell-frame, not frame: the name .frame is taken by GTK theme rules.
@@ -8,19 +9,20 @@ window {
     background: transparent;
     box-shadow: none;
     border: none;
+
+    color: c.$on-surface;
   }
 }
 
 // Fill of the frame and ALL windows: LiquidField reads it as a color (get_color),
 // the alpha goes to the layer transparency.
 .frame-shape {
-  color: t.$fill;
+  color: c.$surface;
 }
 
 // Window content padding (the content is wrapped automatically). No background.
 .frame-body {
   padding: 18px 24px;
-  color: t.$fg;
 }
 
 // Focus ring: only on widgets a keyboard user can actually operate. A bare

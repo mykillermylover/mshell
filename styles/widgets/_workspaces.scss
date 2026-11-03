@@ -1,9 +1,8 @@
 @use '../colors' as c;
 @use '../motion';
-@use '../theme' as t;
 
 .workspaces {
-  color: t.$fg;
+  color: c.$on-surface;
   padding: 4px;
 
   .workspaces-btn {
@@ -20,7 +19,7 @@
 
     &:hover {
       background-color: c.alpha(c.$inverse-primary, 30%);
-      color: t.$fg;
+      color: c.$on-surface
     }
 
     &.focused {

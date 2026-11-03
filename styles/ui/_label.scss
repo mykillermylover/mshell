@@ -1,0 +1,15 @@
+@use '../colors' as c;
+
+label {
+  &.primary {
+    color: c.$primary;
+  }
+
+  &.secondary {
+    color: c.$secondary;
+  }
+
+  &.tertiary {
+    color: c.$tertiary;
+  }
+}
