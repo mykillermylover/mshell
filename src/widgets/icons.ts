@@ -8,4 +8,8 @@ export const ICONS = {
     forward: 'media-skip-forward-symbolic',
     backward: 'media-skip-backward-symbolic',
   },
+  inhibit: {
+    disabled: 'inhibit-symbolic',
+    enabled: 'inhibit-active-symbolic',
+  },
 } as const;

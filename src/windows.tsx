@@ -8,7 +8,7 @@ export const INITIAL_POPS: PopSpec[] = [
   {
     id: 'player',
     edge: 'top',
-    hover: { content: PlayerHover, hideOnReveal: false },
+    hover: { content: PlayerHover, hideOnReveal: false, reserve: true },
     content: Players,
     keyboard: true,
   },

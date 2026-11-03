@@ -9,6 +9,7 @@ import { MCava } from '@ui/cava';
 import { MAnimatedContainer } from '@ui/MAnimatedContainer';
 import MButton from '@ui/MButton';
 import MMediaSlider from '@ui/slider/MMediaSlider';
+import { cursor } from '@widgets/helpers';
 import { ICONS } from '@widgets/icons';
 import {
   createComputed,
@@ -159,7 +160,7 @@ function Player({ player }: PlayerProps) {
           tooltipText={timePassed}
           hexpand
           playing={playing}
-          cursor={Gdk.Cursor.new_from_name('pointer', null)}
+          cursor={cursor('pointer')}
           max={player.length.as((l) => Math.max(l, 0))}
           value={shownPosition((p) =>
             Math.min(Math.max(p, 0), player.length.peek()),
