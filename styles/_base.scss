@@ -1,6 +1,6 @@
 @use 'theme' as t;
 
-// The layer is fully transparent: anything visible as a "background" is drawn by lib/liquid/LiquidField.ts.
+// The layer is fully transparent: anything visible as a 'background' is drawn by lib/liquid/LiquidField.ts.
 // The class is mshell-frame, not frame: the name .frame is taken by GTK theme rules.
 
 window {
@@ -79,7 +79,7 @@ scale trough {
 }
 
 // The form with a value is the one GTK parses: `(prefers-reduced-motion)`
-// without it is rejected with "Expected ':' after @media feature name".
+// without it is rejected with 'Expected ':' after @media feature name'.
 @media (prefers-reduced-motion: reduce) {
   #{$focusable} {
     &:focus-visible {

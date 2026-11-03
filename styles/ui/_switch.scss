@@ -257,7 +257,7 @@ switch.mswitch.icons:checked > slider {
   background-image: -gtk-icontheme('object-select-symbolic');
 }
 
-// showIcons="only-selected": the check comes with the selected 24dp handle,
+// showIcons='only-selected': the check comes with the selected 24dp handle,
 // while the off side stays the plain 16dp knob - so the generic travel
 // applies and no `icons` class is added. The size plumbing is repeated from
 // `.icons`: without it the glyph is drawn at its natural size, twice as big.
