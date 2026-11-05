@@ -15,8 +15,8 @@ const GTK_BLUR_RADIUS_PER_SIGMA = 2;
 // Threshold point: 0.5 - exactly the alpha midpoint, the body edge stays in place.
 const ALPHA_MIDPOINT = 0.5;
 // The frame goes off-screen by 5σ + 16 px so the blur does not eat its visible edge.
-const BLUR_MARGIN_SIGMAS = 5;
-const FRAME_MARGIN_PX = 16;
+const BLUR_MARGIN_SIGMAS = 3;
+const FRAME_MARGIN_PX = 8;
 // σ from blurRadius: the blur is a "bell", 1.35 is the previous edge-weld calibration.
 const SIGMA_PER_MELT = 1 / 1.35;
 const MIN_SIGMA = 1;
