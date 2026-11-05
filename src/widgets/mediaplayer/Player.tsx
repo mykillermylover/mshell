@@ -1,68 +1,17 @@
-import { Mpris, Player } from '@lib/players';
-import { state } from '@lib/state/app';
 import { createExtrapolated } from '@lib/time/extrapolated';
 import { glibScheduler } from '@lib/time/glibScheduler';
 import { Debounce } from '@lib/time/schedule';
-import { useWindowApi } from '@lib/windows/host';
-import { describeKey } from '@lib/windows/keyEvent';
-import { MCava } from '@ui/cava';
-import { MAnimatedContainer } from '@ui/MAnimatedContainer';
-import MButton from '@ui/MButton';
 import MMediaSlider from '@ui/slider/MMediaSlider';
 import { cursor } from '@widgets/helpers';
-import { ICONS } from '@widgets/icons';
-import {
-  createComputed,
-  createEffect,
-  createState,
-  onCleanup,
-  With,
-} from 'ags';
-import AstalCava from 'gi://AstalCava';
+import { createComputed, createState, onCleanup } from 'ags';
+import { Gtk } from 'ags/gtk4';
 import AstalMpris from 'gi://AstalMpris';
-import Gdk from 'gi://Gdk';
-import Gtk from 'gi://Gtk';
 
-interface PlayerProps {
-  player: Player;
-}
+import PlayerControlButtons from './PlayerControls';
+import type { PlayerProps } from './index';
 
 /** How often the extrapolated playhead is recomputed, ms. */
 const POSITION_REFRESH_MS = 100;
-
-function PlayerControlButtons({ player }: PlayerProps) {
-  const { previous, next, play_pause, playbackStatus } = player;
-
-  return (
-    <box orientation={Gtk.Orientation.HORIZONTAL} halign={Gtk.Align.CENTER}>
-      <MButton
-        iconName={ICONS.media.backward}
-        color={'text'}
-        onClicked={() => previous()}
-      />
-      <MButton
-        iconName={playbackStatus((status) => {
-          switch (status) {
-            case AstalMpris.PlaybackStatus.STOPPED:
-            case AstalMpris.PlaybackStatus.PAUSED: {
-              return ICONS.media.play;
-            }
-            case AstalMpris.PlaybackStatus.PLAYING: {
-              return ICONS.media.pause;
-            }
-          }
-        })}
-        color={'text'}
-        onClicked={() => play_pause()}
-      />
-      <MButton
-        iconName={ICONS.media.forward}
-        color={'text'}
-        onClicked={() => next()}
-      />
-    </box>
-  );
-}
 
 const getTime = (sec: number): string => {
   const minutes = Math.floor(sec / 60).toString();
@@ -71,7 +20,7 @@ const getTime = (sec: number): string => {
   return `${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')}`;
 };
 
-function Player({ player }: PlayerProps) {
+export default function Player({ player }: PlayerProps) {
   const {
     artist,
     albumArtist,
@@ -179,87 +128,5 @@ function Player({ player }: PlayerProps) {
         <label label={player.length.as((l) => getTime(l))} />
       </box>
     </box>
-  );
-}
-
-export default function Players() {
-  const mpris = Mpris.get_default();
-
-  const { onKeyPressed, onKeyReleased, hovered, opened } = useWindowApi();
-
-  const primaryPlayer = mpris.primary;
-
-  const keyHolds = new Set<number>();
-
-  onKeyPressed((event) => {
-    const { space } = describeKey(event);
-
-    if (space && !keyHolds.has(event.keyval)) {
-      primaryPlayer?.peek()?.play_pause();
-    }
-
-    keyHolds.add(event.keyval);
-  });
-
-  onKeyReleased((event) => {
-    keyHolds.delete(event.keyval);
-  });
-
-  createEffect(() => {
-    if (!hovered() || !opened()) {
-      keyHolds.clear();
-    }
-  });
-
-  return (
-    <box class={'player'} orientation={Gtk.Orientation.VERTICAL}>
-      <With value={mpris.primary}>
-        {(player) => (player ? <Player player={player} /> : undefined)}
-      </With>
-    </box>
-  );
-}
-
-export function PlayerHover() {
-  const { opened } = useWindowApi();
-
-  const cava = AstalCava.get_default()!;
-
-  const { cavaMode } = state;
-
-  const syncCavaMode = () => {
-    cava.bars = cavaMode.peek() === 'wave-line-to' ? 100 : 20;
-  };
-
-  const cavaUnsub = cavaMode.subscribe(() => {
-    syncCavaMode();
-  });
-  syncCavaMode();
-
-  onCleanup(() => {
-    cavaUnsub();
-  });
-
-  return (
-    <MAnimatedContainer class="hover-row" hexpand>
-      <With value={opened}>
-        {(opened) => (
-          <box spacing={8} heightRequest={opened ? 100 : undefined}>
-            <image
-              iconName={ICONS.media.play}
-              css={opened ? undefined : '-gtk-icon-size: 12px;'}
-            />
-            <MCava
-              cava={cava}
-              hexpand
-              minBarHeight={2}
-              sag={0.25}
-              mode={cavaMode}
-              vexpand
-            />
-          </box>
-        )}
-      </With>
-    </MAnimatedContainer>
   );
 }

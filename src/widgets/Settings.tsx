@@ -185,10 +185,18 @@ export default function Settings() {
           )}
         />
       </box>
-      <label label={'=== THEMING ==='} />
-      <SectionSettings fieldsMap={sectionFields} />
-      <label label={'=== STATE ==='} />
-      <SectionSettings fieldsMap={sectionStateFields} />
+      <scrolledwindow
+        propagateNaturalHeight
+        propagateNaturalWidth
+        maxContentHeight={600}
+      >
+        <box orientation={Gtk.Orientation.VERTICAL}>
+          <label label={'=== THEMING ==='} />
+          <SectionSettings fieldsMap={sectionFields} />
+          <label label={'=== STATE ==='} />
+          <SectionSettings fieldsMap={sectionStateFields} />
+        </box>
+      </scrolledwindow>
     </box>
   );
 }

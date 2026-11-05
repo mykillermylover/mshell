@@ -1,5 +1,6 @@
 import type { FloatSpec, PopSpec } from '@lib/windows/spec';
-import Players, { PlayerHover } from '@widgets/Players';
+import MediaPlayer from '@widgets/mediaplayer';
+import MediaHover from '@widgets/mediaplayer/MediaHover';
 import Settings from '@widgets/Settings';
 import Workspaces from '@widgets/Workspaces';
 
@@ -8,8 +9,8 @@ export const INITIAL_POPS: PopSpec[] = [
   {
     id: 'player',
     edge: 'top',
-    hover: { content: PlayerHover, hideOnReveal: false, reserve: true },
-    content: Players,
+    hover: { content: MediaHover, hideOnReveal: false, reserve: true },
+    content: MediaPlayer,
     keyboard: true,
   },
   {

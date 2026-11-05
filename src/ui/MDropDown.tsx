@@ -41,6 +41,10 @@ export default function MDropDown<T extends string>({
     () => maxRowsAccessor() * rowHeight(),
   );
 
+  const minContentHeight = createComputed(() =>
+    Math.min(maxContentHeight(), filteredOptions().length * rowHeight()),
+  );
+
   const measureRow = (self: Gtk.Widget) => {
     if (rowHeight.peek() === 0) {
       setRowHeight(self.measure(Gtk.Orientation.VERTICAL, -1)[1]);
@@ -80,6 +84,7 @@ export default function MDropDown<T extends string>({
         transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN}
       >
         <scrolledwindow
+          minContentHeight={minContentHeight}
           maxContentHeight={maxContentHeight}
           propagateNaturalHeight
           hexpand
